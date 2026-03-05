@@ -10,13 +10,16 @@ use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\LoginController;
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RegisterController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/consultants', [ConsultantController::class, 'show'])->name('consultant');
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::get('/consultant/{identifier}', [ConsultantController::class, 'profile'])->name('consultant.profile');
 Route::get('/services/{slug}', [ServicesController::class, 'service'])->name('services.dynamic');
-Route::get('/consultation', [ConsultationController::class, 'show'])->name('consultation');
+Route::get('/consultation', [ConsultationController::class, 'index'])->name('consultation');
+Route::get('/consultation/slots', [ConsultationController::class, 'getSlots'])->name('consultation.slots');
+Route::post('/consultation/book', [ConsultationController::class, 'store'])->name('consultation.book');
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 // OTP Login (modal)
 Route::middleware(['guest'])->group(function () {
@@ -33,13 +36,14 @@ Route::middleware(['guest'])->group(function () {
         ->name('login.otp.verify');
 
     // Register route
-    Route::post('/v1/register', [\App\Http\Controllers\RegisterController::class, 'register']);
+    Route::post('/v1/register', [RegisterController::class, 'register']);
 
     // Password login (AJAX, modal)
     Route::post('/v1/login', [LoginController::class, 'login']);    
 });
 
 
+Route::get('/consultation/session-duration', [ConsultationController::class, 'sessionDuration'])->name('consultation.sessionDuration');
 
 
 Route::post('/logout', [OtpAuthController::class, 'logout'])

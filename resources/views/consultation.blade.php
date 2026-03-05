@@ -4,7 +4,21 @@
 
 @section('content')
 
+@push('styles')
+<style>
+    .form-section.active {
+        border: 2px solid #0d6efd;
+        box-shadow: 0 0 8px #0d6efd33;
+    }
+   
+</style>
+@endpush
 
+@push('styles')
+<style>
+    
+</style>
+@endpush
 <div class="container py-5 book_ing">
     <div class="form-container">
 
@@ -66,25 +80,26 @@
                     <!-- RIGHT FORM -->
                     <div class="col-md-7">
 
-                        <form id="multiStepForm">
-
+                        <div id="stepper-error" style="display:none" class="alert alert-danger"></div>
+                        <div id="stepper-debug" style="display:none; margin-bottom:10px;" class="alert alert-info"></div>
+                        <form id="consultation-booking-form">
                             <!-- Step 1 -->
-                            <div class="form-section active">
+                            <div class="form-section">
                                 <h4>Personal Information</h4>
 
                                 <div class="mb-3">
                                     <label>Name</label>
-                                    <input type="text" class="form-control" required>
+                                    <input type="text" class="form-control" name="name" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label>Email</label>
-                                    <input type="email" class="form-control" required>
+                                    <input type="email" class="form-control" name="user_email" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label>Phone</label>
-                                    <input type="tel" class="form-control" required>
+                                    <input type="tel" class="form-control" name="phone" required>
                                 </div>
 
                                 <button type="button" class="btn btn-next next">Next</button>
@@ -96,17 +111,17 @@
 
                                 <div class="mb-3">
                                     <label>Date of Birth</label>
-                                    <input type="date" class="form-control" required>
+                                    <input type="date" class="form-control" name="birth_date" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label>Time of Birth</label>
-                                    <input type="time" class="form-control">
+                                    <input type="time" class="form-control" name="birth_time" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label>Place of Birth</label>
-                                    <input type="text" class="form-control">
+                                    <input type="text" class="form-control" name="place">
                                 </div>
 
                                 <button type="button" class="btn btn-secondary btn-prev prev">Previous</button>
@@ -122,7 +137,7 @@
                                     <!-- Consultation Type -->
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">Consultation Type</label>
-                                        <select class="form-select" name="consultation_type">
+                                        <select class="form-select" name="consultation_type" id="consultation_type">
                                             <option value="video">Video Call</option>
                                             <option value="phone">Phone Call</option>
                                             <option value="inperson">In-person</option>
@@ -132,57 +147,39 @@
                                     <!-- Astrologer -->
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">Choose Astrologer</label>
-                                        <select class="form-select" name="astrologer" id="astrologerSelect">
+                                       
+                                        <select class="form-select" name="astrologer_id" id="astrologer_id">
                                             <option value="">-- Select Astrologer --</option>
-                                            <option>Anurag Singh</option>
-                                            <option>Amit Diwedi</option>
-                                            <option>Nimisha Purbiya</option>
-                                            <option>Satyam Gupta</option>
-                                            <option>Maulik Bamania</option>
-                                            <option>Pawan Tiwari</option>
-                                            <option>Aditya Dubey</option>
-                                            <option>Anshuman Rajak</option>
-                                            <option>Navneet Kaur</option>
-                                            <option>Sayali Gite</option>
-                                            <option>Jay Jethwani</option>
-                                            <option>Rahul Varma</option>
+                                            @if(isset($astrologers['data']) && is_array($astrologers['data']))
+                                                @foreach($astrologers['data'] as $ast)
+                                                    @if(is_array($ast) || is_object($ast))
+                                                        <option value="{{ is_array($ast) ? ($ast['id'] ?? '') : ($ast->id ?? '') }}" data-duration="{{ is_array($ast) ? ($ast['duration'] ?? '') : ($ast->duration ?? '') }}" data-rate="{{ is_array($ast) ? ($ast['rate'] ?? '') : ($ast->rate ?? '') }}">
+                                                            {{ is_array($ast) ? ($ast['name'] ?? '') : ($ast->name ?? '') }}
+                                                        </option>
+                                                    @endif
+                                                @endforeach
+                                            @endif
                                         </select>
                                     </div>
 
                                     <!-- Session Duration -->
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">Session Duration</label>
-                                        <input type="text" class="form-control" id="sessionDuration" value="30 Minutes" readonly>
+                                        <input type="text" class="form-control" id="duration" name="duration" readonly>
                                     </div>
 
                                     <!-- Preferred Date -->
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">Preferred Date</label>
-                                        <input type="date" class="form-control" name="preferred_date" id="preferredDate">
+                                        <input type="date" class="form-control" name="scheduled_at" id="consultation_date">
                                     </div>
 
                                     <!-- Slots -->
                                     <div class="col-md-12">
                                         <label class="form-label fw-semibold">Available Slots</label>
 
-                                        <div id="slotGrid" class="d-flex flex-wrap gap-2 mb-2">
-
-                                            <button type="button" class="btn btn-outline-primary slot-btn" data-value="17:00 - 17:30">
-                                                17:00 - 17:30
-                                            </button>
-
-                                            <button type="button" class="btn btn-outline-primary slot-btn" data-value="17:30 - 18:00">
-                                                17:30 - 18:00
-                                            </button>
-
-                                            <button type="button" class="btn btn-outline-primary slot-btn" data-value="18:00 - 18:30">
-                                                18:00 - 18:30
-                                            </button>
-
-                                        </div>
-
-                                        <input type="hidden" name="slot_time" id="slotTimeInput">
-
+                                        <div id="slotGrid" class="d-flex flex-wrap gap-2 mb-2"></div>
+                                        <input type="hidden" name="slot_id" id="slot_id">
                                         <div class="mt-1 text-muted small">
                                             Selected Slot:
                                             <strong id="slotText">None</strong>
@@ -193,8 +190,7 @@
                                     <!-- Notes -->
                                     <div class="col-12">
                                         <label class="form-label fw-semibold">Notes / Questions</label>
-                                        <textarea class="form-control" name="notes" rows="3"
-                                            placeholder="Briefly describe your concern"></textarea>
+                                        <textarea class="form-control" name="notes" rows="3" placeholder="Briefly describe your concern"></textarea>
                                     </div>
                                     <div class="col-12">
                                         <button type="button" class="btn btn-secondary btn-prev prev">Previous</button>
@@ -220,17 +216,17 @@
                                     <label>Select Payment Method</label>
 
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="payment">
+                                        <input class="form-check-input" type="radio" name="payment_method" value="upi">
                                         <label class="form-check-label">UPI</label>
                                     </div>
 
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="payment">
+                                        <input class="form-check-input" type="radio" name="payment_method" value="card">
                                         <label class="form-check-label">Credit / Debit Card</label>
                                     </div>
 
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="payment">
+                                        <input class="form-check-input" type="radio" name="payment_method" value="netbanking">
                                         <label class="form-check-label">Net Banking</label>
                                     </div>
 
@@ -257,6 +253,7 @@
                                 </div>
 
                                 <button type="button" class="btn btn-secondary btn-prev prev">Previous</button>
+                                <input type="hidden" name="rate" id="rate">
                                 <button type="submit" class="btn btn-success">Submit</button>
                             </div>
 
@@ -273,3 +270,355 @@
 
 
 @endsection
+
+
+
+@push('scripts')
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+    const sections = Array.from(document.querySelectorAll('.form-section'));
+    const steps = Array.from(document.querySelectorAll('.step'));
+    const nextBtns = document.querySelectorAll('.btn-next');
+    const prevBtns = document.querySelectorAll('.btn-prev');
+    let currentStep = 0;
+    // Remove .active from all sections and steps, then set only the first as active
+    sections.forEach(section => section.classList.remove('active'));
+    steps.forEach(step => step.classList.remove('active'));
+    if (sections.length > 0) sections[0].classList.add('active');
+    if (steps.length > 0) steps[0].classList.add('active');
+
+    function showStep(step) {
+        // Defensive: clamp step to available sections
+        if (step < 0) step = 0;
+        if (step >= sections.length) step = sections.length - 1;
+        // Show only the current section
+        sections.forEach((section, idx) => {
+            if (idx === step) {
+                section.classList.add('active');
+            } else {
+                section.classList.remove('active');
+            }
+        });
+        // Update stepper UI
+        const errorDiv = document.getElementById('stepper-error');
+        if (sections.length !== steps.length) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Form stepper mismatch: ' + sections.length + ' sections, ' + steps.length + ' steps. Please contact support.';
+                errorDiv.style.display = 'block';
+            }
+        } else if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+        steps.forEach((stepEl, idx) => {
+            if (idx === step) {
+                stepEl.classList.add('active');
+            } else {
+                stepEl.classList.remove('active');
+            }
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        currentStep = step;
+    }
+
+    // --- FORM VALIDATION ---
+    function validateStep(step) {
+        let valid = true;
+        // Only clear errors for current step
+        const currentSection = sections[step];
+        if (currentSection) {
+            currentSection.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            currentSection.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+        }
+        if (step === 0) {
+            // Personal Info
+            const name = document.querySelector('[name="name"]');
+            const email = document.querySelector('[name="user_email"]');
+            const phone = document.querySelector('[name="phone"]');
+            if (!name.value.trim()) { showError(name, 'Name is required'); valid = false; }
+            if (!email.value.trim() || !email.checkValidity()) { showError(email, 'Valid email required'); valid = false; }
+            if (!phone.value.trim()) { showError(phone, 'Phone is required'); valid = false; }
+        }
+        if (step === 1) {
+            // Birth Details
+            const birthDate = document.querySelector('[name="birth_date"]');
+            const birthTime = document.querySelector('[name="birth_time"]');
+            if (!birthDate.value) { showError(birthDate, 'Birth date is required'); valid = false; }
+            if (!birthTime.value) { showError(birthTime, 'Birth time is required'); valid = false; }
+        }
+        if (step === 2) {
+            // Consultation
+            const consultationType = document.querySelector('[name="consultation_type"]');
+            const astrologer = document.querySelector('[name="astrologer_id"]');
+            const duration = document.querySelector('[name="duration"]');
+            const scheduledAt = document.querySelector('[name="scheduled_at"]');
+            const slotId = document.querySelector('[name="slot_id"]');
+            if (!consultationType.value) { showError(consultationType, 'Select consultation type'); valid = false; }
+            if (!astrologer.value) { showError(astrologer, 'Select astrologer'); valid = false; }
+            if (!duration.value) { showError(duration, 'Duration required'); valid = false; }
+            if (!scheduledAt.value) { showError(scheduledAt, 'Select date'); valid = false; }
+            if (!slotId.value) { showError(slotId, 'Select a slot'); valid = false; }
+        }
+        if (step === 3) {
+            // Payment
+            const payment = document.querySelector('[name="payment_method"]:checked');
+            if (!payment) {
+                const radios = document.querySelectorAll('[name="payment_method"]');
+                if (radios.length) showError(radios[0].closest('.form-check'), 'Select payment method');
+                valid = false;
+            }
+        }
+        if (step === 4) {
+            // Terms
+            const terms = document.getElementById('termsCheck');
+            if (!terms.checked) { showError(terms, 'You must agree to continue'); valid = false; }
+        }
+        return valid;
+    }
+    function showError(input, message) {
+        if (!input) return;
+        input.classList.add('is-invalid');
+        let feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback';
+        feedback.textContent = message;
+        if (input.parentNode) {
+            if (input.type === 'checkbox' || input.type === 'radio') {
+                input.parentNode.appendChild(feedback);
+            } else {
+                input.parentNode.appendChild(feedback);
+            }
+        }
+    }
+
+    nextBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            if (validateStep(currentStep)) {
+                if (currentStep < sections.length - 1) {
+                    currentStep++;
+                    showStep(currentStep);
+                }
+            }
+        });
+    });
+
+    prevBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            if (currentStep > 0) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        });
+    });
+
+    showStep(currentStep);
+
+    // Populate session duration when astrologer is selected
+    const astrologerSelect = document.getElementById('astrologer_id');
+    const durationInput = document.getElementById('duration');
+    const dateInput = document.getElementById('consultation_date');
+    const slotSelect = document.getElementById('slot_id');
+
+    if (astrologerSelect && durationInput) {
+        astrologerSelect.addEventListener('change', function () {
+            const astrologerId = astrologerSelect.value;
+            const selectedOption = astrologerSelect.options[astrologerSelect.selectedIndex];
+            // Set rate from astrologer option data-rate attribute
+            const rateInput = document.getElementById('rate');
+            if (selectedOption && rateInput) {
+                const rate = selectedOption.getAttribute('data-rate') || '';
+                rateInput.value = rate;
+            }
+            if (!astrologerId) {
+                durationInput.value = '';
+                if (slotSelect) slotSelect.innerHTML = '<option value="">Select Slot</option>';
+                return;
+            }
+            fetch(`/consultation/session-duration?astrologer_id=${astrologerId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.duration) {
+                        durationInput.value = data.duration;
+                    } else {
+                        durationInput.value = '';
+                    }
+                })
+                .catch(() => {
+                    durationInput.value = '';
+                });
+            // Clear slots when astrologer changes
+            if (slotSelect) slotSelect.innerHTML = '<option value="">Select Slot</option>';
+        });
+    }
+
+    // Fetch slots when both astrologer and date are selected
+    const slotGrid = document.getElementById('slotGrid');
+    const slotIdInput = document.getElementById('slot_id');
+    const slotText = document.getElementById('slotText');
+    function clearSlotGrid() {
+        if (slotGrid) slotGrid.innerHTML = '';
+        if (slotIdInput) slotIdInput.value = '';
+        if (slotText) slotText.textContent = 'None';
+    }
+    function showSlotSkeletons(count = 5) {
+        if (!slotGrid) return;
+        slotGrid.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const skel = document.createElement('div');
+            skel.className = 'slot-skeleton';
+            slotGrid.appendChild(skel);
+        }
+    }
+    if (astrologerSelect && dateInput && slotGrid && slotIdInput && slotText) {
+        function fetchSlots() {
+            const astrologerId = astrologerSelect.value;
+            const date = dateInput.value;
+            clearSlotGrid();
+            if (!astrologerId || !date) {
+                return;
+            }
+            showSlotSkeletons(5);
+            fetch(`/consultation/slots?astrologer_id=${astrologerId}&date=${date}`)
+                .then(res => res.json())
+                .then(data => {
+                    slotGrid.innerHTML = '';
+                    if (data.success && Array.isArray(data.slots) && data.slots.length > 0) {
+                        data.slots.forEach(slot => {
+                            const badge = document.createElement('span');
+                            badge.className = 'slot-badge';
+                            badge.tabIndex = 0;
+                            badge.textContent = `${slot.start_time} - ${slot.end_time}`;
+                            badge.dataset.slotId = slot.slot_id;
+                            badge.setAttribute('role', 'button');
+                            badge.setAttribute('aria-pressed', 'false');
+                            badge.addEventListener('click', function () {
+                                slotGrid.querySelectorAll('.slot-badge').forEach(b => {
+                                    b.classList.remove('active');
+                                    b.setAttribute('aria-pressed', 'false');
+                                });
+                                badge.classList.add('active');
+                                badge.setAttribute('aria-pressed', 'true');
+                                slotIdInput.value = slot.slot_id;
+                                slotText.textContent = `${slot.start_time} - ${slot.end_time}`;
+                            });
+                            badge.addEventListener('keydown', function(e) {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    badge.click();
+                                }
+                            });
+                            slotGrid.appendChild(badge);
+                        });
+                    } else {
+                        slotGrid.innerHTML = '<span class="text-danger">No slots available</span>';
+                    }
+                })
+                .catch(() => {
+                    slotGrid.innerHTML = '<span class="text-danger">Error loading slots</span>';
+                });
+        }
+        astrologerSelect.addEventListener('change', fetchSlots);
+        dateInput.addEventListener('change', fetchSlots);
+    }
+
+    // --- FINAL FORM SUBMIT VALIDATION ---
+    const form = document.getElementById('consultation-booking-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!validateStep(0) || !validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) {
+                showStep(0);
+                return false;
+            }
+            // Prepare data
+            const formData = new FormData(form);
+            // Map frontend fields to API fields (match controller validation)
+            const data = {
+                name: formData.get('name'),
+                phone: formData.get('phone'),
+                user_email: formData.get('user_email'), // must match backend validation
+                consultation_type: formData.get('consultation_type'),
+                astrologer_id: formData.get('astrologer_id'),
+                duration: formData.get('duration'),
+                scheduled_at: formData.get('scheduled_at'),
+                slot_id: formData.get('slot_id'),
+                birth_date: formData.get('birth_date'),
+                birth_time: formData.get('birth_time'),
+                place: formData.get('place'),
+                notes: formData.get('notes'),
+                payment_method: formData.get('payment_method'),
+                type: formData.get('consultation_type') || 'Online', // required by backend
+                rate: formData.get('rate'),
+            };
+            // Show loading state
+            const errorDiv = document.getElementById('stepper-error');
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
+            // CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            fetch('/consultation/book', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json', // Ensure Laravel returns JSON on validation errors
+                    ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {})
+                },
+                body: JSON.stringify(data)
+            })
+            .then(async response => {
+                let resp;
+                let rawText = '';
+                try {
+                    rawText = await response.text();
+                    resp = JSON.parse(rawText);
+                } catch (err) {
+                    resp = { message: 'Invalid JSON response', error: err, raw: rawText };
+                }
+                if (response.ok && resp.success) {
+                    // Success UI
+                    alert('Consultation booked successfully!');
+                    form.reset();
+                    showStep(0);
+                } else {
+                    if (errorDiv) {
+                        let msg = (resp && resp.message ? resp.message : 'Booking failed.');
+                        // Show Laravel validation errors if present
+                        if (resp && resp.errors && typeof resp.errors === 'object') {
+                            msg += '\n';
+                            for (const [field, errors] of Object.entries(resp.errors)) {
+                                if (Array.isArray(errors)) {
+                                    errors.forEach(e => { msg += `- ${e}\n`; });
+                                } else {
+                                    msg += `- ${errors}\n`;
+                                }
+                            }
+                        }
+                        if (resp && resp.error) msg += ' (JSON error: ' + resp.error + ')';
+                        if (resp && resp.raw) msg += '\nRaw response: ' + resp.raw.substring(0, 300);
+                        errorDiv.textContent = msg;
+                        errorDiv.style.display = 'block';
+                    } else {
+                        alert((resp && resp.message ? resp.message : 'Booking failed.'));
+                    }
+                    // Log the full response for debugging
+                    console.error('Booking error response:', resp, response.status, response.statusText);
+                }
+            })
+            .catch((err) => {
+                if (errorDiv) {
+                    errorDiv.textContent = 'An error occurred while booking. ' + (err && err.message ? err.message : '');
+                    errorDiv.style.display = 'block';
+                } else {
+                    alert('An error occurred while booking. ' + (err && err.message ? err.message : ''));
+                }
+                // Log the error for debugging
+                console.error('Booking AJAX error:', err);
+            });
+        });
+    }
+});
+</script>
+@endpush
+
+
+
