@@ -11,7 +11,11 @@
                 <li class="nav-item"><a class="nav-link" href="#">Horoscope</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('contact') }}">Contact</a></li>
             </ul>
+             @if(session()->has('auth.api_token'))
             <a href="/consultation" class="btn btn-astro ms-3">Book Consultation</a>
+            @else
+            <a href="javascripr:;" class="btn btn-astro ms-3"  data-bs-toggle="modal" data-bs-target="#authModal">Book Consultation</a>
+            @endif
         </div>
     </div>
 </nav>

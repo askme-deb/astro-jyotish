@@ -10,8 +10,11 @@ class ApiUserAuthenticated
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!session()->has('auth.api_token') || !session()->has('auth.user')) {
-            return redirect()->route('login');
+        $token = $request->cookie('auth_api_token');
+        if (!$token) {
+            return response()->json([
+                'message' => 'Unauthenticated.'
+            ], 401);
         }
         return $next($request);
     }

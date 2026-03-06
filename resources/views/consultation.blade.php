@@ -10,13 +10,13 @@
         border: 2px solid #0d6efd;
         box-shadow: 0 0 8px #0d6efd33;
     }
-   
+
 </style>
 @endpush
 
 @push('styles')
 <style>
-    
+
 </style>
 @endpush
 <div class="container py-5 book_ing">
@@ -147,7 +147,7 @@
                                     <!-- Astrologer -->
                                     <div class="col-md-6">
                                         <label class="form-label fw-semibold">Choose Astrologer</label>
-                                       
+
                                         <select class="form-select" name="astrologer_id" id="astrologer_id">
                                             <option value="">-- Select Astrologer --</option>
                                             @if(isset($astrologers['data']) && is_array($astrologers['data']))
@@ -254,6 +254,7 @@
 
                                 <button type="button" class="btn btn-secondary btn-prev prev">Previous</button>
                                 <input type="hidden" name="rate" id="rate">
+                                 <button type="button" id="razorpay-pay-btn" class="btn btn-primary mb-2">Pay with Razorpay</button>
                                 <button type="submit" class="btn btn-success">Submit</button>
                             </div>
 
@@ -274,9 +275,166 @@
 
 
 @push('scripts')
+<!-- Razorpay Checkout Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Razorpay payment integration
+    const razorpayBtn = document.getElementById('razorpay-pay-btn');
+    let paymentSuccess = false;
+    let paymentDetails = {};
+
+    // Helper: Get Bearer token from localStorage or meta (adjust as needed)
+    function getBearerToken() {
+        // Example: from localStorage
+        return localStorage.getItem('authToken') || '';
+    }
+
+    if (razorpayBtn) {
+        razorpayBtn.addEventListener('click', function () {
+            const form = document.getElementById('consultation-booking-form');
+            const formData = new FormData(form);
+            // Prepare booking payload
+            const bookingPayload = {
+                name: formData.get('name'),
+                phone: formData.get('phone'),
+                email: formData.get('user_email'),
+                user_email: formData.get('user_email'), // required by backend
+                consultation_type: formData.get('consultation_type'),
+                astrologer_id: formData.get('astrologer_id'),
+                date: formData.get('scheduled_at'),
+                scheduled_at: formData.get('scheduled_at'), // required by backend
+                slot_id: formData.get('slot_id'),
+                payment_method: 'razorpay',
+                duration: formData.get('duration'), // required by backend
+                type: formData.get('consultation_type') || 'Online', // required by backend
+                rate: formData.get('rate'), // required by backend
+            };
+            // Validate required fields
+            if (!bookingPayload.name || !bookingPayload.phone || !bookingPayload.email || !bookingPayload.consultation_type || !bookingPayload.astrologer_id || !bookingPayload.date || !bookingPayload.slot_id) {
+                toast('Please fill all required fields and select a slot.', true);
+                return;
+            }
+            // Step 1: Create Booking
+            fetch('/api/v1/bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + getBearerToken()
+                },
+                body: JSON.stringify(bookingPayload)
+            })
+            .then(res => res.json())
+            .then(resp => {
+                // Updated success logic for new backend response
+                if (!resp.success || !resp.data || !resp.data.data || !resp.data.data.id) {
+                    toast(resp.message || 'Failed to create booking.', true);
+                    return;
+                }
+                const bookingId = resp.data.data.id;
+                const amount = resp.data.data.rate;
+                const currency = resp.data.data.currency || 'INR';
+                // Step 2: Create Razorpay Order
+                fetch('/api/v1/razorpay/order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + getBearerToken()
+                    },
+                    body: JSON.stringify({ booking_id: bookingId, amount: amount, currency: currency })
+                })
+                .then(res => res.json())
+                .then(orderResp => {
+                    if (!orderResp.status || !orderResp.data || !orderResp.data.razorpay_order_id) {
+                        toast(orderResp.message || 'Failed to initiate payment.', true);
+                        return;
+                    }
+                    const options = {
+                        key: orderResp.data.key || 'rzp_test_3WmknLIqcUo9er', // Replace with your Razorpay key
+                        amount: orderResp.data.amount,
+                        currency: orderResp.data.currency,
+                        name: 'Astro Jyotish',
+                        description: 'Consultation Booking',
+                        order_id: orderResp.data.razorpay_order_id,
+                        handler: function (response) {
+                            // Step 3: Verify Payment
+                            fetch('/api/v1/razorpay/verify', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'Authorization': 'Bearer ' + getBearerToken()
+                                },
+                                body: JSON.stringify({
+                                    booking_id: bookingId,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(verifyResp => {
+                                if (verifyResp.status) {
+                                    // Step 4: Confirm Booking
+                                    fetch('/api/v1/razorpay/booking', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json',
+                                            'Authorization': 'Bearer ' + getBearerToken()
+                                        },
+                                        body: JSON.stringify({
+                                            booking_id: bookingId,
+                                            razorpay_order_id: response.razorpay_order_id,
+                                            razorpay_payment_id: response.razorpay_payment_id,
+                                            razorpay_signature: response.razorpay_signature
+                                        })
+                                    })
+                                    .then(res => res.json())
+                                    .then(confirmResp => {
+                                        if (confirmResp.status) {
+                                            toast('Booking and payment successful!');
+                                            form.reset();
+                                            showStep(0);
+                                        } else {
+                                            toast(confirmResp.message || 'Booking confirmation failed.', true);
+                                        }
+                                    })
+                                    .catch(() => {
+                                        toast('Error confirming booking.', true);
+                                    });
+                                } else {
+                                    toast(verifyResp.message || 'Payment verification failed.', true);
+                                }
+                            })
+                            .catch(() => {
+                                toast('Payment verification error.', true);
+                            });
+                        },
+                        prefill: {
+                            name: bookingPayload.name,
+                            email: bookingPayload.email,
+                            contact: bookingPayload.phone
+                        },
+                        theme: {
+                            color: '#0d6efd'
+                        }
+                    };
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                })
+                .catch(() => {
+                    toast('Error initiating payment.', true);
+                });
+            })
+            .catch(() => {
+                toast('Error creating booking.', true);
+            });
+        });
+    }
     const sections = Array.from(document.querySelectorAll('.form-section'));
     const steps = Array.from(document.querySelectorAll('.step'));
     const nextBtns = document.querySelectorAll('.btn-next');
@@ -617,6 +775,50 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+
+
+let toastEl = null;
+function toast(message, isError = false) {
+    if (!message) return;
+
+    if (!toastEl) {
+        toastEl = document.createElement("div");
+        toastEl.id = "checkout-toast";
+
+        toastEl.style.position = "fixed";
+        toastEl.style.left = "50%";
+        toastEl.style.bottom = "24px";
+        toastEl.style.transform = "translateX(-50%) translateY(20px)";
+        toastEl.style.zIndex = "9999";
+        toastEl.style.padding = "12px 18px";
+        toastEl.style.borderRadius = "6px";
+        toastEl.style.fontSize = "14px";
+        toastEl.style.fontWeight = "500";
+        toastEl.style.color = "#fff";
+        toastEl.style.boxShadow = "0 6px 16px rgba(0,0,0,0.25)";
+        toastEl.style.maxWidth = "90%";
+        toastEl.style.textAlign = "center";
+        toastEl.style.opacity = "0";
+        toastEl.style.transition = "all 0.3s ease";
+
+        document.body.appendChild(toastEl);
+    }
+
+    toastEl.textContent = message;
+    toastEl.style.backgroundColor = isError ? "#e53935" : "#2e7d32";
+
+    // show animation
+    toastEl.style.opacity = "1";
+    toastEl.style.transform = "translateX(-50%) translateY(0)";
+
+    clearTimeout(toastEl._hideTimer);
+
+    toastEl._hideTimer = setTimeout(() => {
+        toastEl.style.opacity = "0";
+        toastEl.style.transform = "translateX(-50%) translateY(20px)";
+    }, 3000);
+}
 </script>
 @endpush
 
