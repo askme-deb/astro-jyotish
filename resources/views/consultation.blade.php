@@ -252,10 +252,11 @@
                                     <label class="form-check-label">I agree to Terms & Conditions</label>
                                 </div>
 
-                                <button type="button" class="btn btn-secondary btn-prev prev">Previous</button>
-                                <input type="hidden" name="rate" id="rate">
-                                 <button type="button" id="razorpay-pay-btn" class="btn btn-primary mb-2">Pay with Razorpay</button>
-                                <button type="submit" class="btn btn-success">Submit</button>
+                                <div class="d-flex justify-content-between align-items-center gap-3">
+                                    <button type="button" class="btn btn-secondary btn-prev prev">Previous</button>
+                                    <input type="hidden" name="rate" id="rate">
+                                    <button type="button" id="razorpay-pay-btn" class="btn btn-next ms-auto">Pay with Razorpay</button>
+                                </div>
                             </div>
 
                         </form>
@@ -282,8 +283,46 @@
 document.addEventListener('DOMContentLoaded', function () {
     // Razorpay payment integration
     const razorpayBtn = document.getElementById('razorpay-pay-btn');
+    const bookingDetailsBaseUrl = "{{ url('/booking') }}";
     let paymentSuccess = false;
     let paymentDetails = {};
+
+    function setRazorpayButtonLoading(isLoading) {
+        if (!razorpayBtn) {
+            return;
+        }
+
+        if (!razorpayBtn.dataset.defaultLabel) {
+            razorpayBtn.dataset.defaultLabel = razorpayBtn.innerHTML;
+        }
+
+        razorpayBtn.disabled = isLoading;
+        razorpayBtn.innerHTML = isLoading
+            ? '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...'
+            : razorpayBtn.dataset.defaultLabel;
+    }
+
+    function redirectToBookingDetails(bookingId) {
+        if (!bookingId) {
+            return;
+        }
+
+        window.location.href = bookingDetailsBaseUrl + '/' + encodeURIComponent(bookingId);
+    }
+
+    function resolveBookingId(payload) {
+        if (!payload || typeof payload !== 'object') {
+            return null;
+        }
+
+        return payload.booking_id
+            || payload.id
+            || payload.data?.id
+            || payload.data?.booking_id
+            || payload.data?.data?.id
+            || payload.data?.data?.booking_id
+            || null;
+    }
 
     // Helper: Get Bearer token from localStorage or meta (adjust as needed)
     function getBearerToken() {
@@ -293,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (razorpayBtn) {
         razorpayBtn.addEventListener('click', function () {
+            setRazorpayButtonLoading(true);
             const form = document.getElementById('consultation-booking-form');
             const formData = new FormData(form);
             // Prepare booking payload
@@ -310,9 +350,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 duration: formData.get('duration'), // required by backend
                 type: formData.get('consultation_type') || 'Online', // required by backend
                 rate: formData.get('rate'), // required by backend
+                birth_date: formData.get('birth_date'),
+                birth_time: formData.get('birth_time'),
+                place: formData.get('place'),
+                notes: formData.get('notes'),
             };
             // Validate required fields
             if (!bookingPayload.name || !bookingPayload.phone || !bookingPayload.email || !bookingPayload.consultation_type || !bookingPayload.astrologer_id || !bookingPayload.date || !bookingPayload.slot_id) {
+                setRazorpayButtonLoading(false);
                 toast('Please fill all required fields and select a slot.', true);
                 return;
             }
@@ -330,6 +375,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(resp => {
                 // Updated success logic for new backend response
                 if (!resp.success || !resp.data || !resp.data.data || !resp.data.data.id) {
+                    setRazorpayButtonLoading(false);
                     toast(resp.message || 'Failed to create booking.', true);
                     return;
                 }
@@ -349,6 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(res => res.json())
                 .then(orderResp => {
                     if (!orderResp.status || !orderResp.data || !orderResp.data.razorpay_order_id) {
+                        setRazorpayButtonLoading(false);
                         toast(orderResp.message || 'Failed to initiate payment.', true);
                         return;
                     }
@@ -396,23 +443,32 @@ document.addEventListener('DOMContentLoaded', function () {
                                     .then(res => res.json())
                                     .then(confirmResp => {
                                         if (confirmResp.status) {
+                                            setRazorpayButtonLoading(false);
                                             toast('Booking and payment successful!');
-                                            form.reset();
-                                            showStep(0);
+                                            redirectToBookingDetails(bookingId);
                                         } else {
+                                            setRazorpayButtonLoading(false);
                                             toast(confirmResp.message || 'Booking confirmation failed.', true);
                                         }
                                     })
                                     .catch(() => {
+                                        setRazorpayButtonLoading(false);
                                         toast('Error confirming booking.', true);
                                     });
                                 } else {
+                                    setRazorpayButtonLoading(false);
                                     toast(verifyResp.message || 'Payment verification failed.', true);
                                 }
                             })
                             .catch(() => {
+                                setRazorpayButtonLoading(false);
                                 toast('Payment verification error.', true);
                             });
+                        },
+                        modal: {
+                            ondismiss: function () {
+                                setRazorpayButtonLoading(false);
+                            }
                         },
                         prefill: {
                             name: bookingPayload.name,
@@ -427,10 +483,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     rzp.open();
                 })
                 .catch(() => {
+                    setRazorpayButtonLoading(false);
                     toast('Error initiating payment.', true);
                 });
             })
             .catch(() => {
+                setRazorpayButtonLoading(false);
                 toast('Error creating booking.', true);
             });
         });
@@ -733,7 +791,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     resp = { message: 'Invalid JSON response', error: err, raw: rawText };
                 }
                 if (response.ok && resp.success) {
-                    // Success UI
+                    const bookingId = resolveBookingId(resp);
+
+                    if (bookingId) {
+                        redirectToBookingDetails(bookingId);
+                        return;
+                    }
+
                     alert('Consultation booked successfully!');
                     form.reset();
                     showStep(0);

@@ -52,11 +52,18 @@ class LoginController extends Controller
         if (!isset($userData['email'])) {
             $userData['email'] = $email;
         }
-        // Debug log to check user data structure
-        Log::info('User data to be saved in session', [
-            'userData' => $userData
-        ]);
+        // Store roles in session if present
+        $roles = [];
+        if (isset($response['roles']) && is_array($response['roles'])) {
+            $roles = $response['roles'];
+        } elseif (isset($userData['roles']) && is_array($userData['roles'])) {
+            // If roles are objects/arrays, extract 'name' if present
+            $roles = array_map(function($role) {
+                return is_array($role) && isset($role['name']) ? $role['name'] : $role;
+            }, $userData['roles']);
+        }
         Session::put('auth.user', $userData);
+        Session::put('auth.roles', $roles);
         if (isset($userData['id'])) {
             Session::put('api_user_id', $userData['id']);
         }

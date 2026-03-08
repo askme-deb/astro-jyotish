@@ -17,103 +17,8 @@
             <div class="col-lg-3">
 
                 <aside class="astro-sidebar">
-
-                    <div class="astro-sidebar-inner">
-
-                        <!-- Profile Card -->
-                        <div class="astro-profile-card">
-
-                            <style>
-                                .astro-avatar-placeholder {
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    width: 64px;
-                                    height: 64px;
-                                    border-radius: 50%;
-                                    background: #e0e0e0;
-                                    position: relative;
-                                }
-                                .avatar-initials {
-                                    font-size: 2rem;
-                                    font-weight: bold;
-                                    color: #555;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    width: 100%;
-                                    height: 100%;
-                                    border-radius: 50%;
-                                    user-select: none;
-                                }
-                                .status-dot {
-                                    position: absolute;
-                                    bottom: 8px;
-                                    right: 8px;
-                                    width: 14px;
-                                    height: 14px;
-                                    background: #4caf50;
-                                    border: 2px solid #fff;
-                                    border-radius: 50%;
-                                }
-                            </style>
-                            <div class="astro-avatar astro-avatar-placeholder">
-                                @php
-                                    $first = session('auth.user.first_name');
-                                    $last = session('auth.user.last_name');
-                                    $initials = '';
-                                    if ($first) $initials .= strtoupper(mb_substr($first, 0, 1));
-                                    if ($last) $initials .= strtoupper(mb_substr($last, 0, 1));
-                                @endphp
-                                <span class="avatar-initials">{{ $initials }}</span>
-                                <span class="status-dot"></span>
-                            </div>
-
-                            <h4 class="astro-name">{{ session('auth.user.first_name') }} {{ session('auth.user.last_name') }}</h4>
-                            <!-- <div class="astro-role">Vedic Astrology • Hindi/English</div> -->
-
-                            <!-- <div class="astro-badge">
-                                ⭐ Verified Astrologer
-                            </div> -->
-
-                        </div>
-
-
-                        <!-- Menu -->
-
-                        <div class="astro-menu-card">
-                            <h6 class="menu-title">MAIN MENU</h6>
-                            <nav class="astro-menu">
-                                <a class="" href="/dashboard">
-                                    <i class="fas fa-gauge"></i> Dashboard
-                                </a>
-                                <a class="" href="/my-bookings">
-                                    <i class="fas fa-calendar-check"></i> My Bookings
-                                </a>
-                                <a class="" href="/profile">
-                                    <i class="fas fa-user"></i> My Profile
-                                </a>
-                                <!-- <a class="" href="/messages">
-                                    <i class="fas fa-comments"></i> Messages
-                                </a> -->
-                            </nav>
-                        </div>
-
-
-                        <!-- Quick Actions -->
-
-                        <div class="astro-action-card">
-                            <h6 class="menu-title">QUICK ACTIONS</h6>
-                            <a class="btn btn-primary w-100 mb-2" href="/book-consultation">
-                                + Book Consultation
-                            </a>
-                            <a class="btn btn-outline-secondary w-100" href="/">
-                                Back to Home
-                            </a>
-                        </div>
-
-                    </div>
-
+            @include('astrologer.partials.sidebar')
+               
                 </aside>
             </div>
 
@@ -128,12 +33,12 @@
                     </div>
                     <div class="dashboard-header-right">
                         <span class="dashboard-status"><span class="dot"></span> Online</span>
-                        <a class="btn btn-primary btn-sm" href="/my-bookings" style="margin-top: 0px;"><i class="fas fa-calendar-check me-1"></i> My Bookings</a>
+                        <a class="btn btn-primary btn-sm" href="/my-bookings"><i class="fas fa-calendar-check me-1"></i> My Bookings</a>
                         <a class="btn btn-outline-secondary btn-sm" href="/profile"><i class="fas fa-user me-1"></i> My Profile</a>
                     </div>
                 </div>
 
-                <!-- Stats -->
+                <!-- Stats (KPI Cards) -->
                 <style>
                     .dashboard-kpi-modern {
                         border-radius: 14px;
@@ -196,8 +101,8 @@
                             <div class="kpi-accent"></div>
                             <div class="kpi-icon"><i class="fas fa-calendar-day"></i></div>
                             <div class="kpi-label">Upcoming Consultations</div>
-                            <div class="kpi-value">{{ $upcomingBookings->count() }}</div>
-                            <div class="kpi-note">{{ $upcomingBookings->count() ? 'Next 7 days' : 'No upcoming bookings' }}</div>
+                            <div class="kpi-value">{{ $bookings->where('status', 'confirmed')->count() }}</div>
+                            <div class="kpi-note">Next 7 days</div>
                         </div>
                     </div>
                     <div class="col-md-6 col-xl-4">
@@ -205,7 +110,7 @@
                             <div class="kpi-accent"></div>
                             <div class="kpi-icon"><i class="fas fa-users"></i></div>
                             <div class="kpi-label">Total Consultations</div>
-                            <div class="kpi-value">{{ $allBookings->count() }}</div>
+                            <div class="kpi-value">{{ $bookings->count() }}</div>
                             <div class="kpi-note">All time</div>
                         </div>
                     </div>
@@ -213,8 +118,8 @@
                         <div class="dashboard-kpi-modern">
                             <div class="kpi-accent"></div>
                             <div class="kpi-icon"><i class="fas fa-wallet"></i></div>
-                            <div class="kpi-label">Wallet Balance</div>
-                            <div class="kpi-value">₹{{ number_format($walletBalance, 2) }}</div>
+                            <div class="kpi-label">Total Earnings</div>
+                            <div class="kpi-value">₹0.00</div>
                             <div class="kpi-note">Available for use</div>
                         </div>
                     </div>
@@ -288,12 +193,12 @@
                                 }
                             </style>
                             <div>
-                                @if($upcomingBookings->count())
-                                    @foreach($upcomingBookings as $booking)
+                                @if($bookings->count())
+                                    @foreach($bookings as $booking)
                                         <div class="dashboard-booking-card">
                                             <div class="dashboard-booking-header">
                                                 <div>
-                                                    <div class="dashboard-booking-title">{{ ucfirst($booking['consultation_type']) }} with {{ $booking['astrologer']['name'] ?? '-' }}</div>
+                                                    <div class="dashboard-booking-title">{{ ucfirst($booking['consultation_type'] ?? 'Consultation') }} with {{ $booking['customer']['name'] ?? '-' }}</div>
                                                     <div style="font-size:0.97rem;color:#666;">Booking ID: BKNG{{ $booking['id'] }}</div>
                                                 </div>
                                                 <span class="dashboard-booking-status {{ $booking['status'] }}">{{ ucfirst($booking['status']) }}</span>
@@ -306,10 +211,10 @@
                                                 <div class="dashboard-booking-label"><i class="fa-solid fa-hourglass-half text-theme-orange me-1"></i> Duration</div>
                                                 <div class="dashboard-booking-value">{{ $booking['duration'] ?? '-' }} min</div>
                                                 <div class="dashboard-booking-label"><i class="fa-solid fa-rupee-sign text-theme-orange me-1"></i> Price</div>
-                                                <div class="dashboard-booking-value">₹{{ $booking['rate'] }}</div>
+                                                <div class="dashboard-booking-value">₹{{ $booking['rate'] ?? '-' }}</div>
                                             </div>
                                             <div class="dashboard-booking-actions">
-                                                <a href="{{ route('booking.details', ['id' => $booking['id']]) }}" class="btn btn-outline-theme btn-sm">
+                                                <a href="#" class="btn btn-outline-theme btn-sm">
                                                     <i class="fa-regular fa-eye"></i> View Details
                                                 </a>
                                             </div>
@@ -321,65 +226,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- <div class="col-lg-4">
-                        <div class="sidebar-card dashboard-card">
-                            <div class="dashboard-section-head">
-                                <h3>Performance</h3>
-                                <div class="dashboard-section-actions">
-                                    <a class="btn btn-outline-secondary btn-sm" href="astrologer-earnings.php">Earnings</a>
-                                </div>
-                            </div>
-
-                            <div class="dashboard-metric2">
-                                <div class="label">Response Rate</div>
-                                <div class="value">92%</div>
-                                <div class="bar"><span style="width: 92%"></span></div>
-                            </div>
-                            <div class="dashboard-metric2">
-                                <div class="label">On-time Sessions</div>
-                                <div class="value">88%</div>
-                                <div class="bar"><span style="width: 88%"></span></div>
-                            </div>
-                            <div class="dashboard-metric2">
-                                <div class="label">Profile Completion</div>
-                                <div class="value">75%</div>
-                                <div class="bar"><span style="width: 75%"></span></div>
-                            </div>
-                        </div>
-
-                        <div class="sidebar-card dashboard-card mt-4">
-                            <div class="dashboard-section-head">
-                                <h3>Inbox</h3>
-                                <div class="dashboard-section-actions">
-                                    <a class="btn btn-outline-secondary btn-sm" href="astrologer-messages.php">Open</a>
-                                </div>
-                            </div>
-
-                            <div class="dashboard-list">
-                                <a class="dashboard-list-item" href="astrologer-messages.php">
-                                    <div class="left">
-                                        <div class="avatar"><i class="fas fa-user"></i></div>
-                                        <div>
-                                            <div class="title">Priya Singh</div>
-                                            <div class="sub">Can we reschedule to 6 PM?</div>
-                                        </div>
-                                    </div>
-                                    <div class="right">2h</div>
-                                </a>
-                                <a class="dashboard-list-item" href="astrologer-messages.php">
-                                    <div class="left">
-                                        <div class="avatar"><i class="fas fa-user"></i></div>
-                                        <div>
-                                            <div class="title">Rahul Sharma</div>
-                                            <div class="sub">Thank you for the guidance.</div>
-                                        </div>
-                                    </div>
-                                    <div class="right">1d</div>
-                                </a>
-                            </div>
-                        </div> -->
-                    </div> 
                 </div>
 
             </div>

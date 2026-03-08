@@ -32,4 +32,20 @@ class AstrologerBookingService
     {
         return $this->apiClient->getSessionDuration($astrologerId);
     }
+
+    /**
+     * Fetch bookings for the authenticated user.
+     */
+    public function getBookings($token = null)
+    {
+        return $this->apiClient->getBookings($token);
+    }
+
+    /**
+     * Fetch bookings for a specific astrologer (admin/astrologer view).
+     */
+    public function getAstrologerBookings($astrologerId, $token = null)
+    {
+        return $this->apiClient->getAstrologerBookings($astrologerId, $token);
+    }
 }

@@ -43,4 +43,9 @@ return [
         'retry_delay' => env('ASTRO_API_RETRY_DELAY', 200),
         'cache_ttl' => env('ASTRO_API_CACHE_TTL', 300),
     ],
+
+    'videosdk' => [
+        'api_key' => env('VIDEOSDK_API_KEY'),
+        'api_secret' => env('VIDEOSDK_API_SECRET'),
+    ],
 ];

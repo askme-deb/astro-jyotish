@@ -11,6 +11,11 @@ use App\Http\Controllers\LoginController;
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\MyBookingsController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\BookingDetailsController;
+
+use App\Http\Controllers\AstrologerAppointmentsController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/consultants', [ConsultantController::class, 'show'])->name('consultant');
@@ -45,6 +50,42 @@ Route::middleware(['guest'])->group(function () {
 
 Route::get('/consultation/session-duration', [ConsultationController::class, 'sessionDuration'])->name('consultation.sessionDuration');
 
+Route::get('/my-bookings', [MyBookingsController::class, 'index'])->name('my-bookings');
+Route::get('/customer/live-consultation-status', [MyBookingsController::class, 'activeConsultationStatus'])->name('customer.liveConsultationStatus');
+Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+Route::get('/booking/{id}', [MyBookingsController::class, 'show'])->name('booking.details');
+
+    Route::get('/appointments', [AstrologerAppointmentsController::class, 'index'])->name('astrologer.appointments');
+    Route::get('/astrologer/appointments/{id}', [AstrologerAppointmentsController::class, 'show'])->name('astrologer.appointment.details');
+
+// Astrologer Appointment Actions
+use App\Http\Controllers\AstrologerAppointmentDetailsController;
+// Route::middleware(['auth'])->group(function () {
+    Route::post('/astrologer/appointments/{id}/start', [AstrologerAppointmentDetailsController::class, 'start'])->name('astrologer.appointment.start');
+    Route::get('/astrologer/appointments/{id}/video', [AstrologerAppointmentDetailsController::class, 'video'])->name('astrologer.appointment.video');
+    Route::post('/astrologer/appointments/{id}/start-video', [AstrologerAppointmentDetailsController::class, 'startVideo'])->name('astrologer.appointment.startVideo');
+    Route::post('/astrologer/appointments/{id}/suggest-product', [AstrologerAppointmentDetailsController::class, 'suggestProduct'])->name('astrologer.appointment.suggestProduct');
+    Route::post('/astrologer/appointments/{id}/suggested-products', [AstrologerAppointmentDetailsController::class, 'addSuggestedProduct'])->name('astrologer.appointment.addSuggestedProduct');
+    Route::post('/astrologer/appointments/{id}/save-notes', [AstrologerAppointmentDetailsController::class, 'saveNotes'])->name('astrologer.appointment.saveNotes');
+    Route::post('/astrologer/appointments/{id}/cancel', [AstrologerAppointmentDetailsController::class, 'cancel'])->name('astrologer.appointment.cancel');
+    Route::post('/astrologer/appointments/{id}/send-link', [\App\Http\Controllers\AstrologerAppointmentDetailsController::class, 'sendCustomerJoinLink'])->name('astrologer.appointment.sendLink');
+// });
+
+
+
+
+// AJAX endpoint for customer to poll session status
+Route::get('/astrologer/appointments/{id}/ajax-status', [\App\Http\Controllers\AstrologerAppointmentDetailsController::class, 'ajaxStatus'])->name('astrologer.appointment.ajaxStatus');
+// AJAX endpoints for starting/ending video consultation session
+Route::post('/astrologer/appointments/{id}/ajax-start-video-session', [\App\Http\Controllers\AstrologerAppointmentDetailsController::class, 'ajaxStartVideoSession'])->name('astrologer.appointment.ajaxStartVideoSession');
+Route::post('/astrologer/appointments/{id}/ajax-end-video-session', [\App\Http\Controllers\AstrologerAppointmentDetailsController::class, 'ajaxEndVideoSession'])->name('astrologer.appointment.ajaxEndVideoSession');
+Route::get('/astrologer/appointments/{id}/leave-video', [\App\Http\Controllers\AstrologerAppointmentDetailsController::class, 'leaveVideo'])->name('astrologer.appointment.leaveVideo');
 
 Route::post('/logout', [OtpAuthController::class, 'logout'])
     ->name('logout');
+
+Route::get('/customer/consultation/video/{meetingId}', function ($meetingId) {
+    return view('customer.video-consultation', ['meetingId' => $meetingId]);
+})->name('customer.consultation.video');
+

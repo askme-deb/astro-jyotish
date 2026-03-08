@@ -17,8 +17,8 @@
                             <span class="fw-semibold">Hi, {{ session('auth.user.first_name') }}</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end mt-2 shadow-sm" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-speedometer2 me-2"></i>My Dashboard</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-person-lines-fill me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ route('dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>My Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ route('profile') }}"><i class="bi bi-person-lines-fill me-2"></i>Profile</a></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
