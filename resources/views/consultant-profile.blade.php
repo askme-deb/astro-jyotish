@@ -20,7 +20,8 @@
                     Trusted <span>Astrologers</span>
                 </h1>
 
-                <button class="appointment-btn">
+                @php $isLoggedIn = session('auth.user') ? true : false; @endphp
+                <button class="appointment-btn" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif">
                     Get an Appointment
                 </button>
             </div>
@@ -38,18 +39,20 @@
             <!-- Profile -->
             <div class="profile-card d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
-                    <img src="https://randomuser.me/api/portraits/women/65.jpg" class="profile-img me-3">
+                    <img src="{{ $consultant['image'] ?? asset('assets/images/default-profile.png') }}" class="profile-img me-3">
                     <div>
-                        <h4 class="mb-1">Tarot Vedansshi</h4>
-                        <p class="mb-1 text-muted">Tarot Reading</p>
-                        <small class="text-muted">English, Hindi | 1 Year | Noida</small>
+                        <h4 class="mb-1">{{ $consultant['name'] ?? '-' }}</h4>
+                        <p class="mb-1 text-muted">{{ $consultant['skills'] ? implode(', ', $consultant['skills']) : 'Astrology' }}</p>
+                        <small class="text-muted">{{ $consultant['languages'] }} | {{ $consultant['experience'] }} | {{ $consultant['location'] ?? '' }}</small>
                         <div class="nhgd">
-                            <span class="skill-badge">Career Counseling</span>
-                            <span class="skill-badge">Career Counseling</span>
-                            <span class="skill-badge">Career Counseling</span>
+                            @if(!empty($consultant['skills']))
+                                @foreach($consultant['skills'] as $skill)
+                                    <span class="skill-badge">{{ $skill }}</span>
+                                @endforeach
+                            @endif
                         </div>
                         <div class="mt-2">
-                            <span class="badge bg-warning text-dark">4.96 ★</span>
+                            <span class="badge bg-warning text-dark">{{ $consultant['rating'] ?? '-' }} ★</span>
                         </div>
                     </div>
                 </div>
@@ -62,9 +65,7 @@
             <div class="section-box">
                 <h6>About</h6>
                 <p class="text-muted">
-                    I am Tarot Vedansshi, a tarot reader with one year of experience in guiding individuals
-                    through life’s questions and crossroads. My approach is calm, empathetic, and non-judgmental,
-                    creating a safe space to explore thoughts and emotions.
+                    {{ $consultant['bio'] ?? 'No bio available.' }}
                 </p>
             </div>
 
@@ -105,48 +106,39 @@
 
             <!-- Price & Actions -->
             <div class="price-card mb-3">
-                <h5>₹ 12 / Min</h5>
-                <button class="btn btn-success w-100 mb-2 btn-custom">
-                    <i class="bi bi-telephone"></i> Join Call
+                <h5>₹ {{ $consultant['price'] ?? '-' }} / Session</h5>
+                <!-- Video Consultation Button (shown if session is in progress, adjust logic as needed) -->
+                @php
+                    $appointmentId = $consultant['appointment_id'] ?? null;
+                    $sessionInProgress = $consultant['session_status'] ?? false;
+                @endphp
+                @if($appointmentId)
+                    <a href="{{ $sessionInProgress ? route('customer.consultation.video', ['meetingId' => 'astro-' . $appointmentId]) : '#' }}"
+                       class="btn btn-success w-100 mb-2 btn-custom{{ !$sessionInProgress ? ' disabled' : '' }}"
+                       @if(!$sessionInProgress) tabindex="-1" aria-disabled="true" @endif>
+                        <i class="fa-solid fa-video me-1"></i> Join Video Consultation
+                    </a>
+                @endif
+                @php $isLoggedIn = session('auth.user') ? true : false; @endphp
+                <button class="btn btn-danger mt-3 tgwe" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif">
+                    <i class="fas fa-calendar-check"></i> Get an Appointment
                 </button>
-                <button class="btn btn-success w-100 mb-2 btn-custom">
-                    <i class="bi bi-chat-dots"></i> Join Chat
-                </button>
-                <button class="btn btn-danger mt-3 tgwe"> <i class="fas fa-calendar-check"></i> Get an Appointment</button>
+                <script>
+                function showAuthModal() {
+                    var modal = document.getElementById('authModal');
+                    if (modal) {
+                        var bsModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
+                        bsModal.show();
+                    }
+                }
+                </script>
             </div>
 
             <!-- Ratings -->
             <div class="price-card mb-3">
                 <h6>Ratings</h6>
-                <h4>4.96 ★</h4>
-
-                <div class="mb-2">
-                    5 ★
-                    <div class="progress">
-                        <div class="progress-bar bg-success" style="width:95%"></div>
-                    </div>
-                </div>
-
-                <div class="mb-2">
-                    4 ★
-                    <div class="progress">
-                        <div class="progress-bar bg-success" style="width:3%"></div>
-                    </div>
-                </div>
-
-                <div class="mb-2">
-                    3 ★
-                    <div class="progress">
-                        <div class="progress-bar bg-warning" style="width:1%"></div>
-                    </div>
-                </div>
-
-                <div>
-                    2 ★
-                    <div class="progress">
-                        <div class="progress-bar bg-danger" style="width:1%"></div>
-                    </div>
-                </div>
+                <h4>{{ $consultant['rating'] ?? '-' }} ★</h4>
+                <!-- If you have rating breakdown data, render it here. Otherwise, show only the average. -->
             </div>
 
             <!-- Security Info -->
@@ -161,3 +153,4 @@
     </div>
 </div>
 @endsection
+

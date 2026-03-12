@@ -76,10 +76,30 @@
             <div class="col-lg-4 col-12">
                 <div class="mb-3">
                     <div class="p-3 bg-white rounded-3 shadow-sm mb-3 border border-1" style="border-color:#f3f3f3!important;">
-                        <div class="fw-bold mb-1 text-theme-orange"><i class="fa-solid fa-user me-1"></i>Customer</div>
+                        <div class="fw-bold mb-1 text-theme-orange"><i class="fa-solid fa-user me-1"></i>Customer Details</div>
+                        <!-- <div><b>ID:</b> {{ $appointment['id'] ?? '-' }}</div> -->
                         <div><b>Name:</b> {{ $appointment['name'] ?? '-' }}</div>
                         <div><b>Email:</b> {{ $appointment['email'] ?? '-' }}</div>
                         <div><b>Contact:</b> {{ $appointment['phone'] ?? '-' }}</div>
+                        <div><b>Consultation Type:</b> {{ $appointment['consultation_type'] ?? '-' }}</div>
+                        <div><b>Birth Date:</b> {{ isset($appointment['birth_date']) && $appointment['birth_date'] ? \Carbon\Carbon::parse($appointment['birth_date'])->format('d F Y') : '-' }}</div>
+                        <div><b>Birth Time:</b> {{ isset($appointment['birth_time']) && $appointment['birth_time'] ? \Carbon\Carbon::parse($appointment['birth_time'])->format('h:i A') : '-' }}</div>
+                        <div><b>Place:</b> {{ $appointment['place'] ?? '-' }}</div>
+                        <!-- <div><b>Duration:</b> {{ $appointment['duration'] ?? '-' }} min</div> -->
+                        <!-- <div><b>Scheduled At:</b> {{ isset($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('d M Y, h:i A') : '-' }}</div> -->
+                        <!-- <div><b>Status:</b> <span class="badge bg-secondary">{{ ucfirst($appointment['status'] ?? '-') }}</span></div>
+                        <div><b>Type:</b> {{ $appointment['type'] ?? '-' }}</div>
+                        <div><b>Rate:</b> {{ $appointment['rate'] ?? '-' }}</div>
+                        <div><b>Payment Method:</b> {{ $appointment['payment_method'] ?? '-' }}</div>
+                        <div><b>Promo Code:</b> {{ $appointment['promo_code'] ?? '-' }}</div>
+                        <div><b>Created At:</b> {{ isset($appointment['created_at']) ? \Carbon\Carbon::parse($appointment['created_at'])->format('d M Y, h:i A') : '-' }}</div>
+                        <div><b>Updated At:</b> {{ isset($appointment['updated_at']) ? \Carbon\Carbon::parse($appointment['updated_at'])->format('d M Y, h:i A') : '-' }}</div>
+                        <div><b>Astrologer Note:</b> {{ $appointment['astrologer_note'] ?? '-' }}</div>
+                        <div><b>Notes:</b> {{ $appointment['notes'] ?? '-' }}</div>
+                        <div><b>Meeting ID:</b> {{ $appointment['meeting_id'] ?? '-' }}</div>
+                        <div><b>Meeting Started At:</b> {{ $appointment['meeting_started_at'] ?? '-' }}</div>
+                        <div><b>Razorpay Order ID:</b> {{ $appointment['razorpay_order_id'] ?? '-' }}</div>
+                        <div><b>Razorpay Payment ID:</b> {{ $appointment['razorpay_payment_id'] ?? '-' }}</div> -->
                     </div>
                     @if(isset($appointment['astrologer']) && is_array($appointment['astrologer']))
                     <!-- <div class="p-3 bg-white rounded-3 shadow-sm mb-3 border border-1" style="border-color:#f3f3f3!important;">

@@ -21,7 +21,8 @@
                     Trusted <span>Astrologers</span>
                 </h1>
 
-                <button class="appointment-btn">
+                @php $isLoggedIn = session('auth.user') ? true : false; @endphp
+                <button class="appointment-btn" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif">
                     Get an Appointment
                 </button>
             </div>

@@ -245,6 +245,7 @@ class AstrologerAppointmentDetailsController extends Controller
         $productCategories = $this->getProductCategories();
         $productGrades = $this->getProductGrades();
         // Reset the session flag after showing the video page
+        //dd($appointment);
         session()->forget('video_call_started');
         return view('astrologer.video-consultation', compact('appointment', 'productCategories', 'productGrades'));
     }
