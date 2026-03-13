@@ -14,6 +14,8 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\MyBookingsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BookingDetailsController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\CustomerConsultationController;
 
 use App\Http\Controllers\AstrologerAppointmentsController;
 
@@ -44,7 +46,7 @@ Route::middleware(['guest'])->group(function () {
     Route::post('/v1/register', [RegisterController::class, 'register']);
 
     // Password login (AJAX, modal)
-    Route::post('/v1/login', [LoginController::class, 'login']);    
+    Route::post('/v1/login', [LoginController::class, 'login']);
 });
 
 
@@ -54,7 +56,11 @@ Route::get('/my-bookings', [MyBookingsController::class, 'index'])->name('my-boo
 Route::get('/customer/live-consultation-status', [MyBookingsController::class, 'activeConsultationStatus'])->name('customer.liveConsultationStatus');
 Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
 Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
 Route::get('/booking/{id}', [MyBookingsController::class, 'show'])->name('booking.details');
+Route::get('/booking/{id}/invoice', [InvoiceController::class, 'download'])->middleware('api.user.auth')->name('booking.invoice.download');
+Route::post('/booking/{id}/reschedule', [MyBookingsController::class, 'reschedule'])->middleware('api.user.auth')->name('booking.reschedule');
+Route::match(['GET', 'POST'], '/booking/{id}/join-consultation', [MyBookingsController::class, 'joinConsultation'])->name('booking.consultation.join');
 
     Route::get('/appointments', [AstrologerAppointmentsController::class, 'index'])->name('astrologer.appointments');
     Route::get('/astrologer/appointments/{id}', [AstrologerAppointmentsController::class, 'show'])->name('astrologer.appointment.details');
@@ -69,6 +75,7 @@ use App\Http\Controllers\AstrologerAppointmentDetailsController;
     Route::post('/astrologer/appointments/{id}/suggested-products', [AstrologerAppointmentDetailsController::class, 'addSuggestedProduct'])->name('astrologer.appointment.addSuggestedProduct');
     Route::post('/astrologer/appointments/{id}/save-notes', [AstrologerAppointmentDetailsController::class, 'saveNotes'])->name('astrologer.appointment.saveNotes');
     Route::post('/astrologer/appointments/{id}/cancel', [AstrologerAppointmentDetailsController::class, 'cancel'])->name('astrologer.appointment.cancel');
+    Route::post('/astrologer/appointments/{id}/reschedule', [AstrologerAppointmentDetailsController::class, 'reschedule'])->name('astrologer.appointment.reschedule');
     Route::post('/astrologer/appointments/{id}/send-link', [\App\Http\Controllers\AstrologerAppointmentDetailsController::class, 'sendCustomerJoinLink'])->name('astrologer.appointment.sendLink');
 // });
 
@@ -85,7 +92,5 @@ Route::get('/astrologer/appointments/{id}/leave-video', [\App\Http\Controllers\A
 Route::post('/logout', [OtpAuthController::class, 'logout'])
     ->name('logout');
 
-Route::get('/customer/consultation/video/{meetingId}', function ($meetingId) {
-    return view('customer.video-consultation', ['meetingId' => $meetingId]);
-})->name('customer.consultation.video');
+Route::get('/customer/consultation/video/{meetingId}', [CustomerConsultationController::class, 'video'])->name('customer.consultation.video');
 

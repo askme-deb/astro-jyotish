@@ -59,7 +59,7 @@
                 <!-- <button id="followBtn" class="btn btn-outline-primary btn-sm btn-custom" onclick="toggleFollow()">+ Follow</button> -->
             </div>
 
-          
+
 
             <!-- About -->
             <div class="section-box">

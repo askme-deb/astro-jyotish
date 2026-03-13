@@ -3,8 +3,24 @@
 @section('content')
 @php
     $meetingId = 'astro-' . $appointment['id'];
+    $initialDurationMinutesValue = max((int) ($appointment['duration'] ?? 0), (int) request()->input('duration', 0));
+    $initialDurationSeconds = max(0, $initialDurationMinutesValue * 60);
+    $initialDurationHours = intdiv($initialDurationSeconds, 3600);
+    $initialDurationMinutes = intdiv($initialDurationSeconds % 3600, 60);
+    $initialDurationRemainderSeconds = $initialDurationSeconds % 60;
+    $initialTimerParts = [];
+    if ($initialDurationHours > 0) {
+        $initialTimerParts[] = $initialDurationHours . ' hr';
+    }
+    if ($initialDurationMinutes > 0 || $initialDurationHours > 0) {
+        $initialTimerParts[] = $initialDurationMinutes . ' min';
+    }
+    $initialTimerParts[] = $initialDurationRemainderSeconds . ' sec';
+    $initialTimerLabel = implode(' ', $initialTimerParts);
     $videoConsultationPageData = [
         'status' => $appointment['status'] ?? 'pending',
+        'meetingStartedAt' => $appointment['meeting_started_at'] ?? null,
+        'durationMinutes' => $initialDurationMinutesValue > 0 ? $initialDurationMinutesValue : 0,
         'endedAfterLeave' => (bool) session('video_consultation_ended'),
         'bookingId' => $appointment['id'],
         'leaveRedirectUrl' => route('astrologer.appointment.leaveVideo', ['id' => $appointment['id']]),
@@ -30,12 +46,12 @@
                 <div class="text-muted" style="font-size:1.08rem;">Appointment #{{ $appointment['id'] }}</div>
             </div>
             <div class="text-end">
-                <span id="session-state-badge" class="badge bg-secondary" style="font-size:1.1em;">{{ ucfirst($appointment['status'] ?? 'pending') }}</span>
-                <span class="ms-3" id="session-timer" style="font-size:1.1em;color:#f98700;"><i class="fa-regular fa-clock me-1"></i>00:00</span>
+                <span id="session-state-badge" class="badge bg-secondary" style="font-size:1.1em;">{{ str_replace('_', ' ', ucfirst($appointment['status'] ?? 'pending')) }}</span>
+                <span class="ms-3" id="session-timer" style="font-size:1.1em;color:#f98700;"><i class="fa-regular fa-clock me-1"></i>{{ $initialTimerLabel }}</span>
                 <button type="button" class="btn btn-link text-info p-0 ms-2" tabindex="0" data-bs-toggle="popover" data-bs-trigger="focus" title="Help" data-bs-content="If you face any issues, refresh the page or check your internet connection. For urgent support, contact admin."><i class="fa-solid fa-circle-question"></i></button>
             </div>
         </div>
-      
+
         <div class="row g-4">
             <div class="col-lg-8 col-12">
                 <!-- <div class="alert alert-info mb-3 p-4 d-flex align-items-start" style="font-size:1.08em; background: linear-gradient(90deg, #f9fafb 80%, #fbbf24 100%); border-left: 6px solid #f98700; border-radius: 12px; box-shadow: 0 2px 8px rgba(249,135,0,0.06);">
@@ -61,7 +77,7 @@
                         <i class="fa-solid fa-shield-halved me-1"></i> Your session is encrypted and secure.
                     </div>
                     <div class="d-flex gap-2 align-items-center">
-                        <span id="session-status" class="badge bg-secondary" style="font-size:1em;">Status: <span id="session-status-text">{{ ucfirst($appointment['status'] ?? 'pending') }}</span></span>
+                        <span id="session-status" class="badge bg-secondary" style="font-size:1em;">Status: <span id="session-status-text">{{ str_replace('_', ' ', ucfirst($appointment['status'] ?? 'pending')) }}</span></span>
                         <button id="join-consultation-btn" class="btn btn-primary" type="button"><i class="fa-solid fa-right-to-bracket me-1"></i> Join Consultation</button>
                         <button id="end-session-btn" class="btn btn-danger" type="button" style="display:none;"><i class="fa-solid fa-stop me-1"></i> End Session</button>
                         <button id="refresh-status-btn" class="btn btn-outline-primary" type="button"><i class="fa-solid fa-rotate-right me-1"></i> Refresh Status</button>
@@ -71,7 +87,7 @@
                     </div>
                 </div>
                 <div id="session-feedback" class="mt-2"></div>
-           
+
             </div>
             <div class="col-lg-4 col-12">
                 <div class="mb-3">
@@ -230,13 +246,16 @@ function showToast(message) {
 
 document.addEventListener('DOMContentLoaded', function() {
     const pageData = JSON.parse(document.getElementById('video-consultation-page-data').textContent);
-    let seconds = 0;
+    const urlDurationMinutes = Number(new URLSearchParams(window.location.search).get('duration') || 0);
+    const resolvedDurationMinutes = Math.max(0, Number(pageData.durationMinutes || urlDurationMinutes || 0));
     let timerInterval = null;
     let currentStatus = pageData.status;
+    let durationSeconds = resolvedDurationMinutes * 60;
     let startTriggeredByJoin = false;
     let meetingInitialized = false;
     let statusPollingInterval = null;
     const endedAfterLeave = pageData.endedAfterLeave;
+    let meetingStartedAtValue = pageData.meetingStartedAt || null;
 
     const timerEl = document.getElementById('session-timer');
     const bookingId = pageData.bookingId;
@@ -285,6 +304,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (status === 'confirmed') {
             sessionStateBadge.classList.add('bg-warning', 'text-dark');
+        } else if (status === 'ready_to_start') {
+            sessionStateBadge.classList.add('bg-info', 'text-dark');
         } else if (status === 'in_progress') {
             sessionStateBadge.classList.add('bg-success');
         } else if (status === 'completed') {
@@ -623,17 +644,70 @@ document.addEventListener('DOMContentLoaded', function() {
         }, noteAutosaveDelay);
     }
 
+    function formatElapsedTime(totalSeconds) {
+        const safeSeconds = Math.max(0, Number(totalSeconds) || 0);
+        const hours = Math.floor(safeSeconds / 3600);
+        const minutes = Math.floor((safeSeconds % 3600) / 60);
+        const remainingSeconds = safeSeconds % 60;
+        const parts = [];
+
+        if (hours > 0) {
+            parts.push(hours + ' hr');
+        }
+
+        if (minutes > 0 || hours > 0) {
+            parts.push(minutes + ' min');
+        }
+
+        parts.push(remainingSeconds + ' sec');
+
+        return parts.join(' ');
+    }
+
+    function getRemainingSeconds() {
+        if (currentStatus !== 'in_progress') {
+            return durationSeconds;
+        }
+
+        if (!meetingStartedAtValue) {
+            return durationSeconds;
+        }
+
+        let normalized = String(meetingStartedAtValue).replace(' ', 'T');
+        if (normalized.length >= 19 && !/Z$/i.test(normalized) && !/[+-]\d{2}:\d{2}$/.test(normalized)) {
+            normalized += 'Z';
+        }
+        const startedAt = new Date(normalized);
+        if (Number.isNaN(startedAt.getTime())) {
+            return durationSeconds;
+        }
+
+        if (durationSeconds <= 0) {
+            return 0;
+        }
+
+        const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt.getTime()) / 1000));
+        return Math.max(durationSeconds - elapsedSeconds, 0);
+    }
+
     function updateTimerDisplay() {
-        const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const s = String(seconds % 60).padStart(2, '0');
-        timerEl.innerHTML = '<i class="fa-regular fa-clock me-1"></i>' + m + ':' + s;
+        timerEl.innerHTML = '<i class="fa-regular fa-clock me-1"></i>' + formatElapsedTime(getRemainingSeconds());
+    }
+
+    function applyMeetingStartedAt(value) {
+        meetingStartedAtValue = value || null;
+        updateTimerDisplay();
     }
 
     function startTimer() {
         if (timerInterval) return;
+        updateTimerDisplay();
         timerInterval = setInterval(function() {
-            seconds++;
             updateTimerDisplay();
+
+            if (currentStatus === 'in_progress' && durationSeconds > 0 && getRemainingSeconds() <= 0) {
+                stopTimer();
+            }
         }, 1000);
     }
 
@@ -667,7 +741,16 @@ document.addEventListener('DOMContentLoaded', function() {
             endBtn.style.display = 'none';
             refreshStatusBtn.style.display = '';
             stopTimer();
-            seconds = 0;
+            meetingStartedAtValue = null;
+            updateTimerDisplay();
+        } else if (s === 'ready_to_start') {
+            root.style.display = '';
+            completedState.style.display = 'none';
+            joinConsultationBtn.style.display = meetingInitialized ? 'none' : '';
+            endBtn.style.display = meetingInitialized ? '' : 'none';
+            refreshStatusBtn.style.display = '';
+            stopTimer();
+            meetingStartedAtValue = null;
             updateTimerDisplay();
         } else if (s === 'in_progress') {
             root.style.display = '';
@@ -675,13 +758,17 @@ document.addEventListener('DOMContentLoaded', function() {
             joinConsultationBtn.style.display = meetingInitialized ? 'none' : '';
             endBtn.style.display = '';
             refreshStatusBtn.style.display = '';
-            startTimer();
+            if (!timerInterval) {
+                startTimer();
+            }
         } else {
             renderCompletedState();
             return;
         }
         updateTopStateBadge(s);
-        statusText.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+        statusText.textContent = s.replace(/_/g, ' ').replace(/\b\w/g, function(char) {
+            return char.toUpperCase();
+        });
     }
 
     function refreshAppointmentStatus(showLoading) {
@@ -702,7 +789,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            if (data.status !== currentStatus) {
+            if (data.durationMinutes != null && Number(data.durationMinutes) > 0) {
+                durationSeconds = Number(data.durationMinutes) * 60;
+            }
+
+            if (data.status === 'in_progress') {
+                applyMeetingStartedAt(data.meetingStartedAt || null);
+                if (!timerInterval) {
+                    startTimer();
+                }
+            }
+
+            if (data.status !== currentStatus || data.status === 'ready_to_start' || data.status === 'in_progress') {
                 updateSessionUI(data.status);
             }
         })
@@ -720,7 +818,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (statusPollingInterval) {
             clearInterval(statusPollingInterval);
         }
-        statusPollingInterval = setInterval(refreshAppointmentStatus, 10000);
+        statusPollingInterval = setInterval(refreshAppointmentStatus, 3000);
     }
 
     function postSession(url, onSuccess, onError) {
@@ -729,8 +827,10 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json'
-            }
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ duration_minutes: resolvedDurationMinutes })
         })
         .then(res => res.json())
         .then(data => {
@@ -783,6 +883,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 notificationSoundEnabled: true,
                 layout: 'GRID'
             });
+
+            updateSessionUI(currentStatus);
         } catch (e) {
             meetingInitialized = false;
             startTriggeredByJoin = false;
@@ -797,9 +899,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (currentStatus === 'in_progress') {
+        if (currentStatus === 'in_progress' || currentStatus === 'ready_to_start') {
             initMeeting();
-            updateSessionUI('in_progress');
+            updateSessionUI(currentStatus);
             return;
         }
 
@@ -807,10 +909,10 @@ document.addEventListener('DOMContentLoaded', function() {
         setButtonLoading(joinConsultationBtn, true, '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Joining');
         postSession(
             `/astrologer/appointments/${bookingId}/ajax-start-video-session`,
-            function() {
+            function(data) {
                 startTriggeredByJoin = false;
-                updateSessionUI('in_progress');
                 initMeeting();
+                updateSessionUI(data.status || 'ready_to_start');
             },
             function() {
                 startTriggeredByJoin = false;
@@ -823,9 +925,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (endedAfterLeave) {
         renderCompletedState('Video consultation ended successfully.');
     } else if (currentStatus === 'in_progress') {
+        applyMeetingStartedAt(pageData.meetingStartedAt || null);
         startTimer();
     } else {
-        seconds = 0;
+        meetingStartedAtValue = null;
         updateTimerDisplay();
     }
     if (!endedAfterLeave) {
@@ -834,7 +937,7 @@ document.addEventListener('DOMContentLoaded', function() {
     refreshAppointmentStatus();
     startStatusPolling();
 
-    if (!endedAfterLeave && currentStatus === 'in_progress') {
+    if (!endedAfterLeave && (currentStatus === 'ready_to_start' || currentStatus === 'in_progress')) {
         initMeeting();
     }
 

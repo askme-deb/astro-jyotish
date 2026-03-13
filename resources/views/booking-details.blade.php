@@ -2,10 +2,17 @@
 
 @section('content')
 @php
+    $rescheduleBlockedStatuses = config('booking.reschedule_blocked_statuses', []);
+    $isRescheduleDisabled = isset($booking) && in_array($booking['status'] ?? null, $rescheduleBlockedStatuses, true);
     $bookingDetailsPageData = isset($booking)
         ? [
             'bookingId' => $booking['id'],
             'customerJoinUrl' => route('customer.consultation.video', ['meetingId' => 'astro-' . $booking['id']]),
+            'astrologerId' => (int) ($booking['astrologer_id'] ?? data_get($booking, 'astrologer.id') ?? data_get($booking, 'assigned_astrologer_id') ?? 0),
+            'currentDate' => !empty($booking['scheduled_at']) ? \Carbon\Carbon::parse($booking['scheduled_at'])->format('Y-m-d') : null,
+            'slotsUrl' => route('consultation.slots'),
+            'rescheduleUrl' => route('booking.reschedule', ['id' => $booking['id']]),
+            'canReschedule' => ! $isRescheduleDisabled,
         ]
         : null;
 @endphp
@@ -39,6 +46,10 @@
     .booking-status-badge.pending {
         background: #ffc107;
         color: #333;
+    }
+    .booking-status-badge.ready_to_start {
+        background: #d1ecf1;
+        color: #0c5460;
     }
     .booking-section {
         background: #fff;
@@ -120,6 +131,11 @@
         background: #d97706;
         color: #fff;
     }
+    .btn-theme-orange.disabled,
+    .btn-theme-orange.is-loading {
+        pointer-events: none;
+        opacity: 0.8;
+    }
     .suggested-products-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -147,6 +163,11 @@
     }
     .suggested-product-meta .badge {
         font-weight: 500;
+    }
+    .booking-actions .btn[disabled],
+    .booking-actions .btn.disabled {
+        pointer-events: none;
+        opacity: 0.65;
     }
 </style>
 
@@ -190,8 +211,8 @@
                         <tr>
                             <td>{{ $booking['astrologer']['name'] ?? '-' }}</td>
                             <td>{{ ucfirst($booking['consultation_type']) }}</td>
-                            <td>{{ \Carbon\Carbon::parse($booking['scheduled_at'])->format('d F Y') }}</td>
-                            <td>{{ \Carbon\Carbon::parse($booking['scheduled_at'])->format('h:i A') }}@if(isset($booking['end_time'])) - {{ \Carbon\Carbon::parse($booking['end_time'])->format('h:i A') }}@endif</td>
+                            <td id="booking-scheduled-date-cell">{{ \Carbon\Carbon::parse($booking['scheduled_at'])->format('d F Y') }}</td>
+                            <td id="booking-scheduled-slot-cell">{{ \Carbon\Carbon::parse($booking['scheduled_at'])->format('h:i A') }}@if(isset($booking['end_time'])) - {{ \Carbon\Carbon::parse($booking['end_time'])->format('h:i A') }}@endif</td>
                             <td>{{ $booking['duration'] ?? '-' }}{{ is_numeric($booking['duration'] ?? null) ? (intval($booking['duration']) >= 60 ? ' min' : ' min') : '' }}</td>
                             <td>₹{{ $booking['rate'] }}</td>
                         </tr>
@@ -266,9 +287,9 @@
             </div>
             <div class="booking-actions">
                 <a href="{{ route('my-bookings') }}" class="btn btn-light border"><i class="fa-solid fa-arrow-left me-1"></i> Back to My Bookings</a>
-                <a href="{{ route('customer.consultation.video', ['meetingId' => 'astro-' . $booking['id']]) }}" id="booking-join-consultation-btn" class="btn btn-success{{ ($booking['status'] ?? null) === 'in_progress' ? '' : ' d-none' }}"><i class="fa-solid fa-video me-1"></i> Join Consultation</a>
-                <button class="btn btn-outline-danger"><i class="fa-solid fa-xmark me-1"></i> Cancel Booking</button>
-                <button class="btn btn-theme-orange"><i class="fa-solid fa-file-invoice me-1"></i> Download Invoice</button>
+                <a href="{{ route('customer.consultation.video', ['meetingId' => 'astro-' . $booking['id']]) }}" id="booking-join-consultation-btn" class="btn btn-success{{ in_array(($booking['status'] ?? null), ['ready_to_start', 'in_progress'], true) ? '' : ' d-none' }}"><i class="fa-solid fa-video me-1"></i> Join Consultation</a>
+                <button type="button" id="booking-reschedule-btn" class="btn btn-outline-danger{{ $isRescheduleDisabled ? ' disabled' : '' }}" @if($isRescheduleDisabled) disabled aria-disabled="true" title="Completed or in-progress bookings cannot be rescheduled." @endif><i class="fa-solid fa-calendar-days me-1"></i> Reschedule Booking</button>
+                <a href="{{ route('booking.invoice.download', ['id' => $booking['id']]) }}" id="booking-download-invoice-btn" class="btn btn-theme-orange"><i class="fa-solid fa-file-invoice me-1"></i> Download Invoice</a>
             </div>
         </div>
     @else
@@ -278,6 +299,21 @@
     @endif
 </div>
     @if($bookingDetailsPageData)
+    @php
+        $bookingRescheduleConfig = array_merge($bookingDetailsPageData, [
+            'modalId' => 'booking-reschedule-modal',
+            'triggerId' => 'booking-reschedule-btn',
+            'dateInputId' => 'booking-reschedule-date',
+            'slotInputId' => 'booking-reschedule-slot',
+            'slotBadgesId' => 'booking-reschedule-slot-badges',
+            'submitButtonId' => 'booking-reschedule-submit',
+            'alertId' => 'booking-reschedule-alert',
+            'slotStateId' => 'booking-reschedule-slot-state',
+            'dataScriptId' => 'booking-reschedule-data',
+            'successEventName' => 'booking-reschedule:success',
+        ]);
+    @endphp
+    @include('partials.booking-reschedule-modal', ['bookingRescheduleConfig' => $bookingRescheduleConfig])
     <script id="booking-details-page-data" type="application/json">{!! json_encode($bookingDetailsPageData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -285,10 +321,94 @@
         const bookingId = pageData.bookingId;
         const badge = document.getElementById('booking-status-badge');
         const joinBtn = document.getElementById('booking-join-consultation-btn');
+        const invoiceBtn = document.getElementById('booking-download-invoice-btn');
+        const scheduledDateCell = document.getElementById('booking-scheduled-date-cell');
+        const scheduledSlotCell = document.getElementById('booking-scheduled-slot-cell');
 
-        if (!bookingId || !badge || !joinBtn) {
+        if (!bookingId || !badge) {
             return;
         }
+
+        function formatDisplayDate(value) {
+            const parts = String(value || '').split('-');
+            if (parts.length !== 3) {
+                return value || '-';
+            }
+
+            const date = new Date(parts[0], Number(parts[1]) - 1, parts[2]);
+            if (Number.isNaN(date.getTime())) {
+                return value || '-';
+            }
+
+            return date.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
+        if (invoiceBtn) {
+            const defaultInvoiceHtml = invoiceBtn.innerHTML;
+
+            invoiceBtn.addEventListener('click', function(event) {
+                let resetTimer;
+                const downloadFrame = document.createElement('iframe');
+
+                event.preventDefault();
+
+                if (invoiceBtn.classList.contains('is-loading')) {
+                    return;
+                }
+
+                invoiceBtn.classList.add('is-loading', 'disabled');
+                invoiceBtn.setAttribute('aria-disabled', 'true');
+                invoiceBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Preparing Invoice';
+
+                downloadFrame.style.display = 'none';
+                downloadFrame.src = invoiceBtn.href;
+                document.body.appendChild(downloadFrame);
+
+                function resetInvoiceButton() {
+                    invoiceBtn.classList.remove('is-loading', 'disabled');
+                    invoiceBtn.removeAttribute('aria-disabled');
+                    invoiceBtn.innerHTML = defaultInvoiceHtml;
+
+                    window.setTimeout(function() {
+                        if (downloadFrame.parentNode) {
+                            downloadFrame.parentNode.removeChild(downloadFrame);
+                        }
+                    }, 1000);
+                }
+
+                downloadFrame.addEventListener('load', function() {
+                    if (resetTimer) {
+                        window.clearTimeout(resetTimer);
+                    }
+
+                    resetInvoiceButton();
+                });
+
+                resetTimer = window.setTimeout(function() {
+                    resetInvoiceButton();
+                }, 4000);
+            });
+        }
+
+        window.addEventListener('booking-reschedule:success', function(event) {
+            if (!event.detail || Number(event.detail.bookingId) !== Number(bookingId)) {
+                return;
+            }
+
+            if (scheduledDateCell) {
+                scheduledDateCell.textContent = formatDisplayDate(event.detail.date);
+            }
+
+            if (scheduledSlotCell) {
+                scheduledSlotCell.textContent = event.detail.slotLabel || '-';
+            }
+
+            pageData.currentDate = event.detail.date;
+        });
 
         function formatStatus(status) {
             return String(status || 'pending')
@@ -306,7 +426,10 @@
             }
 
             badge.textContent = formatStatus(status);
-            joinBtn.classList.toggle('d-none', status !== 'in_progress');
+
+            if (joinBtn) {
+                joinBtn.classList.toggle('d-none', !['ready_to_start', 'in_progress'].includes(status));
+            }
         }
 
         function refreshStatus() {

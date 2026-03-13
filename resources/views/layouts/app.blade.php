@@ -58,7 +58,7 @@
     <div id="global-live-consultation-popup" class="global-live-consultation-backdrop">
         <div class="global-live-consultation-card">
             <div class="mb-3" style="font-size:2rem;color:#198754;"><i class="fa-solid fa-bell"></i></div>
-            <h4 class="mb-2">Consultation Is Live</h4>
+            <h4 class="mb-2" id="global-live-consultation-title">Consultation Is Live</h4>
             <p class="text-muted mb-4" id="global-live-consultation-message">Your astrologer has started the consultation.</p>
             <div class="d-flex flex-column flex-sm-row gap-2 justify-content-center">
                 <button type="button" id="global-live-consultation-dismiss" class="btn btn-outline-secondary">Later</button>
@@ -68,7 +68,7 @@
             </div>
         </div>
     </div>
- 
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script id="global-live-consultation-data" type="application/json">{!! json_encode($globalLiveConsultationData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     <script>
@@ -86,6 +86,7 @@
         const popup = document.getElementById('global-live-consultation-popup');
         const joinBtn = document.getElementById('global-live-consultation-join');
         const dismissBtn = document.getElementById('global-live-consultation-dismiss');
+        const titleEl = document.getElementById('global-live-consultation-title');
         const messageEl = document.getElementById('global-live-consultation-message');
         let activeBooking = null;
         let dismissedBookingId = null;
@@ -114,8 +115,15 @@
             }
 
             activeBooking = booking;
+            if (titleEl) {
+                titleEl.textContent = booking.status === 'ready_to_start'
+                    ? 'Consultation Is Ready'
+                    : 'Consultation Is Live';
+            }
             if (messageEl) {
-                messageEl.textContent = 'Astrologer ' + (booking.astrologerName || 'Your astrologer') + ' has started the consultation. Join now.';
+                messageEl.textContent = booking.status === 'ready_to_start'
+                    ? 'Astrologer ' + (booking.astrologerName || 'Your astrologer') + ' is ready. Join now to start the consultation.'
+                    : 'Astrologer ' + (booking.astrologerName || 'Your astrologer') + ' has started the consultation. Join now.';
             }
             popup.style.display = 'flex';
         }
@@ -125,11 +133,16 @@
                 return;
             }
 
-            const notification = new Notification('Consultation is live', {
-                body: 'Astrologer ' + (booking.astrologerName || 'Your astrologer') + ' has started the consultation. Click to join now.',
+            const notification = new Notification(
+                booking.status === 'ready_to_start' ? 'Consultation is ready' : 'Consultation is live',
+                {
+                body: booking.status === 'ready_to_start'
+                    ? 'Astrologer ' + (booking.astrologerName || 'Your astrologer') + ' is ready. Click to join now.'
+                    : 'Astrologer ' + (booking.astrologerName || 'Your astrologer') + ' has started the consultation. Click to join now.',
                 icon: pageData.iconUrl,
                 tag: 'global-live-consultation-' + booking.bookingId,
-            });
+                }
+            );
 
             notification.onclick = function() {
                 window.focus();

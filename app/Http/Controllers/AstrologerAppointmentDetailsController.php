@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AstrologerBookingService;
+use App\Services\ConsultationStateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Mail;
@@ -11,7 +13,7 @@ use App\Mail\CustomerVideoConsultationLink;
 class AstrologerAppointmentDetailsController extends Controller
 {
     private const STARTABLE_VIDEO_STATUSES = ['confirmed'];
-    private const ENDABLE_VIDEO_STATUSES = ['in_progress'];
+    private const ENDABLE_VIDEO_STATUSES = ['ready_to_start', 'in_progress'];
     private ?array $productGradeLookup = null;
 
     public function start($id, Request $request)
@@ -235,6 +237,70 @@ class AstrologerAppointmentDetailsController extends Controller
         return Redirect::back()->with('success', 'Appointment cancelled.');
     }
 
+    public function reschedule($id, Request $request, AstrologerBookingService $bookingService)
+    {
+        if (!$this->currentUserIsAstrologer()) {
+            return $this->jsonError('Only astrologers can reschedule appointments.', 403);
+        }
+
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'slot_id' => 'required|string',
+        ]);
+
+        $token = $request->cookie('auth_api_token') ?? session('auth.api_token') ?? session('auth_api_token');
+
+        if (! $token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $bookingResponse = $bookingService->getBookingById((int) $id, $token);
+        $booking = $bookingResponse['data'] ?? null;
+
+        if (! is_array($booking) || empty($booking)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Booking not found.',
+            ], 404);
+        }
+
+        $status = (string) ($booking['status'] ?? '');
+        $blockedStatuses = config('booking.reschedule_blocked_statuses', []);
+
+        if (in_array($status, $blockedStatuses, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking can no longer be rescheduled.',
+            ], 422);
+        }
+
+        $payload = [
+            'booking_id' => (int) $id,
+            'date' => $validated['date'],
+            'slot_id' => $validated['slot_id'],
+        ];
+
+        $result = $bookingService->rescheduleAstrologerBooking((int) $id, $payload, $token);
+        $succeeded = ! ($result['error'] ?? false) && (bool) ($result['status'] ?? $result['success'] ?? false);
+
+        if (!$succeeded) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'Unable to reschedule booking right now.',
+                'errors' => $result['errors'] ?? null,
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $result['message'] ?? 'Booking rescheduled successfully.',
+            'data' => $result['data'] ?? $result,
+        ]);
+    }
+
     public function video($id)
     {
         // Fetch real appointment details from DB or service
@@ -242,6 +308,7 @@ class AstrologerAppointmentDetailsController extends Controller
         if (!$appointment) {
             return back()->with('error', 'Appointment not found.');
         }
+
         $productCategories = $this->getProductCategories();
         $productGrades = $this->getProductGrades();
         // Reset the session flag after showing the video page
@@ -269,10 +336,25 @@ class AstrologerAppointmentDetailsController extends Controller
      */
     private function getAppointmentById($id)
     {
-        $token = session('auth.api_token') ?? session('auth_api_token');
-        $apiService = app(\App\Services\Api\Clients\AstrologerApiService::class);
-        $response = $apiService->getBookingById($id, $token);
-        return $response['data'] ?? null;
+        $token = $this->getApiToken();
+        $astrologerId = session('api_user_id');
+        $apiService = $this->getApiService();
+        $stateService = app(ConsultationStateService::class);
+        $appointment = null;
+
+        if ($astrologerId && $this->currentUserIsAstrologer()) {
+            $response = $apiService->getAstrologerBookings($astrologerId, $token);
+            $appointment = collect($response['data'] ?? [])->firstWhere('id', (int) $id);
+        } else {
+            $response = $apiService->getBookings($token);
+            $appointment = collect($response['data'] ?? [])->firstWhere('id', (int) $id);
+        }
+
+        if (!is_array($appointment)) {
+            $appointment = ['id' => (int) $id];
+        }
+
+        return $stateService->mergeIntoBooking($appointment, (int) $id);
     }
 
 
@@ -298,14 +380,29 @@ class AstrologerAppointmentDetailsController extends Controller
         $token = $this->getApiToken();
         $apiService = $this->getApiService();
         $result = $apiService->startVideoConsultation($id, $token);
+        $appointmentDuration = isset($appointment['duration']) && is_numeric($appointment['duration']) ? (int) $appointment['duration'] : null;
+        $requestDuration = $request->filled('duration_minutes') ? (int) $request->input('duration_minutes') : null;
+        app(ConsultationStateService::class)->markReadyToStart(
+            (int) $id,
+            'astro-' . $id,
+            ($appointmentDuration && $appointmentDuration > 0)
+                ? $appointmentDuration
+                : (($requestDuration && $requestDuration > 0) ? $requestDuration : null)
+        );
+
         if (isset($result['error']) && $result['error']) {
-            return $this->jsonError($result['message'] ?? 'Failed to start session.', 500);
+            return response()->json([
+                'success' => true,
+                'message' => 'Video consultation is ready for the customer to join.',
+                'data' => $result,
+                'status' => 'ready_to_start',
+            ]);
         }
         return response()->json([
             'success' => true,
-            'message' => $result['message'] ?? 'Video consultation started successfully.',
+            'message' => $result['message'] ?? 'Video consultation is ready for the customer to join.',
             'data' => $result,
-            'status' => 'in_progress',
+            'status' => 'ready_to_start',
         ]);
     }
 
@@ -331,8 +428,15 @@ class AstrologerAppointmentDetailsController extends Controller
         $token = $this->getApiToken();
         $apiService = $this->getApiService();
         $result = $apiService->endVideoConsultation($id, $token);
+        app(ConsultationStateService::class)->markCompleted((int) $id);
+
         if (isset($result['error']) && $result['error']) {
-            return $this->jsonError($result['message'] ?? 'Failed to end session.', 500);
+            return response()->json([
+                'success' => true,
+                'message' => 'Video consultation ended successfully.',
+                'data' => $result,
+                'status' => 'completed',
+            ]);
         }
         return response()->json([
             'success' => true,
@@ -363,6 +467,7 @@ class AstrologerAppointmentDetailsController extends Controller
         $status = $appointment['status'] ?? null;
         if (in_array($status, self::ENDABLE_VIDEO_STATUSES, true)) {
             $this->getApiService()->endVideoConsultation($id, $this->getApiToken());
+            app(ConsultationStateService::class)->markCompleted((int) $id);
         }
 
         return redirect()
@@ -376,9 +481,14 @@ class AstrologerAppointmentDetailsController extends Controller
      */
     public function ajaxStatus($id, Request $request)
     {
-        $response = $this->getApiService()->getBookingById($id, $this->getApiToken());
-        $status = $response['data']['status'] ?? null;
-        return response()->json(['success' => true, 'status' => $status]);
+        $booking = $this->getAppointmentById($id) ?? [];
+        $bookingDuration = isset($booking['duration']) ? (int) $booking['duration'] : 0;
+        return response()->json([
+            'success' => true,
+            'status' => $booking['status'] ?? null,
+            'meetingStartedAt' => $booking['meeting_started_at'] ?? null,
+            'durationMinutes' => $bookingDuration > 0 ? $bookingDuration : null,
+        ]);
     }
 
     private function getApiToken(): ?string
@@ -407,6 +517,10 @@ class AstrologerAppointmentDetailsController extends Controller
 
     private function startBlockedMessage(?string $status): string
     {
+        if ($status === 'ready_to_start') {
+            return 'Video session is already ready for the customer to join.';
+        }
+
         if ($status === 'in_progress') {
             return 'Video session is already in progress.';
         }

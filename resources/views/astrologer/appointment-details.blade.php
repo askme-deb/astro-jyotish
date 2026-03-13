@@ -1,6 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $rescheduleBlockedStatuses = config('booking.reschedule_blocked_statuses', []);
+    $isRescheduleDisabled = isset($appointment) && in_array($appointment['status'] ?? null, $rescheduleBlockedStatuses, true);
+    $bookingDetailsPageData = isset($appointment)
+        ? [
+            'bookingId' => $appointment['id'],
+            'customerJoinUrl' => route('customer.consultation.video', ['meetingId' => 'astro-' . $appointment['id']]),
+            'astrologerId' => (int) ($appointment['astrologer_id'] ?? data_get($appointment, 'astrologer.id') ?? data_get($appointment, 'assigned_astrologer_id') ?? 0),
+            'currentDate' => !empty($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('Y-m-d') : null,
+            'slotsUrl' => route('consultation.slots'),
+            'rescheduleUrl' => route('astrologer.appointment.reschedule', ['id' => $appointment['id']]),
+            'canReschedule' => ! $isRescheduleDisabled,
+        ]
+        : null;
+@endphp
 <style>
     .booking-header-custom {
         background: linear-gradient(90deg, #f98700 70%, #fbbf24 100%);
@@ -32,6 +47,11 @@
     .booking-status-badge.pending {
         background: #ffc107;
         color: #333;
+    }
+
+    .booking-status-badge.ready_to_start {
+        background: #d1ecf1;
+        color: #0c5460;
     }
 
     .booking-section {
@@ -153,7 +173,7 @@ $meetingId = 'astro-' . $appointment['id'];
 
 <!-- @if($videoCallStarted)
     <div class="mb-3">
-       
+
         <div class="alert alert-info mt-2">
             Share this link with the customer to join: <a href="https://app.videosdk.live/rooms/{{ $meetingId }}" target="_blank">https://app.videosdk.live/rooms/{{ $meetingId }}</a>
         </div>
@@ -210,8 +230,8 @@ $meetingId = 'astro-' . $appointment['id'];
             <button class="btn btn-sm btn-outline-light ms-2 py-0 px-2" style="font-size:0.95em;vertical-align:middle;" onclick="navigator.clipboard.writeText('BKNG{{ $appointment['id'] }}')"><i class="fa-regular fa-copy"></i></button>
         </div>
         <span class="booking-status-badge {{ $appointment['status'] }}">
-            <i class="fa-solid {{ $appointment['status'] === 'confirmed' ? 'fa-circle-check text-success' : ($appointment['status'] === 'pending' ? 'fa-hourglass-half text-warning' : 'fa-circle-xmark text-danger') }} me-1"></i>
-            {{ ucfirst($appointment['status']) }}
+            <i class="fa-solid {{ $appointment['status'] === 'confirmed' ? 'fa-circle-check text-success' : (($appointment['status'] ?? null) === 'ready_to_start' ? 'fa-circle-play text-info' : ($appointment['status'] === 'pending' ? 'fa-hourglass-half text-warning' : ($appointment['status'] === 'in_progress' ? 'fa-video text-success' : 'fa-circle-xmark text-danger'))) }} me-1"></i>
+            {{ str_replace('_', ' ', ucfirst($appointment['status'])) }}
         </span>
     </div>
     <div class="booking-section">
@@ -242,6 +262,10 @@ $meetingId = 'astro-' . $appointment['id'];
                         <i class="fa-solid fa-xmark me-1"></i> Cancel Appointment
                     </button>
                 </form>
+                <button type="button" id="booking-reschedule-btn" class="btn btn-outline-warning{{ $isRescheduleDisabled ? ' disabled' : '' }}" @if($isRescheduleDisabled) disabled aria-disabled="true" title="Completed or in-progress appointments cannot be rescheduled." @endif>
+                    <i class="fa-solid fa-calendar-days me-1"></i> Reschedule Appointment
+                </button>
+
                 @if(($appointment['status'] ?? '') !== 'completed')
                     <a href="{{ route('astrologer.appointment.video', ['id' => $appointment['id']]) }}" target="_blank" class="btn btn-primary float-end" aria-haspopup="dialog">
                         <i class="fa-solid fa-video me-1"></i> Start Video Consultation
@@ -265,8 +289,8 @@ $meetingId = 'astro-' . $appointment['id'];
                 <tbody>
                     <tr>
                         <td>{{ ucfirst($appointment['consultation_type'] ?? 'Consultation') }}</td>
-                        <td>{{ \Carbon\Carbon::parse($appointment['scheduled_at'])->format('d F Y') }}</td>
-                        <td>
+                        <td id="booking-scheduled-date-cell">{{ \Carbon\Carbon::parse($appointment['scheduled_at'])->format('d F Y') }}</td>
+                        <td id="booking-scheduled-slot-cell">
                             {{ \Carbon\Carbon::parse($appointment['scheduled_at'])->format('h:i A') }}
                             @if(isset($appointment['end_time']))
                             - {{ \Carbon\Carbon::parse($appointment['end_time'])->format('h:i A') }}
@@ -339,6 +363,77 @@ $meetingId = 'astro-' . $appointment['id'];
 <div class="alert alert-danger mt-3">
     {{ session('error') }}
 </div>
+@endif
+
+@if($bookingDetailsPageData)
+    @php
+        $bookingRescheduleConfig = array_merge($bookingDetailsPageData, [
+            'modalId' => 'booking-reschedule-modal',
+            'triggerId' => 'booking-reschedule-btn',
+            'dateInputId' => 'booking-reschedule-date',
+            'slotInputId' => 'booking-reschedule-slot',
+            'slotBadgesId' => 'booking-reschedule-slot-badges',
+            'submitButtonId' => 'booking-reschedule-submit',
+            'alertId' => 'booking-reschedule-alert',
+            'slotStateId' => 'booking-reschedule-slot-state',
+            'dataScriptId' => 'booking-reschedule-data',
+            'successEventName' => 'booking-reschedule:success',
+        ]);
+    @endphp
+    @include('partials.booking-reschedule-modal', ['bookingRescheduleConfig' => $bookingRescheduleConfig])
+    <script id="booking-details-page-data" type="application/json">{!! json_encode($bookingDetailsPageData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const pageDataElement = document.getElementById('booking-details-page-data');
+        const scheduledDateCell = document.getElementById('booking-scheduled-date-cell');
+        const scheduledSlotCell = document.getElementById('booking-scheduled-slot-cell');
+
+        if (!pageDataElement) {
+            return;
+        }
+
+        const pageData = JSON.parse(pageDataElement.textContent || '{}');
+        const bookingId = pageData.bookingId;
+
+        if (!bookingId) {
+            return;
+        }
+
+        function formatDisplayDate(value) {
+            const parts = String(value || '').split('-');
+            if (parts.length !== 3) {
+                return value || '-';
+            }
+
+            const date = new Date(parts[0], Number(parts[1]) - 1, parts[2]);
+            if (Number.isNaN(date.getTime())) {
+                return value || '-';
+            }
+
+            return date.toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
+        window.addEventListener('booking-reschedule:success', function(event) {
+            if (!event.detail || Number(event.detail.bookingId) !== Number(bookingId)) {
+                return;
+            }
+
+            if (scheduledDateCell) {
+                scheduledDateCell.textContent = formatDisplayDate(event.detail.date);
+            }
+
+            if (scheduledSlotCell) {
+                scheduledSlotCell.textContent = event.detail.slotLabel || '-';
+            }
+
+            pageData.currentDate = event.detail.date;
+        });
+    });
+    </script>
 @endif
 
 @endsection

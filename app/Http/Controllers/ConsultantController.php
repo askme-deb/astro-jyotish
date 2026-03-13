@@ -53,9 +53,11 @@ class ConsultantController extends Controller
                     return ['id' => $b['id'], 'status' => $b['status'] ?? ''];
                 })->values()->all();
 
-                // Find the most recent in-progress booking
+                $joinableStatuses = ['ready_to_start', 'in_progress'];
+
+                // Find the most recent joinable booking
                 $inProgress = $filtered->first(function ($b) {
-                    return strtolower(trim($b['status'] ?? '')) === 'in_progress';
+                    return in_array(strtolower(trim($b['status'] ?? '')), ['ready_to_start', 'in_progress'], true);
                 });
                 if ($inProgress) {
                     $appointmentId = $inProgress['id'];
@@ -67,7 +69,7 @@ class ConsultantController extends Controller
                     if ($latest) {
                         $appointmentId = $latest['id'];
                         $status = strtolower(trim($latest['status'] ?? ''));
-                        $sessionInProgress = $status === 'in_progress';
+                        $sessionInProgress = in_array($status, $joinableStatuses, true);
                         $consultant['raw_status'] = $latest['status'] ?? '';
                     }
                 }

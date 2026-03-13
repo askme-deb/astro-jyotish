@@ -156,7 +156,7 @@
                                                 <div style="font-size:0.95rem;color:#666;">Booking ID: BKNG{{ $booking['id'] }}</div>
                                             </div>
                                             <span
-                                                class="badge {{ $booking['status'] === 'in_progress' ? 'bg-success' : ($booking['status'] === 'confirmed' ? 'bg-primary' : ($booking['status'] === 'pending' ? 'bg-warning text-dark' : 'bg-secondary')) }}"
+                                                class="badge {{ $booking['status'] === 'in_progress' ? 'bg-success' : (($booking['status'] ?? null) === 'ready_to_start' ? 'bg-info text-dark' : ($booking['status'] === 'confirmed' ? 'bg-primary' : ($booking['status'] === 'pending' ? 'bg-warning text-dark' : 'bg-secondary'))) }}"
                                                 style="font-size:0.95em;min-width:80px;text-align:center;"
                                                 data-booking-status-badge="{{ $booking['id'] }}"
                                             >{{ str_replace('_', ' ', ucfirst($booking['status'])) }}</span>
@@ -224,7 +224,7 @@
                                                 </a>
                                                 <a
                                                     href="{{ route('customer.consultation.video', ['meetingId' => 'astro-' . $booking['id']]) }}"
-                                                    class="btn btn-success btn-sm{{ ($booking['status'] ?? null) === 'in_progress' ? '' : ' d-none' }}"
+                                                    class="btn btn-success btn-sm{{ in_array(($booking['status'] ?? null), ['ready_to_start', 'in_progress'], true) ? '' : ' d-none' }}"
                                                     data-booking-join-btn="{{ $booking['id'] }}"
                                                 >
                                                     <i class="fa-solid fa-video me-1"></i> Join Consultation
@@ -280,6 +280,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (status === 'in_progress') {
                 badge.classList.add('bg-success');
+            } else if (status === 'ready_to_start') {
+                badge.classList.add('bg-info', 'text-dark');
             } else if (status === 'confirmed') {
                 badge.classList.add('bg-primary');
             } else if (status === 'pending') {
@@ -295,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (joinBtn) {
-            joinBtn.classList.toggle('d-none', status !== 'in_progress');
+            joinBtn.classList.toggle('d-none', !['ready_to_start', 'in_progress'].includes(status));
         }
     }
 

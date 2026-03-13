@@ -27,7 +27,7 @@ class AstrologerAppointmentsController extends Controller
         return view('astrologer.appointments', compact('appointments'));
     }
 
-  
+
     public function show($id)
     {
         $userId = session('api_user_id');

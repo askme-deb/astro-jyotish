@@ -42,6 +42,24 @@ class AstrologerBookingService
     }
 
     /**
+     * Fetch a single booking for the authenticated user.
+     */
+    public function getBookingById($bookingId, $token = null)
+    {
+        return $this->apiClient->getBookingById($bookingId, $token);
+    }
+
+    public function rescheduleBooking(array $payload, $token = null)
+    {
+        return $this->apiClient->rescheduleBooking($payload, $token);
+    }
+
+    public function rescheduleAstrologerBooking($bookingId, array $payload, $token = null)
+    {
+        return $this->apiClient->rescheduleAstrologerBooking($bookingId, $payload, $token);
+    }
+
+    /**
      * Fetch bookings for a specific astrologer (admin/astrologer view).
      */
     public function getAstrologerBookings($astrologerId, $token = null)

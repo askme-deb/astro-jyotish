@@ -296,7 +296,7 @@
                                                     <div class="dashboard-booking-title">{{ ucfirst($booking['consultation_type']) }} with {{ $booking['astrologer']['name'] ?? '-' }}</div>
                                                     <div style="font-size:0.97rem;color:#666;">Booking ID: BKNG{{ $booking['id'] }}</div>
                                                 </div>
-                                                <span class="dashboard-booking-status {{ $booking['status'] }}">{{ ucfirst($booking['status']) }}</span>
+                                                <span class="dashboard-booking-status {{ $booking['status'] }}">{{ str_replace('_', ' ', ucfirst($booking['status'])) }}</span>
                                             </div>
                                             <div class="dashboard-booking-row">
                                                 <div class="dashboard-booking-label"><i class="fa-solid fa-calendar-day text-theme-orange me-1"></i> Date</div>
@@ -379,7 +379,7 @@
                                 </a>
                             </div>
                         </div> -->
-                    </div> 
+                    </div>
                 </div>
 
             </div>

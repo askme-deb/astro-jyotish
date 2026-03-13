@@ -39,7 +39,7 @@
                                                 <div style="font-size:1.15rem;font-weight:600;">{{ ucfirst($appointment['consultation_type'] ?? 'Consultation') }} Appointment</div>
                                                 <div style="font-size:0.95rem;color:#666;">Booking ID: BKNG{{ $appointment['id'] }}</div>
                                             </div>
-                                            <span class="badge bg-{{ $appointment['status'] === 'confirmed' ? 'success' : ($appointment['status'] === 'pending' ? 'warning' : 'secondary') }}" style="font-size:0.95em;min-width:80px;text-align:center;">{{ ucfirst($appointment['status']) }}</span>
+                                            <span class="badge bg-{{ $appointment['status'] === 'in_progress' ? 'success' : (($appointment['status'] ?? null) === 'ready_to_start' ? 'info' : ($appointment['status'] === 'confirmed' ? 'primary' : ($appointment['status'] === 'pending' ? 'warning' : 'secondary'))) }} {{ ($appointment['status'] ?? null) === 'ready_to_start' ? 'text-dark' : '' }}" style="font-size:0.95em;min-width:80px;text-align:center;">{{ str_replace('_', ' ', ucfirst($appointment['status'])) }}</span>
                                         </div>
                                         <hr class="my-2">
                                         <style>

@@ -70,10 +70,10 @@
                                 </a>
                                 <a class="" href="/appointments">
                                     <i class="fas fa-calendar-check"></i> Appointments
-                                </a> 
+                                </a>
                                 <a class="" href="/my-bookings">
                                     <i class="fas fa-calendar-check"></i> Availability
-                                </a> 
+                                </a>
                                 <a class="" href="/my-bookings">
                                     <i class="fas fa-calendar-check"></i> Earnings
                                 </a>
@@ -91,7 +91,7 @@
 
                             <h6 class="menu-title">QUICK ACTIONS</h6>
 
-                            <a class="btn btn-primary w-100 mb-2" href="/book-consultation">
+                            <a class="btn btn-primary w-100 mb-2" href="/consultation">
                                 + Book Consultation
                             </a>
                             <a class="btn btn-outline-secondary w-100" href="/">
