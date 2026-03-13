@@ -62,8 +62,8 @@ Route::get('/booking/{id}/invoice', [InvoiceController::class, 'download'])->mid
 Route::post('/booking/{id}/reschedule', [MyBookingsController::class, 'reschedule'])->middleware('api.user.auth')->name('booking.reschedule');
 Route::match(['GET', 'POST'], '/booking/{id}/join-consultation', [MyBookingsController::class, 'joinConsultation'])->name('booking.consultation.join');
 
-    Route::get('/appointments', [AstrologerAppointmentsController::class, 'index'])->name('astrologer.appointments');
-    Route::get('/astrologer/appointments/{id}', [AstrologerAppointmentsController::class, 'show'])->name('astrologer.appointment.details');
+Route::get('/appointments', [AstrologerAppointmentsController::class, 'index'])->name('astrologer.appointments');
+Route::get('/astrologer/appointments/{id}', [AstrologerAppointmentsController::class, 'show'])->name('astrologer.appointment.details');
 
 // Astrologer Appointment Actions
 use App\Http\Controllers\AstrologerAppointmentDetailsController;
