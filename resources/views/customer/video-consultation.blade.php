@@ -107,7 +107,7 @@
     .customer-session-meta {
         position: fixed;
         top: 14px;
-        right: 18px;
+        left: 18px;
         z-index: 10001;
         display: flex;
         gap: 10px;
