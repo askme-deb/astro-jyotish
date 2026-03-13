@@ -148,6 +148,27 @@ class AstrologerApiService extends BaseApiClient
         }
     }
 
+    public function cancelBooking($bookingId, $token = null)
+    {
+        $options = [
+            'json' => [
+                'status' => 'cancelled',
+            ],
+        ];
+
+        if ($token) {
+            $options['headers'] = [
+                'Authorization' => 'Bearer ' . $token,
+            ];
+        }
+
+        try {
+            return $this->request('PATCH', "booking-by-id/{$bookingId}", $options);
+        } catch (\Throwable $e) {
+            return ['error' => true, 'message' => $e->getMessage()];
+        }
+    }
+
 
 
     /**

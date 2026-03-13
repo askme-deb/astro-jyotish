@@ -5,5 +5,12 @@ return [
         'completed',
         'ready_to_start',
         'in_progress',
+        'cancelled',
+    ],
+    'cancel_blocked_statuses' => [
+        'completed',
+        'ready_to_start',
+        'in_progress',
+        'cancelled',
     ],
 ];

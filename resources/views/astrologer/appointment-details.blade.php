@@ -2,9 +2,12 @@
 
 @section('content')
 @php
-dd($appointment);
+
     $rescheduleBlockedStatuses = config('booking.reschedule_blocked_statuses', []);
+    $cancelBlockedStatuses = config('booking.cancel_blocked_statuses', []);
     $isRescheduleDisabled = isset($appointment) && in_array($appointment['status'] ?? null, $rescheduleBlockedStatuses, true);
+    $isCancelDisabled = isset($appointment) && in_array($appointment['status'] ?? null, $cancelBlockedStatuses, true);
+    $isAppointmentCancelled = isset($appointment) && (($appointment['status'] ?? null) === 'cancelled');
     $isNoteFinalized = isset($appointment)
         && ((bool) ($appointment['final_confirmation_from_astrologer'] ?? false)
         || (($appointment['astrologer_note_status'] ?? null) === 'finalized'));
@@ -126,6 +129,51 @@ dd($appointment);
         'qualification',
         'title',
     ], '')));
+    $astrologerImage = trim((string) ($resolveRootValue([
+        'astrologer_image',
+        'astrologer_image_url',
+    ]) ?? $resolveAstrologerValue([
+        'image_url',
+        'image',
+        'avatar',
+        'profile_photo_url',
+    ], '')));
+    $astrologerRate = $resolveRootValue([
+        'astrologer_rate',
+    ]) ?? $resolveAstrologerValue([
+        'rate',
+    ]);
+    $astrologerDuration = $resolveRootValue([
+        'astrologer_duration',
+    ]) ?? $resolveAstrologerValue([
+        'duration',
+    ]);
+    $noteDocumentLogo = asset('assets/images/Logo.png');
+    $formatDurationValue = function ($duration) {
+        if (!is_numeric($duration)) {
+            return null;
+        }
+
+        $duration = (int) $duration;
+        $hours = intdiv($duration, 60);
+        $minutes = $duration % 60;
+
+        if ($hours === 0 && $minutes === 0) {
+            return '0 min';
+        }
+
+        $parts = [];
+
+        if ($hours > 0) {
+            $parts[] = $hours . ' hr' . ($hours > 1 ? 's' : '');
+        }
+
+        if ($minutes > 0) {
+            $parts[] = $minutes . ' min';
+        }
+
+        return implode(' ', $parts);
+    };
     $bookingDetailsPageData = isset($appointment)
         ? [
             'bookingId' => $appointment['id'],
@@ -135,10 +183,14 @@ dd($appointment);
             'slotsUrl' => route('consultation.slots'),
             'rescheduleUrl' => route('astrologer.appointment.reschedule', ['id' => $appointment['id']]),
             'canReschedule' => ! $isRescheduleDisabled,
+            'cancelUrl' => route('astrologer.appointment.cancel', ['id' => $appointment['id']]),
+            'canCancel' => ! $isCancelDisabled,
+            'isAppointmentCancelled' => $isAppointmentCancelled,
             'suggestProductUrl' => route('astrologer.appointment.suggestProduct', ['id' => $appointment['id']]),
             'addSuggestedProductUrl' => route('astrologer.appointment.addSuggestedProduct', ['id' => $appointment['id']]),
             'removeSuggestedProductUrl' => route('astrologer.appointment.removeSuggestedProduct', ['id' => $appointment['id']]),
             'finalizeNotesUrl' => route('astrologer.appointment.finalizeNotes', ['id' => $appointment['id']]),
+            'downloadNotesPdfUrl' => route('astrologer.appointment.notesPdf', ['id' => $appointment['id']]),
             'isNoteFinalized' => $isNoteFinalized,
         ]
         : null;
@@ -222,6 +274,50 @@ dd($appointment);
         font-size: 1.01rem;
     }
 
+    .astrologer-profile-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .astrologer-profile-image {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #fde7c3;
+        background: #fff;
+        flex-shrink: 0;
+    }
+
+    .astrologer-profile-placeholder {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f98700, #fbbf24);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .astrologer-profile-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #222;
+        margin-bottom: 0.2rem;
+    }
+
+    .astrologer-profile-meta {
+        color: #666;
+        font-size: 0.95rem;
+        margin-bottom: 0.2rem;
+    }
+
     .booking-table-summary th,
     .booking-table-summary td {
         text-align: left;
@@ -289,11 +385,12 @@ dd($appointment);
 
     .note-document-paper {
         display: none;
+        position: relative;
         width: 100%;
         max-width: 794px;
         min-height: 1123px;
         margin: 0 auto;
-        padding: 56px 52px;
+        padding: 32px 34px 40px;
         background: #fff;
         border: 1px solid #d9d9d9;
         border-radius: 10px;
@@ -302,47 +399,82 @@ dd($appointment);
     }
 
     .note-document-heading {
-        margin-bottom: 1.75rem;
-        border-bottom: 2px solid #f3e1c7;
+        margin-bottom: 1rem;
     }
 
-    .note-document-pad {
+    .note-document-letterhead {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        gap: 1.5rem;
-        padding-bottom: 1rem;
+        gap: 0.85rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 2px solid #d8d8d8;
+    }
+
+    .note-document-mark {
+        width: 54px;
+        flex: 0 0 54px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 0.15rem;
+    }
+
+    .note-document-mark img {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
     }
 
     .note-document-brand {
         flex: 1 1 auto;
+        min-width: 0;
     }
 
     .note-document-title {
-        font-size: 1.55rem;
+        font-size: 1.18rem;
         font-weight: 700;
         color: #111827;
+        letter-spacing: 0;
+        text-transform: uppercase;
     }
 
     .note-document-doctor {
         font-size: 1rem;
-        font-weight: 600;
-        color: #f98700;
-        margin-top: 0.3rem;
+        font-weight: 700;
+        color: #111827;
+        margin-top: 0.18rem;
+        line-height: 1.3;
     }
 
     .note-document-subtitle {
-        font-size: 0.95rem;
+        font-size: 0.8rem;
         color: #6b7280;
     }
 
+    .note-document-summary {
+        margin-top: 0.22rem;
+        max-width: 540px;
+        line-height: 1.55;
+    }
+
     .note-document-contact {
-        margin-top: 0.8rem;
+        margin-top: 0.45rem;
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem 1.25rem;
-        font-size: 0.95rem;
+        gap: 0.2rem 0.9rem;
+        font-size: 0.8rem;
         color: #374151;
+    }
+
+    .note-document-contact span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
     }
 
     .note-document-contact strong {
@@ -350,50 +482,180 @@ dd($appointment);
     }
 
     .note-document-meta {
-        flex: 0 0 220px;
+        flex: 0 0 210px;
         text-align: right;
-        font-size: 0.95rem;
+        font-size: 0.76rem;
         color: #4b5563;
+        padding-top: 0.15rem;
     }
 
     .note-document-meta strong {
         display: block;
         color: #111827;
-        font-size: 1rem;
-        margin-bottom: 0.2rem;
+        font-size: 0.86rem;
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .note-document-meta-grid {
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .note-document-meta-item {
+        display: block;
+    }
+
+    .note-document-meta-label {
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.62rem;
+    }
+
+    .note-document-meta-value {
+        color: #111827;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    .note-document-fields {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0.8rem;
+        align-items: end;
+        margin-top: 0.6rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px dashed #c7cdd6;
+    }
+
+    .note-document-field {
+        min-width: 0;
+    }
+
+    .note-document-field-label {
+        display: block;
+        font-size: 0.67rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 0.15rem;
+    }
+
+    .note-document-field-value {
+        display: block;
+        min-height: 1.35rem;
+        padding-bottom: 0.18rem;
+        border-bottom: 1px dotted #9ca3af;
+        font-size: 0.88rem;
+        color: #111827;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .note-document-specialties {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.85rem 1rem;
-        padding: 1rem 0 1.25rem;
-        border-top: 1px solid #f6ead9;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+        padding-top: 0.7rem;
+        margin-top: 0.65rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .note-document-specialty-card {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+        min-height: auto;
+        display: block;
+        min-width: 0;
+    }
+
+    .note-document-specialty-card-full {
+        grid-column: 1 / -1;
     }
 
     .note-document-specialty-label {
-        font-size: 0.8rem;
+        display: block;
+        font-size: 0.64rem;
         font-weight: 700;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        color: #9a3412;
-        margin-bottom: 0.2rem;
+        color: #6b7280;
+        margin-bottom: 0.28rem;
     }
 
     .note-document-specialty-value {
-        font-size: 0.95rem;
-        color: #374151;
+        display: block;
+        font-size: 0.88rem;
+        line-height: 1.45;
+        color: #111827;
+        font-weight: 600;
+    }
+
+    .note-document-writing-area {
+        position: relative;
+        min-height: 760px;
+        padding: 0.2rem 0 0 0;
+    }
+
+    .note-document-watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.09;
+        pointer-events: none;
+        user-select: none;
+        z-index: 0;
+    }
+
+    .note-document-watermark img {
+        width: 180px;
+        height: 180px;
+        object-fit: contain;
+        filter: grayscale(1);
+    }
+
+    .note-document-rx {
+        position: relative;
+        z-index: 1;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1;
+        margin-bottom: 0.45rem;
     }
 
     .note-document-body {
-        font-size: 1rem;
-        line-height: 1.85;
+        position: relative;
+        z-index: 1;
+        font-size: 0.98rem;
+        line-height: 2.05;
         white-space: normal;
         word-break: break-word;
+        padding: 0.15rem 0 0;
+        min-height: 700px;
+        background-image: repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 31px,
+            #eef2f7 31px,
+            #eef2f7 32px
+        );
     }
 
     .note-document-body p {
-        margin-bottom: 1rem;
+        margin-bottom: 1.1rem;
+        padding: 0 0.15rem;
+        background: #fff;
+        display: inline;
+        box-shadow: 0 0 0 6px #fff;
     }
 
     .note-document-empty {
@@ -401,23 +663,84 @@ dd($appointment);
         font-style: italic;
     }
 
+    .note-document-footer {
+        position: relative;
+        z-index: 1;
+        margin-top: 1rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .note-document-footer-card {
+        min-width: 220px;
+        max-width: 280px;
+        text-align: right;
+        font-size: 0.74rem;
+        line-height: 1.5;
+        color: #4b5563;
+    }
+
+    .note-document-footer-name {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .note-document-footer-line {
+        display: block;
+    }
+
     @media (max-width: 991.98px) {
         .note-document-paper {
             min-height: auto;
-            padding: 28px 22px;
+            padding: 24px 18px;
         }
 
-        .note-document-pad {
+        .note-document-letterhead {
             flex-direction: column;
+        }
+
+        .note-document-summary {
+            max-width: none;
         }
 
         .note-document-meta {
             flex-basis: auto;
             text-align: left;
+            width: 100%;
+        }
+
+        .note-document-meta-value {
+            text-align: left;
+        }
+
+        .note-document-fields {
+            grid-template-columns: 1fr;
+            gap: 0.6rem;
         }
 
         .note-document-specialties {
             grid-template-columns: 1fr;
+            gap: 0.7rem;
+        }
+
+        .note-document-watermark {
+            top: 50%;
+            left: 50%;
+        }
+
+        .note-document-watermark img {
+            width: 132px;
+            height: 132px;
+        }
+
+        .note-document-footer {
+            justify-content: flex-start;
+        }
+
+        .note-document-footer-card {
+            min-width: 0;
+            text-align: left;
         }
     }
 
@@ -599,21 +922,21 @@ $meetingId = 'astro-' . $appointment['id'];
 </div> -->
 
 @if($videoCallStarted)
-<div class="mb-3">
-    <a href="{{ route('astrologer.appointment.video', ['id' => $appointment['id']]) }}" target="_blank" class="btn btn-primary" aria-haspopup="dialog">
+<div class="mb-3" data-appointment-lock-root>
+    <a href="{{ route('astrologer.appointment.video', ['id' => $appointment['id']]) }}" target="_blank" id="join-video-consultation-btn" class="btn btn-primary{{ $isAppointmentCancelled ? ' disabled' : '' }}" aria-haspopup="dialog" @if($isAppointmentCancelled) aria-disabled="true" tabindex="-1" @endif>
         <i class="fa-solid fa-video me-1"></i> Join Video Consultation
     </a>
     <div class="alert alert-info mt-2">
         <div><b>Customer Join Link:</b></div>
         <div class="input-group mb-2" style="max-width: 500px;">
-            <input type="text" class="form-control" id="customerJoinLink" value="{{ route('customer.consultation.video', ['meetingId' => $meetingId]) }}" readonly>
-            <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('customerJoinLink').value)"><i class="fa-regular fa-copy"></i> Copy</button>
+            <input type="text" class="form-control" id="customerJoinLink" value="{{ route('customer.consultation.video', ['meetingId' => $meetingId]) }}" readonly @if($isAppointmentCancelled) disabled @endif>
+            <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('customerJoinLink').value)" @if($isAppointmentCancelled) disabled @endif><i class="fa-regular fa-copy"></i> Copy</button>
         </div>
         <small>Share this link with the customer. They will join the video consultation in a branded, secure page—no app install required.</small>
         @if(!empty($appointment['customer_email']))
         <form method="POST" action="{{ route('astrologer.appointment.sendLink', ['id' => $appointment['id']]) }}" class="mt-2">
             @csrf
-            <button type="submit" class="btn btn-outline-success">
+            <button type="submit" class="btn btn-outline-success" @if($isAppointmentCancelled) disabled @endif>
                 <i class="fa-solid fa-envelope me-1"></i> Email Link to Customer
             </button>
         </form>
@@ -622,15 +945,15 @@ $meetingId = 'astro-' . $appointment['id'];
 </div>
 @endif
 
-<div class="container" style="max-width: 900px; margin: 40px auto;">
+<div class="container" data-appointment-lock-root style="max-width: 900px; margin: 40px auto;">
     @if(isset($appointment))
     <div class="booking-header-custom">
         <div style="font-size:1.45rem;font-weight:700;letter-spacing:0.01em;"><i class="fa-solid fa-calendar-check me-2"></i>Appointment Details</div>
         <div style="font-size:1.01rem;opacity:0.95;">
             Booking ID : <b id="bookingId">BKNG{{ $appointment['id'] }}</b>
-            <button class="btn btn-sm btn-outline-light ms-2 py-0 px-2" style="font-size:0.95em;vertical-align:middle;" onclick="navigator.clipboard.writeText('BKNG{{ $appointment['id'] }}')"><i class="fa-regular fa-copy"></i></button>
+            <button class="btn btn-sm btn-outline-light ms-2 py-0 px-2" style="font-size:0.95em;vertical-align:middle;" onclick="navigator.clipboard.writeText('BKNG{{ $appointment['id'] }}')" @if($isAppointmentCancelled) disabled @endif><i class="fa-regular fa-copy"></i></button>
         </div>
-        <span class="booking-status-badge {{ $appointment['status'] }}">
+        <span class="booking-status-badge {{ $appointment['status'] }}" id="appointment-status-badge">
             <i class="fa-solid {{ $appointment['status'] === 'confirmed' ? 'fa-circle-check text-success' : (($appointment['status'] ?? null) === 'ready_to_start' ? 'fa-circle-play text-info' : ($appointment['status'] === 'pending' ? 'fa-hourglass-half text-warning' : ($appointment['status'] === 'in_progress' ? 'fa-video text-success' : 'fa-circle-xmark text-danger'))) }} me-1"></i>
             {{ str_replace('_', ' ', ucfirst($appointment['status'])) }}
         </span>
@@ -657,23 +980,42 @@ $meetingId = 'astro-' . $appointment['id'];
                 <!-- <a href="#suggest-products" class="btn btn-warning">
                             <i class="fa-solid fa-gift me-1"></i> Suggest Products
                         </a> -->
-                <form method="POST" action="{{ route('astrologer.appointment.cancel', ['id' => $appointment['id']]) }}" style="display:inline;">
-                    @csrf
-                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this appointment?');" title="Cancel this appointment">
+                <button type="button" id="cancel-appointment-btn" class="btn btn-outline-danger{{ $isCancelDisabled ? ' disabled' : '' }}" @if($isCancelDisabled) disabled aria-disabled="true" title="This appointment can no longer be cancelled." @else title="Cancel this appointment" @endif>
                         <i class="fa-solid fa-xmark me-1"></i> Cancel Appointment
-                    </button>
-                </form>
+                </button>
                 <button type="button" id="booking-reschedule-btn" class="btn btn-outline-warning{{ $isRescheduleDisabled ? ' disabled' : '' }}" @if($isRescheduleDisabled) disabled aria-disabled="true" title="Completed or in-progress appointments cannot be rescheduled." @endif>
                     <i class="fa-solid fa-calendar-days me-1"></i> Reschedule Appointment
                 </button>
 
                 @if(($appointment['status'] ?? '') !== 'completed')
-                    <a href="{{ route('astrologer.appointment.video', ['id' => $appointment['id']]) }}" target="_blank" class="btn btn-primary float-end" aria-haspopup="dialog">
+                    <a href="{{ route('astrologer.appointment.video', ['id' => $appointment['id']]) }}" target="_blank" id="start-video-consultation-btn" class="btn btn-primary float-end{{ ($appointment['status'] ?? '') === 'cancelled' ? ' d-none' : '' }}" aria-haspopup="dialog">
                         <i class="fa-solid fa-video me-1"></i> Start Video Consultation
                     </a>
                 @else
-                    <span class="alert alert-info mb-0" style="font-size:1em;display:inline-block;vertical-align:middle;">This appointment is completed. Video consultation is no longer available.</span>
+                    <span class="alert alert-info mb-0" id="video-consultation-disabled-state" style="font-size:1em;display:inline-block;vertical-align:middle;">This appointment is completed. Video consultation is no longer available.</span>
                 @endif
+                <div id="appointment-action-feedback" class="w-100 mt-2"></div>
+            </div>
+
+            <div class="modal fade" id="cancel-appointment-confirmation-modal" tabindex="-1" aria-labelledby="cancel-appointment-confirmation-label" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="cancel-appointment-confirmation-label">Cancel Appointment</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-2">This will cancel the appointment for both astrologer and customer.</p>
+                            <p class="mb-0">Are you sure you want to continue?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Keep Appointment</button>
+                            <button type="button" id="confirm-cancel-appointment-btn" class="btn btn-outline-danger">
+                                <i class="fa-solid fa-xmark me-1"></i> Confirm Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
 
@@ -741,6 +1083,7 @@ $meetingId = 'astro-' . $appointment['id'];
                     <div class="booking-details-value">No customer details found.</div>
                 @endif
             </div>
+        
             <div class="flex-grow-1 d-flex flex-column align-items-end justify-content-between">
                 <div class="booking-details-label mb-2">Total Amount</div>
                 <div class="booking-details-value" style="font-size:1.5rem;font-weight:700;color:#219150;">₹{{ $appointment['rate'] ?? '-' }}</div>
@@ -756,21 +1099,33 @@ $meetingId = 'astro-' . $appointment['id'];
                     name="astrologer_note"
                     class="note-editor"
                     placeholder="Write consultation notes for this appointment..."
-                    @readonly($isNoteFinalized)
-                    aria-readonly="{{ $isNoteFinalized ? 'true' : 'false' }}"
+                    @readonly($isNoteFinalized || $isAppointmentCancelled)
+                    @disabled($isAppointmentCancelled)
+                    aria-readonly="{{ ($isNoteFinalized || $isAppointmentCancelled) ? 'true' : 'false' }}"
                     style="display:{{ $isNoteFinalized ? 'none' : 'block' }};"
                 >{{ old('astrologer_note', $appointment['astrologer_note'] ?? '') }}</textarea>
                 <div id="astrologer-note-document" class="note-document-paper" style="display:{{ $isNoteFinalized ? 'block' : 'none' }};">
                     <div class="note-document-heading">
-                        <div class="note-document-pad">
+                        @php
+                            $astrologerDisplayName = $astrologerName !== '' ? $astrologerName : 'Astrologer Consultant';
+                            $customerDisplayName = trim((string) data_get($appointment, 'user.first_name') . ' ' . (string) data_get($appointment, 'user.last_name'));
+                            if ($customerDisplayName === '') {
+                                $customerDisplayName = trim((string) ($appointment['name'] ?? ''));
+                            }
+                        @endphp
+                        <div class="note-document-letterhead">
+                            <div class="note-document-mark">
+                                <img src="{{ $noteDocumentLogo }}" alt="{{ config('app.name') }} logo">
+                            </div>
                             <div class="note-document-brand">
                                 <div class="note-document-title">Astrologer Consultation Notes</div>
                                 <div class="note-document-doctor">
-                                    {{ $astrologerName !== '' ? $astrologerName : 'Astrologer Consultant' }}
+                                    {{ $astrologerDisplayName }}
                                     @if($astrologerDesignation !== '')
                                         <span class="note-document-subtitle d-block mt-1">{{ $astrologerDesignation }}</span>
                                     @endif
                                 </div>
+                                <div class="note-document-subtitle note-document-summary">Consultation summary, remedies, and post-session guidance</div>
                                 <div class="note-document-contact">
                                     @if($astrologerEmail !== '')
                                         <span><strong>Email:</strong> {{ $astrologerEmail }}</span>
@@ -782,37 +1137,87 @@ $meetingId = 'astro-' . $appointment['id'];
                                         <span class="note-document-subtitle">Professional consultation summary</span>
                                     @endif
                                 </div>
+                                <div class="note-document-specialties">
+                                    <div class="note-document-specialty-card">
+                                        <div class="note-document-specialty-label">Experience</div>
+                                        <div class="note-document-specialty-value">{{ ($astrologerExperience !== null && $astrologerExperience !== '') ? $astrologerExperience . ' years' : 'Not specified' }}</div>
+                                    </div>
+                                    <div class="note-document-specialty-card">
+                                        <div class="note-document-specialty-label">Languages</div>
+                                        <div class="note-document-specialty-value">{{ $astrologerLanguages !== '' ? $astrologerLanguages : 'Not specified' }}</div>
+                                    </div>
+                                    <div class="note-document-specialty-card note-document-specialty-card-full">
+                                        <div class="note-document-specialty-label">Specializations</div>
+                                        <div class="note-document-specialty-value">{{ $astrologerSkills !== '' ? $astrologerSkills : 'Not specified' }}</div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="note-document-meta">
-                                <strong>Booking ID: BKNG{{ $appointment['id'] }}</strong>
-                                <div>{{ !empty($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('d M Y') : now()->format('d M Y') }}</div>
-                                <div>{{ !empty($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('h:i A') : '' }}</div>
+                                <strong>Consultation Record</strong>
+                                <div class="note-document-meta-grid">
+                                    <div class="note-document-meta-item">
+                                        <span class="note-document-meta-label">Booking ID</span>
+                                        <span class="note-document-meta-value">BKNG{{ $appointment['id'] }}</span>
+                                    </div>
+                                    <div class="note-document-meta-item">
+                                        <span class="note-document-meta-label">Date</span>
+                                        <span class="note-document-meta-value">{{ !empty($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('d M Y') : now()->format('d M Y') }}</span>
+                                    </div>
+                                    <div class="note-document-meta-item">
+                                        <span class="note-document-meta-label">Time</span>
+                                        <span class="note-document-meta-value">{{ !empty($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('h:i A') : '-' }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="note-document-specialties">
-                            <div>
-                                <div class="note-document-specialty-label">Experience</div>
-                                <div class="note-document-specialty-value">{{ ($astrologerExperience !== null && $astrologerExperience !== '') ? $astrologerExperience . ' years' : 'Not specified' }}</div>
+                        <div class="note-document-fields">
+                            <div class="note-document-field">
+                                <span class="note-document-field-label">Name</span>
+                                <span class="note-document-field-value">{{ $customerDisplayName !== '' ? $customerDisplayName : 'Not provided' }}</span>
+                                
                             </div>
-                            <div>
-                                <div class="note-document-specialty-label">Languages</div>
-                                <div class="note-document-specialty-value">{{ $astrologerLanguages !== '' ? $astrologerLanguages : 'Not specified' }}</div>
+                            <div class="note-document-field">
+                                <span class="note-document-field-label">Consultation</span>
+                                <span class="note-document-field-value">{{ ucfirst($appointment['consultation_type'] ?? 'Consultation') }}</span>
                             </div>
-                            <div style="grid-column: 1 / -1;">
-                                <div class="note-document-specialty-label">Specializations</div>
-                                <div class="note-document-specialty-value">{{ $astrologerSkills !== '' ? $astrologerSkills : 'Not specified' }}</div>
+                            <div class="note-document-field">
+                                <span class="note-document-field-label">Date</span>
+                                <span class="note-document-field-value">{{ !empty($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('d M Y') : '-' }}</span>
                             </div>
+                            <div class="note-document-field">
+                                <span class="note-document-field-label">Time</span>
+                                <span class="note-document-field-value">{{ !empty($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('h:i A') : '-' }}</span>
+                            </div>
+                        </div>
+                      
+                    </div>
+                    <div class="note-document-writing-area">
+                        <div class="note-document-watermark" aria-hidden="true">
+                            <img src="{{ $noteDocumentLogo }}" alt="">
+                        </div>
+                        <div class="note-document-rx">Astrological Advice</div>
+                        <div id="astrologer-note-document-body" class="note-document-body">
+                            @php
+                                $finalizedNote = trim((string) old('astrologer_note', $appointment['astrologer_note'] ?? ''));
+                            @endphp
+                            @if($finalizedNote !== '')
+                                {!! nl2br(e($finalizedNote)) !!}
+                            @else
+                                <p class="note-document-empty mb-0">No astrologer note was provided for this appointment.</p>
+                            @endif
                         </div>
                     </div>
-                    <div id="astrologer-note-document-body" class="note-document-body">
-                        @php
-                            $finalizedNote = trim((string) old('astrologer_note', $appointment['astrologer_note'] ?? ''));
-                        @endphp
-                        @if($finalizedNote !== '')
-                            {!! nl2br(e($finalizedNote)) !!}
-                        @else
-                            <p class="note-document-empty mb-0">No astrologer note was provided for this appointment.</p>
-                        @endif
+                    <div class="note-document-footer">
+                        <div class="note-document-footer-card">
+                            <span class="note-document-footer-name">{{ $astrologerDisplayName }}</span>
+                            @if($astrologerPhone !== '')
+                                <span class="note-document-footer-line">Phone: {{ $astrologerPhone }}</span>
+                            @endif
+                            @if($astrologerEmail !== '')
+                                <span class="note-document-footer-line">Email: {{ $astrologerEmail }}</span>
+                            @endif
+                            <span class="note-document-footer-line">Reference: BKNG{{ $appointment['id'] }}</span>
+                        </div>
                     </div>
                 </div>
                 @error('astrologer_note')
@@ -820,10 +1225,13 @@ $meetingId = 'astro-' . $appointment['id'];
                 @enderror
                 <div id="notes-feedback" class="note-feedback mt-2"></div>
                 <div class="d-flex justify-content-end gap-2 mt-3">
-                    <button type="submit" id="save-notes-btn" class="btn btn-save-note">
+                    <button type="button" id="download-note-pdf-btn" class="btn btn-outline-secondary{{ $isNoteFinalized ? '' : ' d-none' }}" @if($isAppointmentCancelled) disabled @endif>
+                        <i class="fa-solid fa-file-arrow-down me-1"></i> Download PDF
+                    </button>
+                    <button type="submit" id="save-notes-btn" class="btn btn-save-note" @if($isAppointmentCancelled) disabled @endif>
                         <i class="fa-solid fa-floppy-disk me-1"></i> Save Draft Note
                     </button>
-                    <button type="button" id="finalize-notes-btn" class="btn btn-finalize-note">
+                    <button type="button" id="finalize-notes-btn" class="btn btn-finalize-note" @if($isAppointmentCancelled) disabled @endif>
                         <i class="fa-solid fa-circle-check me-1"></i> Close &amp; Finalize
                     </button>
                 </div>
@@ -843,7 +1251,7 @@ $meetingId = 'astro-' . $appointment['id'];
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" id="confirm-finalize-notes-btn" class="btn btn-finalize-note">
+                        <button type="button" id="confirm-finalize-notes-btn" class="btn btn-finalize-note" @if($isAppointmentCancelled) disabled @endif>
                             <i class="fa-solid fa-circle-check me-1"></i> Confirm Finalize
                         </button>
                     </div>
@@ -852,7 +1260,7 @@ $meetingId = 'astro-' . $appointment['id'];
         </div>
 
         <div class="booking-details-col mt-4" style="max-width:none;">
-            <button type="button" class="collapsible-section-toggle" data-bs-toggle="collapse" data-bs-target="#suggest-products-collapse" aria-expanded="false" aria-controls="suggest-products-collapse">
+            <button type="button" class="collapsible-section-toggle" data-bs-toggle="collapse" data-bs-target="#suggest-products-collapse" aria-expanded="false" aria-controls="suggest-products-collapse" @if($isAppointmentCancelled) disabled @endif>
                 <span class="booking-details-label mb-0"><i class="fa-solid fa-filter me-1"></i> Find Products To Suggest</span>
                 <i class="fa-solid fa-chevron-down collapsible-section-toggle-icon"></i>
             </button>
@@ -861,7 +1269,7 @@ $meetingId = 'astro-' . $appointment['id'];
                     @csrf
                     <div class="row g-2 mb-2 align-items-center">
                         <div class="col-md-6">
-                            <select class="form-select" name="product_grade_id">
+                            <select class="form-select" name="product_grade_id" @if($isAppointmentCancelled) disabled @endif>
                                 <option value="">Select Product Grade</option>
                                 @foreach(($productGrades ?? []) as $productGrade)
                                     <option value="{{ $productGrade['id'] }}">{{ $productGrade['name'] }}</option>
@@ -869,7 +1277,7 @@ $meetingId = 'astro-' . $appointment['id'];
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <select class="form-select" name="category_id">
+                            <select class="form-select" name="category_id" @if($isAppointmentCancelled) disabled @endif>
                                 <option value="">Select Category</option>
                                 @foreach(($productCategories ?? []) as $categoryGroup)
                                     @if(!empty($categoryGroup['options']))
@@ -883,31 +1291,31 @@ $meetingId = 'astro-' . $appointment['id'];
                             </select>
                         </div>
                         <div class="col-12">
-                            <input type="text" class="form-control" name="q" placeholder="Search Product">
+                            <input type="text" class="form-control" name="q" placeholder="Search Product" @if($isAppointmentCancelled) disabled @endif>
                         </div>
                         <div class="col-md-6">
-                            <input type="number" min="0" step="0.01" class="form-control" name="ratti" placeholder="Ratti">
+                            <input type="number" min="0" step="0.01" class="form-control" name="ratti" placeholder="Ratti" @if($isAppointmentCancelled) disabled @endif>
                         </div>
                         <div class="col-md-6">
-                            <input type="number" min="0" step="0.01" class="form-control" name="carat" placeholder="Carat">
+                            <input type="number" min="0" step="0.01" class="form-control" name="carat" placeholder="Carat" @if($isAppointmentCancelled) disabled @endif>
                         </div>
                         <div class="col-md-6">
-                            <input type="number" min="0" step="1" class="form-control" name="min_price" placeholder="Min Price">
+                            <input type="number" min="0" step="1" class="form-control" name="min_price" placeholder="Min Price" @if($isAppointmentCancelled) disabled @endif>
                         </div>
                         <div class="col-md-6">
-                            <input type="number" min="0" step="1" class="form-control" name="max_price" placeholder="Max Price">
+                            <input type="number" min="0" step="1" class="form-control" name="max_price" placeholder="Max Price" @if($isAppointmentCancelled) disabled @endif>
                         </div>
                         <div class="col-md-6">
-                            <input type="number" min="1" max="100" step="1" class="form-control" name="per_page" value="20" placeholder="Per Page">
+                            <input type="number" min="1" max="100" step="1" class="form-control" name="per_page" value="20" placeholder="Per Page" @if($isAppointmentCancelled) disabled @endif>
                         </div>
                         <div class="col-md-6 d-flex align-items-center">
                             <div class="form-check ms-1">
-                                <input class="form-check-input" type="checkbox" value="1" id="product-in-stock" name="in_stock" checked>
+                                <input class="form-check-input" type="checkbox" value="1" id="product-in-stock" name="in_stock" checked @if($isAppointmentCancelled) disabled @endif>
                                 <label class="form-check-label" for="product-in-stock">In stock only</label>
                             </div>
                         </div>
                     </div>
-                    <button id="search-products-btn" class="btn btn-outline-theme mt-2" type="submit">
+                    <button id="search-products-btn" class="btn btn-outline-theme mt-2" type="submit" @if($isAppointmentCancelled) disabled @endif>
                         <i class="fa-solid fa-magnifying-glass me-1"></i> Search Products
                     </button>
                     <div id="product-search-feedback" class="mt-2"></div>
@@ -961,7 +1369,7 @@ $meetingId = 'astro-' . $appointment['id'];
                                     </a>
                                 @endif
                                 @if(!empty($product['id']))
-                                    <button type="button" class="btn btn-sm btn-outline-danger remove-suggested-product-btn suggested-product-remove" data-cart-id="{{ (int) $product['id'] }}">
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-suggested-product-btn suggested-product-remove" data-cart-id="{{ (int) $product['id'] }}" @if($isAppointmentCancelled) disabled @endif>
                                         <i class="fa-solid fa-trash-can me-1"></i> Remove
                                     </button>
                                 @endif
@@ -1011,11 +1419,20 @@ $meetingId = 'astro-' . $appointment['id'];
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const pageDataElement = document.getElementById('booking-details-page-data');
+        const statusBadge = document.getElementById('appointment-status-badge');
         const scheduledDateCell = document.getElementById('booking-scheduled-date-cell');
         const scheduledSlotCell = document.getElementById('booking-scheduled-slot-cell');
+        const cancelAppointmentBtn = document.getElementById('cancel-appointment-btn');
+        const actionFeedback = document.getElementById('appointment-action-feedback');
+        const rescheduleBtn = document.getElementById('booking-reschedule-btn');
+        const startVideoConsultationBtn = document.getElementById('start-video-consultation-btn');
+        const videoConsultationDisabledState = document.getElementById('video-consultation-disabled-state');
         const saveNotesForm = document.getElementById('save-notes-form');
         const saveNotesBtn = document.getElementById('save-notes-btn');
         const finalizeNotesBtn = document.getElementById('finalize-notes-btn');
+        const downloadNotePdfBtn = document.getElementById('download-note-pdf-btn');
+        const cancelAppointmentConfirmationModalElement = document.getElementById('cancel-appointment-confirmation-modal');
+        const confirmCancelAppointmentBtn = document.getElementById('confirm-cancel-appointment-btn');
         const finalizeNotesConfirmationModalElement = document.getElementById('finalize-notes-confirmation-modal');
         const confirmFinalizeNotesBtn = document.getElementById('confirm-finalize-notes-btn');
         const noteTextarea = document.getElementById('astrologer-note-textarea');
@@ -1041,14 +1458,22 @@ $meetingId = 'astro-' . $appointment['id'];
 
         const pageData = JSON.parse(pageDataElement.textContent || '{}');
         const bookingId = pageData.bookingId;
+        const appointmentLockRoots = Array.from(document.querySelectorAll('[data-appointment-lock-root]'));
         const suggestProductUrl = pageData.suggestProductUrl;
         const addSuggestedProductUrl = pageData.addSuggestedProductUrl;
         const removeSuggestedProductUrl = pageData.removeSuggestedProductUrl;
+        const cancelUrl = pageData.cancelUrl;
         const finalizeNotesUrl = pageData.finalizeNotesUrl;
+        const downloadNotesPdfUrl = pageData.downloadNotesPdfUrl;
+        const cancelAppointmentConfirmationModal = cancelAppointmentConfirmationModalElement && window.bootstrap
+            ? new bootstrap.Modal(cancelAppointmentConfirmationModalElement)
+            : null;
         const finalizeNotesConfirmationModal = finalizeNotesConfirmationModalElement && window.bootstrap
             ? new bootstrap.Modal(finalizeNotesConfirmationModalElement)
             : null;
         let isNoteFinalized = Boolean(pageData.isNoteFinalized);
+        let canCancel = Boolean(pageData.canCancel);
+        let isAppointmentCancelled = Boolean(pageData.isAppointmentCancelled);
 
         if (!bookingId) {
             return;
@@ -1118,13 +1543,15 @@ $meetingId = 'astro-' . $appointment['id'];
                 return;
             }
 
-            finalizeNotesBtn.disabled = false;
+            finalizeNotesBtn.disabled = isAppointmentCancelled;
             finalizeNotesBtn.classList.remove('btn-success');
             finalizeNotesBtn.classList.add('btn-finalize-note');
             finalizeNotesBtn.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> Close &amp; Finalize';
         }
 
         function setProductsEditingDisabled(disabled) {
+            disabled = Boolean(disabled || isAppointmentCancelled);
+
             if (suggestProductsForm) {
                 suggestProductsForm.querySelectorAll('input, select, button').forEach(function(element) {
                     element.disabled = disabled;
@@ -1148,8 +1575,8 @@ $meetingId = 'astro-' . $appointment['id'];
             isNoteFinalized = Boolean(finalized);
 
             if (noteTextarea) {
-                noteTextarea.disabled = isNoteFinalized;
-                noteTextarea.readOnly = isNoteFinalized;
+                noteTextarea.disabled = isAppointmentCancelled;
+                noteTextarea.readOnly = isNoteFinalized || isAppointmentCancelled;
                 noteTextarea.style.display = isNoteFinalized ? 'none' : 'block';
             }
 
@@ -1162,11 +1589,49 @@ $meetingId = 'astro-' . $appointment['id'];
             }
 
             if (saveNotesBtn) {
-                saveNotesBtn.disabled = isNoteFinalized;
+                saveNotesBtn.disabled = isNoteFinalized || isAppointmentCancelled;
+            }
+
+            if (downloadNotePdfBtn) {
+                downloadNotePdfBtn.classList.toggle('d-none', !isNoteFinalized);
+                downloadNotePdfBtn.disabled = !isNoteFinalized || isAppointmentCancelled;
             }
 
             setFinalizeButtonState(isNoteFinalized);
             setProductsEditingDisabled(isNoteFinalized);
+        }
+
+        function applyAppointmentLockedState(cancelled) {
+            if (!cancelled) {
+                return;
+            }
+
+            appointmentLockRoots.forEach(function(root) {
+                root.querySelectorAll('button, input, textarea, select').forEach(function(control) {
+                    control.disabled = true;
+
+                    if (control.tagName === 'TEXTAREA') {
+                        control.readOnly = true;
+                    }
+                });
+            });
+
+            var joinVideoConsultationBtn = document.getElementById('join-video-consultation-btn');
+            if (joinVideoConsultationBtn) {
+                joinVideoConsultationBtn.classList.add('disabled');
+                joinVideoConsultationBtn.setAttribute('aria-disabled', 'true');
+                joinVideoConsultationBtn.setAttribute('tabindex', '-1');
+                joinVideoConsultationBtn.style.pointerEvents = 'none';
+            }
+
+            if (startVideoConsultationBtn) {
+                startVideoConsultationBtn.classList.add('d-none');
+            }
+
+            if (videoConsultationDisabledState) {
+                videoConsultationDisabledState.textContent = 'This appointment has been cancelled. Video consultation is no longer available.';
+                videoConsultationDisabledState.style.display = 'inline-block';
+            }
         }
 
         function showNotesFeedback(message, type) {
@@ -1193,6 +1658,114 @@ $meetingId = 'astro-' . $appointment['id'];
             }
 
             productSearchFeedback.innerHTML = '<div class="alert alert-' + type + ' py-2 mb-0">' + escapeHtml(message) + '</div>';
+        }
+
+        function showAppointmentActionFeedback(message, type) {
+            if (!actionFeedback) {
+                return;
+            }
+
+            if (!message) {
+                actionFeedback.innerHTML = '';
+                return;
+            }
+
+            actionFeedback.innerHTML = '<div class="alert alert-' + type + ' py-2 px-3 mb-0 small">' + escapeHtml(message) + '</div>';
+        }
+
+        function statusIconClass(status) {
+            if (status === 'confirmed') {
+                return 'fa-circle-check text-success';
+            }
+
+            if (status === 'ready_to_start') {
+                return 'fa-circle-play text-info';
+            }
+
+            if (status === 'pending') {
+                return 'fa-hourglass-half text-warning';
+            }
+
+            if (status === 'in_progress') {
+                return 'fa-video text-success';
+            }
+
+            return 'fa-circle-xmark text-danger';
+        }
+
+        function formatStatusLabel(status) {
+            return String(status || '')
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, function(character) {
+                    return character.toUpperCase();
+                });
+        }
+
+        function setCancelButtonState(disabled) {
+            if (!cancelAppointmentBtn) {
+                return;
+            }
+
+            cancelAppointmentBtn.disabled = disabled;
+            cancelAppointmentBtn.classList.toggle('disabled', disabled);
+
+            if (disabled) {
+                cancelAppointmentBtn.setAttribute('aria-disabled', 'true');
+            } else {
+                cancelAppointmentBtn.removeAttribute('aria-disabled');
+            }
+        }
+
+        function applyAppointmentStatus(status) {
+            pageData.currentStatus = status;
+            isAppointmentCancelled = status === 'cancelled';
+
+            if (statusBadge) {
+                statusBadge.className = 'booking-status-badge ' + status;
+                statusBadge.innerHTML = '<i class="fa-solid ' + statusIconClass(status) + ' me-1"></i> ' + escapeHtml(formatStatusLabel(status));
+            }
+
+            var statusBlocksReschedule = ['completed', 'ready_to_start', 'in_progress', 'cancelled'].includes(status);
+            var statusBlocksCancel = ['completed', 'ready_to_start', 'in_progress', 'cancelled'].includes(status);
+
+            canCancel = !statusBlocksCancel;
+            pageData.canCancel = canCancel;
+            setCancelButtonState(statusBlocksCancel);
+
+            if (rescheduleBtn) {
+                rescheduleBtn.disabled = statusBlocksReschedule;
+                rescheduleBtn.classList.toggle('disabled', statusBlocksReschedule);
+
+                if (statusBlocksReschedule) {
+                    rescheduleBtn.setAttribute('aria-disabled', 'true');
+                    rescheduleBtn.title = 'Completed, cancelled, or active appointments cannot be rescheduled.';
+                } else {
+                    rescheduleBtn.removeAttribute('aria-disabled');
+                    rescheduleBtn.title = '';
+                }
+            }
+
+            if (startVideoConsultationBtn) {
+                startVideoConsultationBtn.classList.toggle('d-none', status === 'completed' || status === 'cancelled');
+            }
+
+            if (videoConsultationDisabledState) {
+                if (status === 'completed') {
+                    videoConsultationDisabledState.textContent = 'This appointment is completed. Video consultation is no longer available.';
+                    videoConsultationDisabledState.style.display = 'inline-block';
+                } else if (status === 'cancelled') {
+                    videoConsultationDisabledState.textContent = 'This appointment has been cancelled. Video consultation is no longer available.';
+                    videoConsultationDisabledState.style.display = 'inline-block';
+                } else {
+                    videoConsultationDisabledState.style.display = 'none';
+                }
+            }
+
+            applyFinalizedState(isNoteFinalized);
+
+            if (isAppointmentCancelled) {
+                applyAppointmentLockedState(true);
+            }
         }
 
         function hasDisplayValue(value) {
@@ -1233,6 +1806,9 @@ $meetingId = 'astro-' . $appointment['id'];
             }
 
             button.disabled = false;
+            if (isAppointmentCancelled) {
+                button.disabled = true;
+            }
             button.classList.remove('btn-success');
             button.classList.add('btn-outline-theme');
             button.innerHTML = '<i class="fa-solid fa-cart-plus me-1"></i> Suggest Product';
@@ -1256,7 +1832,7 @@ $meetingId = 'astro-' . $appointment['id'];
                 + '<div class="suggested-product-actions">'
                 + (product.url ? '<a href="' + escapeHtml(product.url) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View Product</a>' : '')
                 + (!product.url && hasDisplayValue(product.slug) ? '<div class="text-muted small align-self-center">Product Slug: ' + escapeHtml(product.slug) + '</div>' : '')
-                + (hasDisplayValue(product.id || product.cart_id) ? '<button type="button" class="btn btn-sm btn-outline-danger remove-suggested-product-btn suggested-product-remove" data-cart-id="' + escapeHtml(product.id || product.cart_id) + '"><i class="fa-solid fa-trash-can me-1"></i> Remove</button>' : '')
+                + (hasDisplayValue(product.id || product.cart_id) ? '<button type="button" class="btn btn-sm btn-outline-danger remove-suggested-product-btn suggested-product-remove" data-cart-id="' + escapeHtml(product.id || product.cart_id) + '"' + (isAppointmentCancelled ? ' disabled' : '') + '><i class="fa-solid fa-trash-can me-1"></i> Remove</button>' : '')
                 + '</div>'
                 + '</div>';
         }
@@ -1298,6 +1874,11 @@ $meetingId = 'astro-' . $appointment['id'];
         function removeSuggestedProduct(button) {
             if (!button || !removeSuggestedProductUrl) {
                 return Promise.resolve();
+            }
+
+            if (isAppointmentCancelled) {
+                showProductSearchFeedback('This appointment has been cancelled. All actions are disabled.', 'danger');
+                return Promise.resolve({ success: false, cancelled: true });
             }
 
             const cartId = button.dataset.cartId;
@@ -1368,6 +1949,11 @@ $meetingId = 'astro-' . $appointment['id'];
         function suggestProductForBooking(button) {
             if (!button) {
                 return Promise.resolve();
+            }
+
+            if (isAppointmentCancelled) {
+                showProductSearchFeedback('This appointment has been cancelled. All actions are disabled.', 'danger');
+                return Promise.resolve({ success: false, cancelled: true });
             }
 
             var productId = button.dataset.productId;
@@ -1508,7 +2094,7 @@ $meetingId = 'astro-' . $appointment['id'];
                             '<div class="mt-2 d-flex flex-wrap gap-2">' +
                                 (hasDisplayValue(product.id) ? '<button type="button" class="btn btn-sm btn-outline-theme suggest-product-btn" data-product-id="' + escapeHtml(product.id) + '"' +
                                     (hasDisplayValue(product.variation_id) ? ' data-variation-id="' + escapeHtml(product.variation_id) + '"' : '') +
-                                    ' data-product-name="' + escapeHtml(product.name) + '" data-product-price="' + escapeHtml(product.price) + '" data-product-original-price="' + escapeHtml(product.original_price || product.price) + '" data-product-discount-rate="' + escapeHtml(product.discount_rate || '') + '" data-product-currency-symbol="' + escapeHtml(product.currency_symbol || '₹') + '" data-product-image="' + escapeHtml(product.image || '') + '" data-product-grade="' + escapeHtml(product.grade || '') + '" data-product-ratti="' + escapeHtml(product.ratti || '') + '" data-product-carat="' + escapeHtml(product.carat || '') + '" data-product-url="' + escapeHtml(product.url || '') + '" data-product-slug="' + escapeHtml(product.slug || '') + '"><i class="fa-solid fa-cart-plus me-1"></i> Suggest Product</button>' : '') +
+                                    ' data-product-name="' + escapeHtml(product.name) + '" data-product-price="' + escapeHtml(product.price) + '" data-product-original-price="' + escapeHtml(product.original_price || product.price) + '" data-product-discount-rate="' + escapeHtml(product.discount_rate || '') + '" data-product-currency-symbol="' + escapeHtml(product.currency_symbol || '₹') + '" data-product-image="' + escapeHtml(product.image || '') + '" data-product-grade="' + escapeHtml(product.grade || '') + '" data-product-ratti="' + escapeHtml(product.ratti || '') + '" data-product-carat="' + escapeHtml(product.carat || '') + '" data-product-url="' + escapeHtml(product.url || '') + '" data-product-slug="' + escapeHtml(product.slug || '') + '"' + (isAppointmentCancelled ? ' disabled' : '') + '><i class="fa-solid fa-cart-plus me-1"></i> Suggest Product</button>' : '') +
                                 (product.url ? '<a class="btn btn-sm btn-outline-theme" href="' + escapeHtml(product.url) + '" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View Product</a>' : '') +
                             '</div>' +
                         '</div>' +
@@ -1541,6 +2127,11 @@ $meetingId = 'astro-' . $appointment['id'];
 
             if (!saveNotesForm || !saveNotesBtn || !noteTextarea) {
                 return Promise.resolve({ success: false });
+            }
+
+            if (isAppointmentCancelled) {
+                showNotesFeedback('This appointment has been cancelled. All actions are disabled.', 'danger');
+                return Promise.resolve({ success: false, cancelled: true });
             }
 
             if (isNoteFinalized) {
@@ -1620,6 +2211,11 @@ $meetingId = 'astro-' . $appointment['id'];
                 return Promise.resolve({ success: isNoteFinalized });
             }
 
+            if (isAppointmentCancelled) {
+                showNotesFeedback('This appointment has been cancelled. All actions are disabled.', 'danger');
+                return Promise.resolve({ success: false, cancelled: true });
+            }
+
             noteFinalizeInFlight = true;
 
             return submitNotes({ force: true })
@@ -1674,6 +2270,11 @@ $meetingId = 'astro-' . $appointment['id'];
                 return;
             }
 
+            if (isAppointmentCancelled) {
+                showNotesFeedback('This appointment has been cancelled. All actions are disabled.', 'danger');
+                return;
+            }
+
             if (noteSaveTimeout) {
                 clearTimeout(noteSaveTimeout);
             }
@@ -1688,6 +2289,83 @@ $meetingId = 'astro-' . $appointment['id'];
                 noteSaveTimeout = null;
                 submitNotes();
             }, noteAutosaveDelay);
+        }
+
+        function downloadNotesPdf() {
+            if (!downloadNotesPdfUrl || !downloadNotePdfBtn) {
+                return;
+            }
+
+            if (isAppointmentCancelled) {
+                showNotesFeedback('This appointment has been cancelled. All actions are disabled.', 'danger');
+                return;
+            }
+
+            setButtonLoading(downloadNotePdfBtn, true, '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Preparing');
+
+            var shouldSaveFirst = !isNoteFinalized && noteTextarea && noteTextarea.value !== lastSavedNote;
+            var savePromise = shouldSaveFirst
+                ? submitNotes({ force: true })
+                : Promise.resolve({ success: true, unchanged: true });
+
+            savePromise
+                .then(function(result) {
+                    if (result && (result.success || result.unchanged || result.finalized)) {
+                        window.location.assign(downloadNotesPdfUrl);
+                        window.setTimeout(function() {
+                            setButtonLoading(downloadNotePdfBtn, false);
+                        }, 1200);
+                        return;
+                    }
+
+                    setButtonLoading(downloadNotePdfBtn, false);
+                })
+                .catch(function() {
+                    setButtonLoading(downloadNotePdfBtn, false);
+                });
+        }
+
+        function cancelAppointment() {
+            if (!cancelAppointmentBtn || !cancelUrl || !canCancel) {
+                return Promise.resolve({ success: false });
+            }
+
+            setButtonLoading(cancelAppointmentBtn, true, '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Cancelling');
+            showAppointmentActionFeedback('Cancelling appointment...', 'warning');
+
+            return fetch(cancelUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(function(response) {
+                return response.json().then(function(data) {
+                    return { ok: response.ok, status: response.status, data: data };
+                });
+            })
+            .then(function(result) {
+                if (result.ok && result.data.success) {
+                    applyAppointmentStatus(result.data.status || 'cancelled');
+                    showAppointmentActionFeedback(result.data.message || 'Appointment cancelled successfully.', 'success');
+                    return { success: true, data: result.data };
+                }
+
+                var errorMessage = (result.data && result.data.message) ? result.data.message : 'Failed to cancel appointment.';
+                showAppointmentActionFeedback(errorMessage, 'danger');
+                return { success: false, data: result.data };
+            })
+            .catch(function(error) {
+                showAppointmentActionFeedback(error.message || 'Failed to cancel appointment.', 'danger');
+                return { success: false, error: error };
+            })
+            .finally(function() {
+                setButtonLoading(cancelAppointmentBtn, false);
+                setCancelButtonState(!canCancel);
+            });
         }
 
         function formatDisplayDate(value) {
@@ -1756,6 +2434,41 @@ $meetingId = 'astro-' . $appointment['id'];
             });
         }
 
+        if (downloadNotePdfBtn) {
+            downloadNotePdfBtn.addEventListener('click', function() {
+                if (noteSaveInFlight || noteFinalizeInFlight) {
+                    return;
+                }
+
+                downloadNotesPdf();
+            });
+        }
+
+        if (cancelAppointmentBtn) {
+            cancelAppointmentBtn.addEventListener('click', function() {
+                if (!canCancel) {
+                    return;
+                }
+
+                if (cancelAppointmentConfirmationModal) {
+                    cancelAppointmentConfirmationModal.show();
+                    return;
+                }
+
+                cancelAppointment();
+            });
+        }
+
+        if (confirmCancelAppointmentBtn) {
+            confirmCancelAppointmentBtn.addEventListener('click', function() {
+                if (cancelAppointmentConfirmationModal) {
+                    cancelAppointmentConfirmationModal.hide();
+                }
+
+                cancelAppointment();
+            });
+        }
+
         if (confirmFinalizeNotesBtn) {
             confirmFinalizeNotesBtn.addEventListener('click', function() {
                 if (finalizeNotesConfirmationModal) {
@@ -1769,6 +2482,10 @@ $meetingId = 'astro-' . $appointment['id'];
         if (suggestProductsForm && searchProductsBtn) {
             suggestProductsForm.addEventListener('submit', function(event) {
                 event.preventDefault();
+                if (isAppointmentCancelled) {
+                    showProductSearchFeedback('This appointment has been cancelled. All actions are disabled.', 'danger');
+                    return;
+                }
                 showProductSearchFeedback('', 'success');
                 setButtonLoading(searchProductsBtn, true, '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Searching');
 
@@ -1840,6 +2557,11 @@ $meetingId = 'astro-' . $appointment['id'];
         }
 
         applyFinalizedState(isNoteFinalized);
+
+        if (isAppointmentCancelled) {
+            applyAppointmentLockedState(true);
+            showAppointmentActionFeedback('This appointment has been cancelled. All actions are disabled.', 'warning');
+        }
     });
     </script>
 @endif

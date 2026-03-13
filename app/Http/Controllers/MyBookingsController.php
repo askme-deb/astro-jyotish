@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use App\Services\AstrologerBookingService;
 use App\Services\ConsultationStateService;
@@ -21,9 +22,8 @@ class MyBookingsController extends Controller
 
     public function show($id, Request $request, AstrologerBookingService $bookingService)
     {
-        $token = $request->cookie('auth_api_token');
-        $response = $bookingService->getBookings($token);
-        $booking = collect($response['data'] ?? [])->firstWhere('id', (int)$id);
+        $token = $this->getUserApiToken($request);
+        $booking = $this->findBookingById((int) $id, $request, $bookingService);
         $suggestedProducts = [];
 
         // Compute astrologer initials if booking and astrologer name exist
@@ -53,6 +53,33 @@ class MyBookingsController extends Controller
         }
 
         return view('booking-details', compact('booking', 'astroInitials', 'suggestedProducts'));
+    }
+
+    public function downloadNotesPdf($id, Request $request, AstrologerBookingService $bookingService)
+    {
+        $booking = $this->findBookingById((int) $id, $request, $bookingService);
+
+        if (!is_array($booking) || empty($booking)) {
+            return back()->with('error', 'Booking not found.');
+        }
+
+        $isNoteFinalized = (bool) ($booking['final_confirmation_from_astrologer'] ?? false)
+            || (($booking['astrologer_note_status'] ?? null) === 'finalized');
+
+        if (!$isNoteFinalized) {
+            return back()->with('error', 'Astrologer note is not available for download yet.');
+        }
+
+        $filename = 'consultation-note-bkng' . (int) $booking['id'] . '.pdf';
+
+        $pdf = Pdf::loadView('astrologer.appointment-note-pdf', [
+            'appointment' => $booking,
+            'generatedAt' => now(),
+            'logoPath' => public_path('assets/images/Logo.png'),
+            'appName' => config('app.name', 'Astro Consultant'),
+        ])->setPaper('a4');
+
+        return $pdf->download($filename);
     }
 
     public function activeConsultationStatus(Request $request, AstrologerBookingService $bookingService)
@@ -271,6 +298,25 @@ class MyBookingsController extends Controller
             'message' => $result['message'] ?? 'Booking rescheduled successfully.',
             'data' => $result['data'] ?? $result,
         ]);
+    }
+
+    private function findBookingById(int $id, Request $request, AstrologerBookingService $bookingService): ?array
+    {
+        $token = $this->getUserApiToken($request);
+
+        if (!$token) {
+            return null;
+        }
+
+        $response = $bookingService->getBookings($token);
+        $booking = collect($response['data'] ?? [])->firstWhere('id', $id);
+
+        return is_array($booking) && !empty($booking) ? $booking : null;
+    }
+
+    private function getUserApiToken(Request $request): ?string
+    {
+        return $request->cookie('auth_api_token') ?? session('auth.api_token') ?? session('auth_api_token');
     }
 
     private function extractSuggestedProductsForBooking(array $response, int $bookingId): array

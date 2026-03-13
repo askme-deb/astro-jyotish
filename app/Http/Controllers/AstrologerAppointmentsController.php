@@ -22,7 +22,7 @@ class AstrologerAppointmentsController extends Controller
         $apiService = app(\App\Services\Api\Clients\AstrologerApiService::class);
         $token = session('auth.api_token');
         $response = $apiService->getAstrologerBookings($userId, $token);
-        dd($response);
+       // dd($response);
         $appointments = $response['data'] ?? [];
 
         return view('astrologer.appointments', compact('appointments'));
@@ -37,8 +37,15 @@ class AstrologerAppointmentsController extends Controller
         $response = $apiService->getAstrologerBookings($userId, $token);
         $appointments = $response['data'] ?? [];
         $appointment = collect($appointments)->firstWhere('id', $id);
-        $suggestedProducts = [];
+        $astrologer = is_array($response['astrologer'] ?? null) ? $response['astrologer'] : null;
 
+        if (is_array($appointment) && $astrologer !== null) {
+            $appointment['astrologer'] = $appointment['astrologer'] ?? $astrologer;
+            $appointment['astrologer_id'] = $appointment['astrologer_id'] ?? ($astrologer['id'] ?? null);
+        }
+
+        $suggestedProducts = [];
+         //dd($appointment);
         if (is_array($appointment) && !empty($appointment)) {
             $astrologerId = $this->firstNumericValue($appointment, [
                 'astrologer_id',

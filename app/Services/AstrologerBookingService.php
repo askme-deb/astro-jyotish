@@ -59,6 +59,11 @@ class AstrologerBookingService
         return $this->apiClient->rescheduleAstrologerBooking($bookingId, $payload, $token);
     }
 
+    public function cancelBooking($bookingId, $token = null)
+    {
+        return $this->apiClient->cancelBooking($bookingId, $token);
+    }
+
     /**
      * Fetch bookings for a specific astrologer (admin/astrologer view).
      */

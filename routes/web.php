@@ -58,6 +58,7 @@ Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
 Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
 Route::get('/booking/{id}', [MyBookingsController::class, 'show'])->name('booking.details');
+Route::get('/booking/{id}/notes-pdf', [MyBookingsController::class, 'downloadNotesPdf'])->middleware('api.user.auth')->name('booking.notesPdf');
 Route::get('/booking/{id}/invoice', [InvoiceController::class, 'download'])->middleware('api.user.auth')->name('booking.invoice.download');
 Route::post('/booking/{id}/reschedule', [MyBookingsController::class, 'reschedule'])->middleware('api.user.auth')->name('booking.reschedule');
 Route::match(['GET', 'POST'], '/booking/{id}/join-consultation', [MyBookingsController::class, 'joinConsultation'])->name('booking.consultation.join');
@@ -76,6 +77,7 @@ use App\Http\Controllers\AstrologerAppointmentDetailsController;
     Route::post('/astrologer/appointments/{id}/suggested-products/remove', [AstrologerAppointmentDetailsController::class, 'removeSuggestedProduct'])->name('astrologer.appointment.removeSuggestedProduct');
     Route::post('/astrologer/appointments/{id}/save-notes', [AstrologerAppointmentDetailsController::class, 'saveNotes'])->name('astrologer.appointment.saveNotes');
     Route::post('/astrologer/appointments/{id}/finalize-notes', [AstrologerAppointmentDetailsController::class, 'finalizeNotes'])->name('astrologer.appointment.finalizeNotes');
+    Route::get('/astrologer/appointments/{id}/notes-pdf', [AstrologerAppointmentDetailsController::class, 'downloadNotesPdf'])->name('astrologer.appointment.notesPdf');
     Route::post('/astrologer/appointments/{id}/cancel', [AstrologerAppointmentDetailsController::class, 'cancel'])->name('astrologer.appointment.cancel');
     Route::post('/astrologer/appointments/{id}/reschedule', [AstrologerAppointmentDetailsController::class, 'reschedule'])->name('astrologer.appointment.reschedule');
     Route::post('/astrologer/appointments/{id}/send-link', [\App\Http\Controllers\AstrologerAppointmentDetailsController::class, 'sendCustomerJoinLink'])->name('astrologer.appointment.sendLink');

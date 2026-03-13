@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\AstrologerBookingService;
 use App\Services\ConsultationStateService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Mail;
@@ -14,10 +15,16 @@ class AstrologerAppointmentDetailsController extends Controller
 {
     private const STARTABLE_VIDEO_STATUSES = ['confirmed'];
     private const ENDABLE_VIDEO_STATUSES = ['ready_to_start', 'in_progress'];
+    private const CANCELLED_APPOINTMENT_MESSAGE = 'This appointment has been cancelled. All actions are disabled.';
     private ?array $productGradeLookup = null;
 
     public function start($id, Request $request)
     {
+        $appointment = $this->getAppointmentById($id);
+        if ($appointment && $this->isAppointmentCancelled($appointment)) {
+            return Redirect::back()->with('error', self::CANCELLED_APPOINTMENT_MESSAGE);
+        }
+
         // TODO: Implement logic to start the consultation
         // Example: Update appointment status, log start time, etc.
         return Redirect::back()->with('success', 'Consultation started.');
@@ -25,6 +32,15 @@ class AstrologerAppointmentDetailsController extends Controller
 
     public function startVideo($id, Request $request)
     {
+        $appointment = $this->getAppointmentById($id);
+        if (!$appointment) {
+            return Redirect::back()->with('error', 'Appointment not found.');
+        }
+
+        if ($this->isAppointmentCancelled($appointment)) {
+            return Redirect::back()->with('error', self::CANCELLED_APPOINTMENT_MESSAGE);
+        }
+
         // Example: Call VideoSDK API to create a meeting room
         $apiKey = config('services.videosdk.api_key');
         $apiSecret = config('services.videosdk.api_secret');
@@ -61,6 +77,12 @@ class AstrologerAppointmentDetailsController extends Controller
         $appointment = $this->getAppointmentById($id);
         if (!$appointment) {
             return $this->respondProductSearchError($request, 'Appointment not found.', 404);
+        }
+
+        if ($this->isAppointmentCancelled($appointment)) {
+            return $this->respondProductSearchError($request, self::CANCELLED_APPOINTMENT_MESSAGE, 422, [
+                'cancelled' => true,
+            ]);
         }
 
         if ($this->isAppointmentFinalized($appointment)) {
@@ -130,6 +152,10 @@ class AstrologerAppointmentDetailsController extends Controller
             return $this->respondNoteError($request, 'Appointment not found.', 404);
         }
 
+        if ($this->isAppointmentCancelled($appointment)) {
+            return $this->respondNoteError($request, self::CANCELLED_APPOINTMENT_MESSAGE, 422);
+        }
+
         if ($this->isAppointmentFinalized($appointment)) {
             return $this->respondNoteError($request, 'This appointment has already been finalized. Notes can no longer be edited.', 422);
         }
@@ -180,6 +206,10 @@ class AstrologerAppointmentDetailsController extends Controller
             return $this->respondNoteError($request, 'Appointment not found.', 404);
         }
 
+        if ($this->isAppointmentCancelled($appointment)) {
+            return $this->respondNoteError($request, self::CANCELLED_APPOINTMENT_MESSAGE, 422);
+        }
+
         if ($this->isAppointmentFinalized($appointment)) {
             return $this->respondNoteError($request, 'This appointment has already been finalized.', 422);
         }
@@ -203,6 +233,34 @@ class AstrologerAppointmentDetailsController extends Controller
         return Redirect::back()->with('success', $result['message'] ?? 'Notes finalized successfully.');
     }
 
+    public function downloadNotesPdf($id, Request $request)
+    {
+        if (!$this->currentUserIsAstrologer()) {
+            return Redirect::back()->with('error', 'Only astrologers can download consultation notes.');
+        }
+
+        $appointment = $this->getAppointmentById($id);
+
+        if (!is_array($appointment) || $appointment === [] || (count($appointment) === 1 && isset($appointment['id']))) {
+            return Redirect::back()->with('error', 'Appointment not found.');
+        }
+
+        if ($this->isAppointmentCancelled($appointment)) {
+            return Redirect::back()->with('error', self::CANCELLED_APPOINTMENT_MESSAGE);
+        }
+
+        $filename = 'consultation-note-bkng' . (int) $appointment['id'] . '.pdf';
+
+        $pdf = Pdf::loadView('astrologer.appointment-note-pdf', [
+            'appointment' => $appointment,
+            'generatedAt' => now(),
+            'logoPath' => public_path('assets/images/Logo.png'),
+            'appName' => config('app.name', 'Astro Consultant'),
+        ])->setPaper('a4');
+
+        return $pdf->download($filename);
+    }
+
     public function addSuggestedProduct($id, Request $request)
     {
         if (!$this->currentUserIsAstrologer()) {
@@ -212,6 +270,12 @@ class AstrologerAppointmentDetailsController extends Controller
         $appointment = $this->getAppointmentById($id);
         if (!$appointment) {
             return $this->respondSuggestedProductError($request, 'Appointment not found.', 404);
+        }
+
+        if ($this->isAppointmentCancelled($appointment)) {
+            return $this->respondSuggestedProductError($request, self::CANCELLED_APPOINTMENT_MESSAGE, 422, [
+                'cancelled' => true,
+            ]);
         }
 
         if ($this->isAppointmentFinalized($appointment)) {
@@ -291,6 +355,12 @@ class AstrologerAppointmentDetailsController extends Controller
             return $this->respondSuggestedProductError($request, 'Appointment not found.', 404);
         }
 
+        if ($this->isAppointmentCancelled($appointment)) {
+            return $this->respondSuggestedProductError($request, self::CANCELLED_APPOINTMENT_MESSAGE, 422, [
+                'cancelled' => true,
+            ]);
+        }
+
         if ($this->isAppointmentFinalized($appointment)) {
             return $this->respondSuggestedProductError($request, 'This appointment has already been finalized. Suggested products can no longer be changed.', 422, [
                 'finalized' => true,
@@ -342,11 +412,45 @@ class AstrologerAppointmentDetailsController extends Controller
         return Redirect::back()->with('success', $result['message'] ?? 'Suggested product removed successfully.');
     }
 
-    public function cancel($id, Request $request)
+    public function cancel($id, Request $request, AstrologerBookingService $bookingService)
     {
-        // TODO: Implement logic to cancel the appointment
-        // Example: Update appointment status to cancelled
-        return Redirect::back()->with('success', 'Appointment cancelled.');
+        if (!$this->currentUserIsAstrologer()) {
+            return $this->jsonOrRedirectError($request, 'Only astrologers can cancel appointments.', 403);
+        }
+
+        $appointment = $this->getAppointmentById($id);
+        if (!$appointment) {
+            return $this->jsonOrRedirectError($request, 'Appointment not found.', 404);
+        }
+
+        $status = (string) ($appointment['status'] ?? '');
+        $blockedStatuses = config('booking.cancel_blocked_statuses', []);
+
+        if (in_array($status, $blockedStatuses, true)) {
+            return $this->jsonOrRedirectError($request, 'This appointment can no longer be cancelled.', 422, [
+                'status' => $status,
+            ]);
+        }
+
+        $result = $bookingService->cancelBooking((int) $id, $this->getApiToken());
+        $succeeded = !($result['error'] ?? false) && (bool) ($result['status'] ?? $result['success'] ?? true);
+
+        if (!$succeeded) {
+            return $this->jsonOrRedirectError($request, $result['message'] ?? 'Unable to cancel appointment right now.', 422);
+        }
+
+        app(ConsultationStateService::class)->forget((int) $id);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'] ?? 'Appointment cancelled successfully.',
+                'status' => 'cancelled',
+                'data' => $result['data'] ?? $result,
+            ]);
+        }
+
+        return Redirect::back()->with('success', $result['message'] ?? 'Appointment cancelled successfully.');
     }
 
     public function reschedule($id, Request $request, AstrologerBookingService $bookingService)
@@ -421,6 +525,10 @@ class AstrologerAppointmentDetailsController extends Controller
             return back()->with('error', 'Appointment not found.');
         }
 
+        if ($this->isAppointmentCancelled($appointment)) {
+            return back()->with('error', self::CANCELLED_APPOINTMENT_MESSAGE);
+        }
+
         $productCategories = $this->getProductCategories();
         $productGrades = $this->getProductGrades();
         // Reset the session flag after showing the video page
@@ -432,6 +540,10 @@ class AstrologerAppointmentDetailsController extends Controller
     public function sendCustomerJoinLink($id)
     {
         $appointment = $this->getAppointmentById($id); // Assume this method exists or replace with actual logic
+        if ($appointment && $this->isAppointmentCancelled($appointment)) {
+            return back()->with('error', self::CANCELLED_APPOINTMENT_MESSAGE);
+        }
+
         if (!$appointment || empty($appointment['customer_email'])) {
             return back()->with('error', 'Customer email not found.');
         }
@@ -453,17 +565,24 @@ class AstrologerAppointmentDetailsController extends Controller
         $apiService = $this->getApiService();
         $stateService = app(ConsultationStateService::class);
         $appointment = null;
+        $astrologer = null;
 
         if ($astrologerId && $this->currentUserIsAstrologer()) {
             $response = $apiService->getAstrologerBookings($astrologerId, $token);
             $appointment = collect($response['data'] ?? [])->firstWhere('id', (int) $id);
+            $astrologer = is_array($response['astrologer'] ?? null) ? $response['astrologer'] : null;
         } else {
             $response = $apiService->getBookings($token);
             $appointment = collect($response['data'] ?? [])->firstWhere('id', (int) $id);
         }
 
         if (!is_array($appointment)) {
-            $appointment = ['id' => (int) $id];
+            return null;
+        }
+
+        if ($astrologer !== null) {
+            $appointment['astrologer'] = $appointment['astrologer'] ?? $astrologer;
+            $appointment['astrologer_id'] = $appointment['astrologer_id'] ?? ($astrologer['id'] ?? null);
         }
 
         return $stateService->mergeIntoBooking($appointment, (int) $id);
@@ -482,6 +601,10 @@ class AstrologerAppointmentDetailsController extends Controller
         $appointment = $this->getAppointmentById($id);
         if (!$appointment) {
             return $this->jsonError('Appointment not found.', 404);
+        }
+
+        if ($this->isAppointmentCancelled($appointment)) {
+            return $this->jsonError(self::CANCELLED_APPOINTMENT_MESSAGE, 422, ['status' => 'cancelled']);
         }
 
         $status = $appointment['status'] ?? null;
@@ -532,6 +655,10 @@ class AstrologerAppointmentDetailsController extends Controller
             return $this->jsonError('Appointment not found.', 404);
         }
 
+        if ($this->isAppointmentCancelled($appointment)) {
+            return $this->jsonError(self::CANCELLED_APPOINTMENT_MESSAGE, 422, ['status' => 'cancelled']);
+        }
+
         $status = $appointment['status'] ?? null;
         if (!in_array($status, self::ENDABLE_VIDEO_STATUSES, true)) {
             return $this->jsonError($this->endBlockedMessage($status), 422, ['status' => $status]);
@@ -574,6 +701,12 @@ class AstrologerAppointmentDetailsController extends Controller
             return redirect()
                 ->route('astrologer.appointments')
                 ->with('error', 'Appointment not found.');
+        }
+
+        if ($this->isAppointmentCancelled($appointment)) {
+            return redirect()
+                ->route('astrologer.appointment.video', ['id' => $id])
+                ->with('error', self::CANCELLED_APPOINTMENT_MESSAGE);
         }
 
         $status = $appointment['status'] ?? null;
@@ -619,6 +752,11 @@ class AstrologerAppointmentDetailsController extends Controller
         return in_array('Astrologer', $roles, true);
     }
 
+    private function isAppointmentCancelled(array $appointment): bool
+    {
+        return strtolower((string) ($appointment['status'] ?? '')) === 'cancelled';
+    }
+
     private function isAppointmentFinalized(array $appointment): bool
     {
         $finalConfirmation = $appointment['final_confirmation_from_astrologer'] ?? false;
@@ -637,6 +775,10 @@ class AstrologerAppointmentDetailsController extends Controller
 
     private function startBlockedMessage(?string $status): string
     {
+        if ($status === 'cancelled') {
+            return self::CANCELLED_APPOINTMENT_MESSAGE;
+        }
+
         if ($status === 'ready_to_start') {
             return 'Video session is already ready for the customer to join.';
         }
@@ -654,6 +796,10 @@ class AstrologerAppointmentDetailsController extends Controller
 
     private function endBlockedMessage(?string $status): string
     {
+        if ($status === 'cancelled') {
+            return self::CANCELLED_APPOINTMENT_MESSAGE;
+        }
+
         if ($status === 'completed') {
             return 'Video session has already been completed.';
         }
@@ -690,6 +836,18 @@ class AstrologerAppointmentDetailsController extends Controller
     }
 
     private function respondSuggestedProductError(Request $request, string $message, int $statusCode, array $extra = [])
+    {
+        if ($request->expectsJson()) {
+            return response()->json(array_merge([
+                'success' => false,
+                'message' => $message,
+            ], $extra), $statusCode);
+        }
+
+        return Redirect::back()->with('error', $message);
+    }
+
+    private function jsonOrRedirectError(Request $request, string $message, int $statusCode, array $extra = [])
     {
         if ($request->expectsJson()) {
             return response()->json(array_merge([

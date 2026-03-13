@@ -4,6 +4,133 @@
 @php
     $rescheduleBlockedStatuses = config('booking.reschedule_blocked_statuses', []);
     $isRescheduleDisabled = isset($booking) && in_array($booking['status'] ?? null, $rescheduleBlockedStatuses, true);
+    $isNoteFinalized = isset($booking)
+        && ((bool) ($booking['final_confirmation_from_astrologer'] ?? false)
+        || (($booking['astrologer_note_status'] ?? null) === 'finalized'));
+    $bookingRoot = isset($booking) && is_array($booking) ? $booking : [];
+    $astrologerSources = array_values(array_filter([
+        is_array(data_get($bookingRoot, 'astrologer')) ? data_get($bookingRoot, 'astrologer') : null,
+        is_array(data_get($bookingRoot, 'assigned_astrologer')) ? data_get($bookingRoot, 'assigned_astrologer') : null,
+        is_array(data_get($bookingRoot, 'consultant')) ? data_get($bookingRoot, 'consultant') : null,
+        is_array(data_get($bookingRoot, 'astrologer.user')) ? data_get($bookingRoot, 'astrologer.user') : null,
+        is_array(data_get($bookingRoot, 'assigned_astrologer.user')) ? data_get($bookingRoot, 'assigned_astrologer.user') : null,
+    ], function ($source) {
+        return is_array($source) && $source !== [];
+    }));
+    $resolveBookingValue = function (array $paths, $default = null) use ($bookingRoot) {
+        foreach ($paths as $path) {
+            $value = data_get($bookingRoot, $path);
+
+            if (is_string($value)) {
+                $value = trim($value);
+            }
+
+            if ($value !== null && $value !== '') {
+                return $value;
+            }
+        }
+
+        return $default;
+    };
+    $resolveAstrologerValue = function (array $paths, $default = null) use ($astrologerSources) {
+        foreach ($astrologerSources as $source) {
+            foreach ($paths as $path) {
+                $value = data_get($source, $path);
+
+                if (is_string($value)) {
+                    $value = trim($value);
+                }
+
+                if ($value !== null && $value !== '') {
+                    return $value;
+                }
+            }
+        }
+
+        return $default;
+    };
+    $formatBookingList = function ($value) {
+        if (!is_array($value)) {
+            return trim((string) $value);
+        }
+
+        return collect($value)->map(function ($item) {
+            if (is_array($item)) {
+                return $item['name'] ?? $item['title'] ?? $item['label'] ?? $item['value'] ?? null;
+            }
+
+            return $item;
+        })->filter(function ($item) {
+            return $item !== null && trim((string) $item) !== '';
+        })->join(', ');
+    };
+    $astrologerName = trim((string) ($resolveBookingValue([
+        'astrologer_name',
+        'astrologer_full_name',
+    ]) ?? $resolveAstrologerValue([
+        'name',
+        'full_name',
+        'display_name',
+    ], '')));
+    if ($astrologerName === '') {
+        $astrologerName = trim(
+            ((string) ($resolveBookingValue(['astrologer_first_name']) ?? $resolveAstrologerValue(['first_name'], '')))
+            . ' '
+            . ((string) ($resolveBookingValue(['astrologer_last_name']) ?? $resolveAstrologerValue(['last_name'], '')))
+        );
+    }
+    $astrologerEmail = trim((string) ($resolveBookingValue([
+        'astrologer_email',
+    ]) ?? $resolveAstrologerValue([
+        'email',
+        'user.email',
+    ], '')));
+    $astrologerPhone = trim((string) ($resolveBookingValue([
+        'astrologer_mobile_no',
+        'astrologer_phone',
+        'astrologer_contact_no',
+    ]) ?? $resolveAstrologerValue([
+        'mobile_no',
+        'phone',
+        'contact_no',
+        'user.mobile_no',
+        'user.phone',
+        'user.contact_no',
+    ], '')));
+    $astrologerExperience = $resolveBookingValue([
+        'astrologer_experience',
+    ]) ?? $resolveAstrologerValue([
+        'experience',
+        'exp_in_years',
+    ]);
+    $astrologerLanguages = $formatBookingList($resolveBookingValue([
+        'astrologer_languages',
+    ]) ?? $resolveAstrologerValue([
+        'languages',
+        'language',
+    ], []));
+    $astrologerSkills = $formatBookingList($resolveBookingValue([
+        'astrologer_skills',
+        'astrologer_specializations',
+    ]) ?? $resolveAstrologerValue([
+        'skills',
+        'specializations',
+        'specialisations',
+    ], []));
+    $astrologerDesignation = trim((string) ($resolveBookingValue([
+        'astrologer_designation',
+        'astrologer_qualification',
+    ]) ?? $resolveAstrologerValue([
+        'designation',
+        'qualification',
+        'title',
+    ], '')));
+    $astrologerDisplayName = $astrologerName !== '' ? $astrologerName : 'Astrologer Consultant';
+    $customerDisplayName = trim((string) data_get($bookingRoot, 'user.first_name') . ' ' . (string) data_get($bookingRoot, 'user.last_name'));
+    if ($customerDisplayName === '') {
+        $customerDisplayName = trim((string) ($booking['name'] ?? ''));
+    }
+    $noteDocumentLogo = asset('assets/images/Logo.png');
     $bookingDetailsPageData = isset($booking)
         ? [
             'bookingId' => $booking['id'],
@@ -136,6 +263,10 @@
         pointer-events: none;
         opacity: 0.8;
     }
+    .btn.is-loading {
+        pointer-events: none;
+        opacity: 0.8;
+    }
     .suggested-products-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -168,6 +299,285 @@
     .booking-actions .btn.disabled {
         pointer-events: none;
         opacity: 0.65;
+    }
+    .note-document-paper {
+        position: relative;
+        width: 100%;
+        max-width: 794px;
+        margin: 0 auto;
+        padding: 32px 34px 40px;
+        background: #fff;
+        border: 1px solid #d9d9d9;
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        color: #1f2937;
+    }
+    .note-document-heading {
+        margin-bottom: 1rem;
+    }
+    .note-document-letterhead {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.85rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 2px solid #d8d8d8;
+    }
+    .note-document-mark {
+        width: 54px;
+        flex: 0 0 54px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 0.15rem;
+    }
+    .note-document-mark img {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+    }
+    .note-document-brand {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .note-document-title {
+        font-size: 1.18rem;
+        font-weight: 700;
+        color: #111827;
+        text-transform: uppercase;
+    }
+    .note-document-doctor {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827;
+        margin-top: 0.18rem;
+        line-height: 1.3;
+    }
+    .note-document-subtitle {
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+    .note-document-summary {
+        margin-top: 0.22rem;
+        max-width: 540px;
+        line-height: 1.55;
+    }
+    .note-document-contact {
+        margin-top: 0.45rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem 0.9rem;
+        font-size: 0.8rem;
+        color: #374151;
+    }
+    .note-document-contact span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .note-document-contact strong {
+        color: #111827;
+    }
+    .note-document-meta {
+        flex: 0 0 210px;
+        text-align: right;
+        font-size: 0.76rem;
+        color: #4b5563;
+        padding-top: 0.15rem;
+    }
+    .note-document-meta strong {
+        display: block;
+        color: #111827;
+        font-size: 0.86rem;
+        margin-bottom: 0.4rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .note-document-meta-grid {
+        display: grid;
+        gap: 0.35rem;
+    }
+    .note-document-meta-label {
+        color: #6b7280;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.62rem;
+    }
+    .note-document-meta-value {
+        color: #111827;
+        font-weight: 600;
+        text-align: right;
+    }
+    .note-document-fields {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0.8rem;
+        align-items: end;
+        margin-top: 0.6rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px dashed #c7cdd6;
+    }
+    .note-document-field-label {
+        display: block;
+        font-size: 0.67rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 0.15rem;
+    }
+    .note-document-field-value {
+        display: block;
+        min-height: 1.35rem;
+        padding-bottom: 0.18rem;
+        border-bottom: 1px dotted #9ca3af;
+        font-size: 0.88rem;
+        color: #111827;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .note-document-specialties {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.9rem;
+        padding-top: 0.7rem;
+        margin-top: 0.65rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    .note-document-specialty-card-full {
+        grid-column: 1 / -1;
+    }
+    .note-document-specialty-label {
+        display: block;
+        font-size: 0.64rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #6b7280;
+        margin-bottom: 0.28rem;
+    }
+    .note-document-specialty-value {
+        display: block;
+        font-size: 0.88rem;
+        line-height: 1.45;
+        color: #111827;
+        font-weight: 600;
+    }
+    .note-document-writing-area {
+        position: relative;
+        min-height: 760px;
+        padding: 0.2rem 0 0;
+    }
+    .note-document-watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0.09;
+        pointer-events: none;
+        user-select: none;
+        z-index: 0;
+    }
+    .note-document-watermark img {
+        width: 180px;
+        height: 180px;
+        object-fit: contain;
+        filter: grayscale(1);
+    }
+    .note-document-rx {
+        position: relative;
+        z-index: 1;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1;
+        margin-bottom: 0.45rem;
+    }
+    .note-document-body {
+        position: relative;
+        z-index: 1;
+        font-size: 0.98rem;
+        line-height: 2.05;
+        word-break: break-word;
+        padding: 0.15rem 0 0;
+        min-height: 700px;
+        background-image: repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 31px,
+            #eef2f7 31px,
+            #eef2f7 32px
+        );
+    }
+    .note-document-body p {
+        margin-bottom: 1.1rem;
+        padding: 0 0.15rem;
+        background: #fff;
+        display: inline;
+        box-shadow: 0 0 0 6px #fff;
+    }
+    .note-document-empty {
+        color: #6b7280;
+        font-style: italic;
+    }
+    .note-document-footer {
+        position: relative;
+        z-index: 1;
+        margin-top: 1rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .note-document-footer-card {
+        min-width: 220px;
+        max-width: 280px;
+        text-align: right;
+        font-size: 0.74rem;
+        line-height: 1.5;
+        color: #4b5563;
+    }
+    .note-document-footer-name {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #111827;
+    }
+    .note-document-footer-line {
+        display: block;
+    }
+    @media (max-width: 991.98px) {
+        .note-document-paper {
+            padding: 24px 18px;
+        }
+        .note-document-letterhead {
+            flex-direction: column;
+        }
+        .note-document-summary {
+            max-width: none;
+        }
+        .note-document-meta {
+            flex-basis: auto;
+            text-align: left;
+            width: 100%;
+        }
+        .note-document-meta-value {
+            text-align: left;
+        }
+        .note-document-fields,
+        .note-document-specialties {
+            grid-template-columns: 1fr;
+        }
+        .note-document-watermark img {
+            width: 132px;
+            height: 132px;
+        }
+        .note-document-footer {
+            justify-content: flex-start;
+        }
+        .note-document-footer-card {
+            min-width: 0;
+            text-align: left;
+        }
     }
 </style>
 
@@ -232,8 +642,125 @@
                 </div>
             </div>
             <div class="booking-details-col mt-4" style="max-width:none;">
-                <div class="booking-details-label mb-2"><i class="fa-solid fa-note-sticky me-1"></i> Astrologer Note</div>
-                <div class="booking-details-value mb-0" style="white-space:pre-line;">{{ (int) ($booking['final_confirmation_from_astrologer'] ?? 0) === 1 ? ($booking['astrologer_note'] ?? 'No note has been shared by the astrologer yet.') : 'No note has been shared by the astrologer yet.' }}</div>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div class="booking-details-label mb-0"><i class="fa-solid fa-note-sticky me-1"></i> Astrologer Note</div>
+                    @if($isNoteFinalized)
+                        <a href="{{ route('booking.notesPdf', ['id' => $booking['id']]) }}" id="booking-download-note-pdf-btn" class="btn btn-outline-secondary btn-sm">
+                            <i class="fa-solid fa-file-arrow-down me-1"></i> Download PDF
+                        </a>
+                    @endif
+                </div>
+                @if($isNoteFinalized)
+                    <div class="note-document-paper">
+                        <div class="note-document-heading">
+                            <div class="note-document-letterhead">
+                                <div class="note-document-mark">
+                                    <img src="{{ $noteDocumentLogo }}" alt="{{ config('app.name') }} logo">
+                                </div>
+                                <div class="note-document-brand">
+                                    <div class="note-document-title">Astrologer Consultation Notes</div>
+                                    <div class="note-document-doctor">
+                                        {{ $astrologerDisplayName }}
+                                        @if($astrologerDesignation !== '')
+                                            <span class="note-document-subtitle d-block mt-1">{{ $astrologerDesignation }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="note-document-subtitle note-document-summary">Consultation summary, remedies, and post-session guidance</div>
+                                    <div class="note-document-contact">
+                                        @if($astrologerEmail !== '')
+                                            <span><strong>Email:</strong> {{ $astrologerEmail }}</span>
+                                        @endif
+                                        @if($astrologerPhone !== '')
+                                            <span><strong>Phone:</strong> {{ $astrologerPhone }}</span>
+                                        @endif
+                                        @if($astrologerEmail === '' && $astrologerPhone === '')
+                                            <span class="note-document-subtitle">Professional consultation summary</span>
+                                        @endif
+                                    </div>
+                                    <div class="note-document-specialties">
+                                        <div class="note-document-specialty-card">
+                                            <div class="note-document-specialty-label">Experience</div>
+                                            <div class="note-document-specialty-value">{{ ($astrologerExperience !== null && $astrologerExperience !== '') ? $astrologerExperience . ' years' : 'Not specified' }}</div>
+                                        </div>
+                                        <div class="note-document-specialty-card">
+                                            <div class="note-document-specialty-label">Languages</div>
+                                            <div class="note-document-specialty-value">{{ $astrologerLanguages !== '' ? $astrologerLanguages : 'Not specified' }}</div>
+                                        </div>
+                                        <div class="note-document-specialty-card note-document-specialty-card-full">
+                                            <div class="note-document-specialty-label">Specializations</div>
+                                            <div class="note-document-specialty-value">{{ $astrologerSkills !== '' ? $astrologerSkills : 'Not specified' }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="note-document-meta">
+                                    <strong>Consultation Record</strong>
+                                    <div class="note-document-meta-grid">
+                                        <div>
+                                            <span class="note-document-meta-label">Booking ID</span>
+                                            <span class="note-document-meta-value d-block">BKNG{{ $booking['id'] }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="note-document-meta-label">Date</span>
+                                            <span class="note-document-meta-value d-block">{{ !empty($booking['scheduled_at']) ? \Carbon\Carbon::parse($booking['scheduled_at'])->format('d M Y') : now()->format('d M Y') }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="note-document-meta-label">Time</span>
+                                            <span class="note-document-meta-value d-block">{{ !empty($booking['scheduled_at']) ? \Carbon\Carbon::parse($booking['scheduled_at'])->format('h:i A') : '-' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="note-document-fields">
+                                <div class="note-document-field">
+                                    <span class="note-document-field-label">Name</span>
+                                    <span class="note-document-field-value">{{ $customerDisplayName !== '' ? $customerDisplayName : 'Not provided' }}</span>
+                                </div>
+                                <div class="note-document-field">
+                                    <span class="note-document-field-label">Consultation</span>
+                                    <span class="note-document-field-value">{{ ucfirst($booking['consultation_type'] ?? 'Consultation') }}</span>
+                                </div>
+                                <div class="note-document-field">
+                                    <span class="note-document-field-label">Date</span>
+                                    <span class="note-document-field-value">{{ !empty($booking['scheduled_at']) ? \Carbon\Carbon::parse($booking['scheduled_at'])->format('d M Y') : '-' }}</span>
+                                </div>
+                                <div class="note-document-field">
+                                    <span class="note-document-field-label">Time</span>
+                                    <span class="note-document-field-value">{{ !empty($booking['scheduled_at']) ? \Carbon\Carbon::parse($booking['scheduled_at'])->format('h:i A') : '-' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="note-document-writing-area">
+                            <div class="note-document-watermark" aria-hidden="true">
+                                <img src="{{ $noteDocumentLogo }}" alt="">
+                            </div>
+                            <div class="note-document-rx">Astrological Advice</div>
+                            <div class="note-document-body">
+                                @php
+                                    $finalizedNote = trim((string) ($booking['astrologer_note'] ?? ''));
+                                @endphp
+                                @if($finalizedNote !== '')
+                                    {!! nl2br(e($finalizedNote)) !!}
+                                @else
+                                    <p class="note-document-empty mb-0">No astrologer note was provided for this appointment.</p>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="note-document-footer">
+                            <div class="note-document-footer-card">
+                                <span class="note-document-footer-name">{{ $astrologerDisplayName }}</span>
+                                @if($astrologerPhone !== '')
+                                    <span class="note-document-footer-line">Phone: {{ $astrologerPhone }}</span>
+                                @endif
+                                @if($astrologerEmail !== '')
+                                    <span class="note-document-footer-line">Email: {{ $astrologerEmail }}</span>
+                                @endif
+                                <span class="note-document-footer-line">Reference: BKNG{{ $booking['id'] }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <div class="booking-details-value mb-0">No note has been shared by the astrologer yet.</div>
+                @endif
             </div>
             <div class="booking-details-col mt-4" style="max-width:none;">
                 <div class="booking-details-label mb-3"><i class="fa-solid fa-gem me-1"></i> Astrologer Suggested Products</div>
@@ -322,6 +849,7 @@
         const badge = document.getElementById('booking-status-badge');
         const joinBtn = document.getElementById('booking-join-consultation-btn');
         const invoiceBtn = document.getElementById('booking-download-invoice-btn');
+        const notePdfBtn = document.getElementById('booking-download-note-pdf-btn');
         const scheduledDateCell = document.getElementById('booking-scheduled-date-cell');
         const scheduledSlotCell = document.getElementById('booking-scheduled-slot-cell');
 
@@ -347,31 +875,35 @@
             });
         }
 
-        if (invoiceBtn) {
-            const defaultInvoiceHtml = invoiceBtn.innerHTML;
+        function attachDownloadHandler(button, loadingHtml) {
+            if (!button) {
+                return;
+            }
 
-            invoiceBtn.addEventListener('click', function(event) {
+            const defaultButtonHtml = button.innerHTML;
+
+            button.addEventListener('click', function(event) {
                 let resetTimer;
                 const downloadFrame = document.createElement('iframe');
 
                 event.preventDefault();
 
-                if (invoiceBtn.classList.contains('is-loading')) {
+                if (button.classList.contains('is-loading')) {
                     return;
                 }
 
-                invoiceBtn.classList.add('is-loading', 'disabled');
-                invoiceBtn.setAttribute('aria-disabled', 'true');
-                invoiceBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Preparing Invoice';
+                button.classList.add('is-loading', 'disabled');
+                button.setAttribute('aria-disabled', 'true');
+                button.innerHTML = loadingHtml;
 
                 downloadFrame.style.display = 'none';
-                downloadFrame.src = invoiceBtn.href;
+                downloadFrame.src = button.href;
                 document.body.appendChild(downloadFrame);
 
-                function resetInvoiceButton() {
-                    invoiceBtn.classList.remove('is-loading', 'disabled');
-                    invoiceBtn.removeAttribute('aria-disabled');
-                    invoiceBtn.innerHTML = defaultInvoiceHtml;
+                function resetDownloadButton() {
+                    button.classList.remove('is-loading', 'disabled');
+                    button.removeAttribute('aria-disabled');
+                    button.innerHTML = defaultButtonHtml;
 
                     window.setTimeout(function() {
                         if (downloadFrame.parentNode) {
@@ -385,14 +917,17 @@
                         window.clearTimeout(resetTimer);
                     }
 
-                    resetInvoiceButton();
+                    resetDownloadButton();
                 });
 
                 resetTimer = window.setTimeout(function() {
-                    resetInvoiceButton();
+                    resetDownloadButton();
                 }, 4000);
             });
         }
+
+        attachDownloadHandler(invoiceBtn, '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Preparing Invoice');
+        attachDownloadHandler(notePdfBtn, '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Preparing PDF');
 
         window.addEventListener('booking-reschedule:success', function(event) {
             if (!event.detail || Number(event.detail.bookingId) !== Number(bookingId)) {
