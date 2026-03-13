@@ -239,6 +239,25 @@ class AstrologerApiService extends BaseApiClient
         }
     }
 
+    public function finalizeAstrologerNote($bookingId, $token)
+    {
+        $options = [
+            'json' => [
+                'astrologer_note_status' => 'finalized',
+                'final_confirmation_from_astrologer' => true,
+            ],
+            'headers' => [
+                'Authorization' => 'Bearer ' . $token,
+            ],
+        ];
+
+        try {
+            return $this->request('PATCH', "bookings/{$bookingId}/astrologer-note-status", $options);
+        } catch (\Throwable $e) {
+            return ['error' => true, 'message' => $e->getMessage()];
+        }
+    }
+
     /**
      * Search products for astrologer suggestions using the external catalog API.
      */
@@ -294,6 +313,43 @@ class AstrologerApiService extends BaseApiClient
 
         try {
             return $this->request('POST', 'astrologer-carts', $options);
+        } catch (\Throwable $e) {
+            return ['error' => true, 'message' => $e->getMessage()];
+        }
+    }
+    public function getAstrologerSuggestedProducts(array $payload, $token = null)
+    {
+        $options = [
+            'json' => $payload,
+        ];
+
+        if ($token) {
+            $options['headers'] = [
+                'Authorization' => 'Bearer ' . $token,
+            ];
+        }
+
+        try {
+            return $this->request('POST', 'astrologer-suggested-products', $options);
+        } catch (\Throwable $e) {
+            return ['error' => true, 'message' => $e->getMessage()];
+        }
+    }
+
+    public function removeSuggestedProduct(array $payload, $token = null)
+    {
+        $options = [
+            'json' => $payload,
+        ];
+
+        if ($token) {
+            $options['headers'] = [
+                'Authorization' => 'Bearer ' . $token,
+            ];
+        }
+
+        try {
+            return $this->request('POST', 'astrologer/remove-suggested-product', $options);
         } catch (\Throwable $e) {
             return ['error' => true, 'message' => $e->getMessage()];
         }

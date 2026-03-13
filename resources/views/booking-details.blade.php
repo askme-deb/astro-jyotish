@@ -233,11 +233,11 @@
             </div>
             <div class="booking-details-col mt-4" style="max-width:none;">
                 <div class="booking-details-label mb-2"><i class="fa-solid fa-note-sticky me-1"></i> Astrologer Note</div>
-                <div class="booking-details-value mb-0" style="white-space:pre-line;">{{ $booking['astrologer_note'] ?? 'No note has been shared by the astrologer yet.' }}</div>
+                <div class="booking-details-value mb-0" style="white-space:pre-line;">{{ (int) ($booking['final_confirmation_from_astrologer'] ?? 0) === 1 ? ($booking['astrologer_note'] ?? 'No note has been shared by the astrologer yet.') : 'No note has been shared by the astrologer yet.' }}</div>
             </div>
             <div class="booking-details-col mt-4" style="max-width:none;">
                 <div class="booking-details-label mb-3"><i class="fa-solid fa-gem me-1"></i> Astrologer Suggested Products</div>
-                @if(!empty($suggestedProducts))
+                @if((int) ($booking['final_confirmation_from_astrologer'] ?? 0) === 1 && !empty($suggestedProducts))
                     <div class="suggested-products-grid">
                         @foreach($suggestedProducts as $product)
                             <div class="suggested-product-card">

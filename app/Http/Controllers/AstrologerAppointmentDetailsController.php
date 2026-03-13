@@ -63,6 +63,12 @@ class AstrologerAppointmentDetailsController extends Controller
             return $this->respondProductSearchError($request, 'Appointment not found.', 404);
         }
 
+        if ($this->isAppointmentFinalized($appointment)) {
+            return $this->respondProductSearchError($request, 'This appointment has already been finalized. Suggested products can no longer be changed.', 422, [
+                'finalized' => true,
+            ]);
+        }
+
         $validator = Validator::make($request->all(), [
             'q' => ['nullable', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer', 'min:1'],
@@ -124,6 +130,10 @@ class AstrologerAppointmentDetailsController extends Controller
             return $this->respondNoteError($request, 'Appointment not found.', 404);
         }
 
+        if ($this->isAppointmentFinalized($appointment)) {
+            return $this->respondNoteError($request, 'This appointment has already been finalized. Notes can no longer be edited.', 422);
+        }
+
         $validator = Validator::make($request->all(), [
             'astrologer_note' => ['nullable', 'string', 'max:5000'],
         ]);
@@ -159,6 +169,40 @@ class AstrologerAppointmentDetailsController extends Controller
         return Redirect::back()->with('success', $result['message'] ?? 'Notes saved successfully.');
     }
 
+    public function finalizeNotes($id, Request $request)
+    {
+        if (!$this->currentUserIsAstrologer()) {
+            return $this->respondNoteError($request, 'Only astrologers can finalize consultation notes.', 403);
+        }
+
+        $appointment = $this->getAppointmentById($id);
+        if (!$appointment) {
+            return $this->respondNoteError($request, 'Appointment not found.', 404);
+        }
+
+        if ($this->isAppointmentFinalized($appointment)) {
+            return $this->respondNoteError($request, 'This appointment has already been finalized.', 422);
+        }
+
+        $result = $this->getApiService()->finalizeAstrologerNote($id, $this->getApiToken());
+
+        if (isset($result['error']) && $result['error']) {
+            return $this->respondNoteError($request, $result['message'] ?? 'Failed to finalize notes.', 500);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'] ?? 'Notes finalized successfully.',
+                'data' => $result,
+                'astrologer_note_status' => 'finalized',
+                'final_confirmation_from_astrologer' => true,
+            ]);
+        }
+
+        return Redirect::back()->with('success', $result['message'] ?? 'Notes finalized successfully.');
+    }
+
     public function addSuggestedProduct($id, Request $request)
     {
         if (!$this->currentUserIsAstrologer()) {
@@ -168,6 +212,12 @@ class AstrologerAppointmentDetailsController extends Controller
         $appointment = $this->getAppointmentById($id);
         if (!$appointment) {
             return $this->respondSuggestedProductError($request, 'Appointment not found.', 404);
+        }
+
+        if ($this->isAppointmentFinalized($appointment)) {
+            return $this->respondSuggestedProductError($request, 'This appointment has already been finalized. Suggested products can no longer be changed.', 422, [
+                'finalized' => true,
+            ]);
         }
 
         $validator = Validator::make($request->all(), [
@@ -228,6 +278,68 @@ class AstrologerAppointmentDetailsController extends Controller
         }
 
         return Redirect::back()->with('success', $result['message'] ?? 'Product suggested successfully.');
+    }
+
+    public function removeSuggestedProduct($id, Request $request)
+    {
+        if (!$this->currentUserIsAstrologer()) {
+            return $this->respondSuggestedProductError($request, 'Only astrologers can remove suggested products.', 403);
+        }
+
+        $appointment = $this->getAppointmentById($id);
+        if (!$appointment) {
+            return $this->respondSuggestedProductError($request, 'Appointment not found.', 404);
+        }
+
+        if ($this->isAppointmentFinalized($appointment)) {
+            return $this->respondSuggestedProductError($request, 'This appointment has already been finalized. Suggested products can no longer be changed.', 422, [
+                'finalized' => true,
+            ]);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'cart_id' => ['required', 'integer', 'min:1'],
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please provide a valid suggested product to remove.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            return Redirect::back()->withErrors($validator)->withInput();
+        }
+
+        $astrologerId = $this->resolveAppointmentAstrologerId($appointment);
+        if (!$astrologerId) {
+            return $this->respondSuggestedProductError($request, 'Unable to determine the astrologer for this suggestion.', 422);
+        }
+
+        $payload = [
+            'cart_id' => (int) $validator->validated()['cart_id'],
+            'astrologer_id' => (int) $astrologerId,
+            'booking_id' => (int) $appointment['id'],
+        ];
+
+        $result = $this->getApiService()->removeSuggestedProduct($payload, $this->getApiToken());
+
+        if (isset($result['error']) && $result['error']) {
+            return $this->respondSuggestedProductError($request, $result['message'] ?? 'Failed to remove suggested product.', 500);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'] ?? 'Suggested product removed successfully.',
+                'data' => $result,
+                'payload' => $payload,
+            ]);
+        }
+
+        return Redirect::back()->with('success', $result['message'] ?? 'Suggested product removed successfully.');
     }
 
     public function cancel($id, Request $request)
@@ -505,6 +617,14 @@ class AstrologerAppointmentDetailsController extends Controller
     {
         $roles = session('auth.roles', []);
         return in_array('Astrologer', $roles, true);
+    }
+
+    private function isAppointmentFinalized(array $appointment): bool
+    {
+        $finalConfirmation = $appointment['final_confirmation_from_astrologer'] ?? false;
+        $noteStatus = strtolower((string) ($appointment['astrologer_note_status'] ?? ''));
+
+        return filter_var($finalConfirmation, FILTER_VALIDATE_BOOLEAN) || $noteStatus === 'finalized';
     }
 
     private function jsonError(string $message, int $statusCode, array $extra = [])
