@@ -88,11 +88,8 @@
         const dismissBtn = document.getElementById('global-live-consultation-dismiss');
         const titleEl = document.getElementById('global-live-consultation-title');
         const messageEl = document.getElementById('global-live-consultation-message');
-        const pollingIntervalMs = 30000;
         let activeBooking = null;
         let dismissedBookingId = null;
-        let pollingTimer = null;
-        let isFetchingStatus = false;
 
         function ensureNotificationPermission() {
             if (!('Notification' in window)) {
@@ -157,12 +154,6 @@
         }
 
         function fetchLiveConsultationStatus() {
-            if (document.hidden || isFetchingStatus) {
-                return Promise.resolve();
-            }
-
-            isFetchingStatus = true;
-
             return fetch(pageData.statusUrl, {
                 headers: { 'Accept': 'application/json' }
             })
@@ -202,27 +193,7 @@
             })
             .catch(function() {
                 // Ignore transient global polling failures.
-            })
-            .finally(function() {
-                isFetchingStatus = false;
             });
-        }
-
-        function startPolling() {
-            if (pollingTimer) {
-                return;
-            }
-
-            pollingTimer = window.setInterval(fetchLiveConsultationStatus, pollingIntervalMs);
-        }
-
-        function stopPolling() {
-            if (!pollingTimer) {
-                return;
-            }
-
-            window.clearInterval(pollingTimer);
-            pollingTimer = null;
         }
 
         if (joinBtn) {
@@ -243,22 +214,8 @@
         }
 
         ensureNotificationPermission();
-
-        if (!document.hidden) {
-            fetchLiveConsultationStatus();
-        }
-
-        startPolling();
-
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                stopPolling();
-                return;
-            }
-
-            fetchLiveConsultationStatus();
-            startPolling();
-        });
+        fetchLiveConsultationStatus();
+        window.setInterval(fetchLiveConsultationStatus, 10000);
     });
     </script>
 
