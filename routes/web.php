@@ -21,6 +21,7 @@ use App\Http\Controllers\AstrologerAppointmentsController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/consultants', [ConsultantController::class, 'show'])->name('consultant');
+Route::get('/consultants/filter', [ConsultantController::class, 'filter'])->name('consultant.filter');
 Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::get('/consultant/{identifier}', [ConsultantController::class, 'profile'])->name('consultant.profile');
 Route::get('/services/{slug}', [ServicesController::class, 'service'])->name('services.dynamic');

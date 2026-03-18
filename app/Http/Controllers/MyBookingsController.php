@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use App\Services\AstrologerBookingService;
+use App\Services\ConsultationBroadcastService;
 use App\Services\ConsultationStateService;
 
 class MyBookingsController extends Controller
@@ -122,7 +123,7 @@ class MyBookingsController extends Controller
             'success' => true,
             'active' => true,
             'bookingId' => $bookingId,
-            'status' => $activeBooking['status'] ?? 'ready_to_start',
+            'status' => $this->normalizeRealtimeStatus($activeBooking['status'] ?? 'ready_to_start'),
             'joinUrl' => route('customer.consultation.video', ['meetingId' => 'astro-' . $bookingId, 'duration' => (int) ($activeBooking['duration'] ?? 0)]),
             'bookingDetailsUrl' => route('booking.details', ['id' => $bookingId]),
             'astrologerName' => $activeBooking['astrologer']['name'] ?? 'your astrologer',
@@ -233,6 +234,13 @@ class MyBookingsController extends Controller
             'data' => $payload,
         ];
 
+        if ($status === 'ready_to_start') {
+            app(ConsultationBroadcastService::class)->broadcastLive(
+                array_merge($booking, is_array($payload) ? $payload : [], $localState, ['id' => $validatedId]),
+                $resolvedDuration
+            );
+        }
+
         if ($request->isMethod('get')) {
             return response()->json($response);
         }
@@ -317,6 +325,15 @@ class MyBookingsController extends Controller
     private function getUserApiToken(Request $request): ?string
     {
         return $request->cookie('auth_api_token') ?? session('auth.api_token') ?? session('auth_api_token');
+    }
+
+    private function normalizeRealtimeStatus(?string $status): string
+    {
+        return match ($status) {
+            'in_progress' => 'live',
+            'completed' => 'ended',
+            default => (string) ($status ?: 'ready_to_start'),
+        };
     }
 
     private function extractSuggestedProductsForBooking(array $response, int $bookingId): array

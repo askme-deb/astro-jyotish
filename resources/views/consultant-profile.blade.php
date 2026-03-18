@@ -3,6 +3,14 @@
 @section('title', $consultant['name'] ?? 'Consultant Profile')
 
 @section('content')
+@php
+    $consultantProfilePageData = [
+        'userId' => session('api_user_id') ?? data_get(session('auth.user', []), 'id'),
+        'appointmentId' => $consultant['appointment_id'] ?? null,
+        'joinableBookingIds' => collect($consultant['all_bookings'] ?? [])->pluck('id')->filter()->values()->all(),
+        'initialStatus' => !empty($consultant['session_status']) ? 'in_progress' : strtolower(trim((string) ($consultant['raw_status'] ?? ''))),
+    ];
+@endphp
 
 <div class="container mt-4 inner_back">
 
@@ -114,6 +122,7 @@
                 @endphp
                 @if($appointmentId)
                     <a href="{{ $sessionInProgress ? route('customer.consultation.video', ['meetingId' => 'astro-' . $appointmentId]) : '#' }}"
+                       id="consultant-profile-join-btn"
                        class="btn btn-success w-100 mb-2 btn-custom{{ !$sessionInProgress ? ' disabled' : '' }}"
                        @if(!$sessionInProgress) tabindex="-1" aria-disabled="true" @endif>
                         <i class="fa-solid fa-video me-1"></i> Join Video Consultation
@@ -152,5 +161,75 @@
 
     </div>
 </div>
+<script id="consultant-profile-page-data" type="application/json">{!! json_encode($consultantProfilePageData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pageDataEl = document.getElementById('consultant-profile-page-data');
+    const joinButton = document.getElementById('consultant-profile-join-btn');
+
+    if (!pageDataEl || !joinButton) {
+        return;
+    }
+
+    const pageData = JSON.parse(pageDataEl.textContent || '{}');
+    const joinableBookingIds = Array.isArray(pageData.joinableBookingIds) ? pageData.joinableBookingIds.map(Number) : [];
+    let activeBookingId = Number(pageData.appointmentId || 0);
+
+    function isJoinableStatus(status) {
+        return ['ready_to_start', 'in_progress', 'live'].includes(String(status || '').toLowerCase());
+    }
+
+    function normalizeStatus(status) {
+        if (status === 'live') {
+            return 'in_progress';
+        }
+
+        if (status === 'ended') {
+            return 'completed';
+        }
+
+        return String(status || '').toLowerCase();
+    }
+
+    function updateJoinButton(status, joinUrl, bookingId) {
+        const normalizedStatus = normalizeStatus(status);
+        const resolvedBookingId = Number(bookingId || activeBookingId || 0);
+
+        if (resolvedBookingId) {
+            activeBookingId = resolvedBookingId;
+        }
+
+        if (isJoinableStatus(normalizedStatus)) {
+            joinButton.classList.remove('disabled', 'd-none');
+            joinButton.removeAttribute('tabindex');
+            joinButton.removeAttribute('aria-disabled');
+            joinButton.href = joinUrl || ('/customer/consultation/video/astro-' + activeBookingId);
+            return;
+        }
+
+        joinButton.classList.add('disabled');
+        joinButton.setAttribute('tabindex', '-1');
+        joinButton.setAttribute('aria-disabled', 'true');
+        joinButton.href = '#';
+    }
+
+    updateJoinButton(pageData.initialStatus, joinButton.getAttribute('href'), activeBookingId);
+
+    if (!window.Echo || !pageData.userId) {
+        return;
+    }
+
+    window.Echo.private('consultation.user.' + pageData.userId)
+        .listen('.consultation.status.updated', function(event) {
+            const bookingId = Number(event.bookingId || 0);
+
+            if (!bookingId || joinableBookingIds.indexOf(bookingId) === -1) {
+                return;
+            }
+
+            updateJoinButton(event.status, event.joinUrl || null, bookingId);
+        });
+});
+</script>
 @endsection
 

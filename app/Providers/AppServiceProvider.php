@@ -3,11 +3,13 @@
 
 namespace App\Providers;
 
+use Illuminate\Auth\GenericUser;
 use Illuminate\Support\ServiceProvider;
 use App\Services\Api\AstrologerApiService;
 use Illuminate\Support\Facades\Config;
 use App\Services\Api\BlogService;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use App\Services\Api\AuthApiService;
@@ -47,12 +49,35 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-  public function boot(): void
+    public function boot(): void
     {
         RateLimiter::for('otp', function (Request $request) {
             return [
                 Limit::perMinute(5)->by($request->ip()),
             ];
         });
+
+        Broadcast::routes([
+            'middleware' => ['web', 'api.user.auth'],
+        ]);
+
+        Broadcast::resolveAuthenticatedUserUsing(function (Request $request) {
+            $token = $request->cookie('auth_api_token')
+                ?? session('auth.api_token')
+                ?? session('auth_api_token');
+            $sessionUser = session('auth.user', []);
+            $sessionUserId = session('api_user_id') ?? data_get($sessionUser, 'id');
+
+            if (! $token || ! $sessionUserId) {
+                return null;
+            }
+
+            return new GenericUser(array_merge(
+                is_array($sessionUser) ? $sessionUser : [],
+                ['id' => (int) $sessionUserId]
+            ));
+        });
+
+        require base_path('routes/channels.php');
     }
 }

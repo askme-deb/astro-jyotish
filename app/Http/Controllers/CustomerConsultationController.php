@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ConsultationBroadcastService;
 use App\Services\ConsultationStateService;
 use Illuminate\Http\Request;
 
@@ -43,6 +44,11 @@ class CustomerConsultationController extends Controller
                     // Keep the local transition even if the external API is unavailable.
                 }
             }
+
+            app(ConsultationBroadcastService::class)->broadcastLive(
+                array_merge(is_array($booking) ? $booking : [], $localState, ['id' => $bookingId]),
+                isset($localState['duration']) && is_numeric($localState['duration']) ? (int) $localState['duration'] : null
+            );
         }
 
         return view('customer.video-consultation', [

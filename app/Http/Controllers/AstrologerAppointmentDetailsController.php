@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\AstrologerBookingService;
+use App\Services\ConsultationBroadcastService;
 use App\Services\ConsultationStateService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -617,12 +618,16 @@ class AstrologerAppointmentDetailsController extends Controller
         $result = $apiService->startVideoConsultation($id, $token);
         $appointmentDuration = isset($appointment['duration']) && is_numeric($appointment['duration']) ? (int) $appointment['duration'] : null;
         $requestDuration = $request->filled('duration_minutes') ? (int) $request->input('duration_minutes') : null;
-        app(ConsultationStateService::class)->markReadyToStart(
+        $localState = app(ConsultationStateService::class)->markReadyToStart(
             (int) $id,
             'astro-' . $id,
             ($appointmentDuration && $appointmentDuration > 0)
                 ? $appointmentDuration
                 : (($requestDuration && $requestDuration > 0) ? $requestDuration : null)
+        );
+        app(ConsultationBroadcastService::class)->broadcastReadyToStart(
+            array_merge($appointment, $localState, ['id' => (int) $id]),
+            isset($localState['duration']) && is_numeric($localState['duration']) ? (int) $localState['duration'] : null
         );
 
         if (isset($result['error']) && $result['error']) {
@@ -667,7 +672,10 @@ class AstrologerAppointmentDetailsController extends Controller
         $token = $this->getApiToken();
         $apiService = $this->getApiService();
         $result = $apiService->endVideoConsultation($id, $token);
-        app(ConsultationStateService::class)->markCompleted((int) $id);
+        $localState = app(ConsultationStateService::class)->markCompleted((int) $id);
+        app(ConsultationBroadcastService::class)->broadcastEnded(
+            array_merge($appointment, $localState, ['id' => (int) $id])
+        );
 
         if (isset($result['error']) && $result['error']) {
             return response()->json([
@@ -712,7 +720,10 @@ class AstrologerAppointmentDetailsController extends Controller
         $status = $appointment['status'] ?? null;
         if (in_array($status, self::ENDABLE_VIDEO_STATUSES, true)) {
             $this->getApiService()->endVideoConsultation($id, $this->getApiToken());
-            app(ConsultationStateService::class)->markCompleted((int) $id);
+            $localState = app(ConsultationStateService::class)->markCompleted((int) $id);
+            app(ConsultationBroadcastService::class)->broadcastEnded(
+                array_merge($appointment, $localState, ['id' => (int) $id])
+            );
         }
 
         return redirect()

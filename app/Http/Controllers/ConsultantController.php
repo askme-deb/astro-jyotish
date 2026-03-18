@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\Api\AstrologerApiService;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 
 class ConsultantController extends Controller
 {
@@ -22,9 +22,66 @@ class ConsultantController extends Controller
      */
     public function show(Request $request)
     {
-        $forceRefresh = $request->query('refresh', false);
-        $astrologers = $this->astrologerApiService->getAstrologers($forceRefresh);
-        return view('consultant', compact('astrologers'));
+        $forceRefresh = filter_var($request->query('refresh', false), FILTER_VALIDATE_BOOLEAN);
+        $allAstrologers = $this->astrologerApiService->getAstrologers($forceRefresh) ?? [];
+
+        try {
+            $filteredResponse = $this->astrologerApiService->filterAstrologers([
+                'page' => 1,
+                'per_page' => 15,
+            ]);
+
+            $astrologers = $filteredResponse['items'];
+            $pagination = $filteredResponse['meta'];
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            $astrologers = [];
+            $pagination = [
+                'current_page' => 1,
+                'last_page' => 1,
+                'per_page' => 15,
+                'total' => 0,
+            ];
+        }
+
+        if ($astrologers === [] && $allAstrologers !== []) {
+            $astrologers = array_slice($allAstrologers, 0, 15);
+            $total = count($allAstrologers);
+            $pagination = [
+                'current_page' => 1,
+                'last_page' => max(1, (int) ceil($total / 15)),
+                'per_page' => 15,
+                'total' => $total,
+            ];
+        }
+
+        $filters = $this->astrologerApiService->getConsultantFilterSections($allAstrologers);
+
+        return view('consultant', compact('astrologers', 'filters', 'pagination'));
+    }
+
+    public function filter(Request $request): JsonResponse
+    {
+        try {
+            $response = $this->astrologerApiService->filterAstrologers($request->query());
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'Unable to load astrologers right now.',
+            ], 502);
+        }
+
+        return response()->json([
+            'html' => view('consultant.partials.results', [
+                'astrologers' => $response['items'],
+            ])->render(),
+            'pagination' => view('consultant.partials.pagination', [
+                'pagination' => $response['meta'],
+            ])->render(),
+            'meta' => $response['meta'],
+        ]);
     }
 
     public function profile($identifier)

@@ -4,6 +4,7 @@
 @php
     $myBookingsPageData = [
         'bookingIds' => collect($bookings ?? [])->pluck('id')->values()->all(),
+        'userId' => session('api_user_id') ?? data_get(session('auth.user', []), 'id'),
     ];
 @endphp
 <div class="container mt-4 inner_back">
@@ -262,6 +263,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const pageData = JSON.parse(pageDataEl.textContent || '{}');
     const bookingIds = Array.isArray(pageData.bookingIds) ? pageData.bookingIds : [];
+    let pollingTimer = null;
+    let hasHealthySocket = false;
 
     function formatStatus(status) {
         return String(status || 'pending')
@@ -272,19 +275,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function applyBookingStatus(bookingId, status) {
+        const normalizedStatus = status === 'live' ? 'in_progress' : (status === 'ended' ? 'completed' : status);
         const badge = document.querySelector('[data-booking-status-badge="' + bookingId + '"]');
         const joinBtn = document.querySelector('[data-booking-join-btn="' + bookingId + '"]');
 
         if (badge) {
             badge.className = 'badge';
 
-            if (status === 'in_progress') {
+            if (normalizedStatus === 'in_progress') {
                 badge.classList.add('bg-success');
-            } else if (status === 'ready_to_start') {
+            } else if (normalizedStatus === 'ready_to_start') {
                 badge.classList.add('bg-info', 'text-dark');
-            } else if (status === 'confirmed') {
+            } else if (normalizedStatus === 'confirmed') {
                 badge.classList.add('bg-primary');
-            } else if (status === 'pending') {
+            } else if (normalizedStatus === 'pending') {
                 badge.classList.add('bg-warning', 'text-dark');
             } else {
                 badge.classList.add('bg-secondary');
@@ -293,11 +297,11 @@ document.addEventListener('DOMContentLoaded', function() {
             badge.style.fontSize = '0.95em';
             badge.style.minWidth = '80px';
             badge.style.textAlign = 'center';
-            badge.textContent = formatStatus(status);
+            badge.textContent = formatStatus(normalizedStatus);
         }
 
         if (joinBtn) {
-            joinBtn.classList.toggle('d-none', !['ready_to_start', 'in_progress'].includes(status));
+            joinBtn.classList.toggle('d-none', !['ready_to_start', 'in_progress'].includes(normalizedStatus));
         }
     }
 
@@ -324,10 +328,99 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    refreshStatuses();
+    function startPolling() {
+        if (pollingTimer || bookingIds.length === 0) {
+            return;
+        }
 
-    if (bookingIds.length > 0) {
-        setInterval(refreshStatuses, 10000);
+        pollingTimer = window.setInterval(refreshStatuses, 10000);
+    }
+
+    function stopPolling() {
+        if (!pollingTimer) {
+            return;
+        }
+
+        window.clearInterval(pollingTimer);
+        pollingTimer = null;
+    }
+
+    function setSocketHealthyState(isHealthy) {
+        hasHealthySocket = isHealthy;
+
+        if (hasHealthySocket) {
+            stopPolling();
+            return;
+        }
+
+        if (!document.hidden) {
+            refreshStatuses();
+        }
+
+        startPolling();
+    }
+
+    function subscribeToRealtimeStatuses() {
+        if (!window.Echo || !pageData.userId) {
+            setSocketHealthyState(false);
+            return;
+        }
+
+        window.Echo.private('consultation.user.' + pageData.userId)
+            .listen('.consultation.status.updated', function(event) {
+                const bookingId = Number(event.bookingId || 0);
+
+                if (!bookingId || bookingIds.indexOf(bookingId) === -1) {
+                    return;
+                }
+
+                applyBookingStatus(bookingId, event.status);
+            });
+
+        const connection = window.Echo.connector && window.Echo.connector.pusher
+            ? window.Echo.connector.pusher.connection
+            : null;
+
+        if (!connection) {
+            setSocketHealthyState(false);
+            return;
+        }
+
+        if (connection.state === 'connected') {
+            setSocketHealthyState(true);
+        }
+
+        connection.bind('connected', function() {
+            setSocketHealthyState(true);
+        });
+        connection.bind('unavailable', function() {
+            setSocketHealthyState(false);
+        });
+        connection.bind('disconnected', function() {
+            setSocketHealthyState(false);
+        });
+        connection.bind('error', function() {
+            setSocketHealthyState(false);
+        });
+    }
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopPolling();
+            return;
+        }
+
+        if (!hasHealthySocket) {
+            refreshStatuses();
+            startPolling();
+        }
+    });
+
+    subscribeToRealtimeStatuses();
+
+    if (!window.Echo || !pageData.userId) {
+        refreshStatuses();
+        startPolling();
     }
 });
 </script>

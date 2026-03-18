@@ -1,0 +1,19 @@
+[program:astro-jyotish-reverb]
+command=php /var/www/astro-jyotish/artisan reverb:start --host=0.0.0.0 --port=8080
+directory=/var/www/astro-jyotish
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/log/supervisor/astro-jyotish-reverb.log
+stopwaitsecs=3600
+
+[program:astro-jyotish-queue]
+command=php /var/www/astro-jyotish/artisan queue:work --queue=default --sleep=1 --tries=3 --timeout=120
+directory=/var/www/astro-jyotish
+autostart=true
+autorestart=true
+user=www-data
+redirect_stderr=true
+stdout_logfile=/var/log/supervisor/astro-jyotish-queue.log
+stopwaitsecs=3600

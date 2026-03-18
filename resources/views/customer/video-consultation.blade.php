@@ -240,7 +240,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentStatus = pageData.status || 'pending';
     let durationSeconds = resolvedDurationMinutes * 60;
     let timerInterval = null;
+    let statusPollingInterval = null;
+    let hasHealthySocket = false;
     let meetingStartedAtValue = pageData.meetingStartedAt || null;
+    const realtimePageDataEl = document.getElementById('global-live-consultation-data');
+    const realtimePageData = realtimePageDataEl ? JSON.parse(realtimePageDataEl.textContent || '{}') : {};
 
     function formatStatus(status) {
         return String(status || 'pending')
@@ -365,6 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderCompletedState() {
         applyStatus('completed');
+        stopStatusPolling();
         if (completedRedirectTimeout) {
             clearTimeout(completedRedirectTimeout);
         }
@@ -382,6 +387,140 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = bookingDetailsUrl;
             }, 3000);
         }
+    }
+
+    function normalizeRealtimeStatus(status) {
+        if (status === 'live') {
+            return 'in_progress';
+        }
+
+        if (status === 'ended') {
+            return 'completed';
+        }
+
+        return status;
+    }
+
+    function startStatusPolling() {
+        if (statusPollingInterval) {
+            return;
+        }
+
+        statusPollingInterval = window.setInterval(fetchStatus, 10000);
+    }
+
+    function stopStatusPolling() {
+        if (!statusPollingInterval) {
+            return;
+        }
+
+        window.clearInterval(statusPollingInterval);
+        statusPollingInterval = null;
+    }
+
+    function setSocketHealthyState(isHealthy) {
+        hasHealthySocket = isHealthy;
+
+        if (hasHealthySocket) {
+            stopStatusPolling();
+            return;
+        }
+
+        if (currentStatus !== 'completed') {
+            fetchStatus();
+            startStatusPolling();
+        }
+    }
+
+    function applyRealtimeStatus(data) {
+        const status = normalizeRealtimeStatus(data.status || 'pending');
+
+        if (data.durationMinutes != null && Number(data.durationMinutes) > 0) {
+            durationSeconds = Number(data.durationMinutes) * 60;
+        }
+
+        applyStatus(status, data.meetingStartedAt || null);
+
+        if (status === 'in_progress') {
+            joinBtn.disabled = false;
+            refreshStatusBtn.style.display = 'inline-block';
+            if (meetingInitialized) {
+                joinBtn.style.display = 'none';
+                statusAlert.className = 'alert alert-success';
+                statusAlert.textContent = 'Session is live.';
+            } else {
+                attemptAutoJoin();
+            }
+            completedState.style.display = 'none';
+        } else if (status === 'ready_to_start') {
+            autoJoinAttempted = false;
+            joinBtn.disabled = false;
+            joinBtn.style.display = 'inline-block';
+            setButtonLoading(joinBtn, false);
+            refreshStatusBtn.style.display = 'inline-block';
+            completedState.style.display = 'none';
+            meetingRoot.style.display = 'none';
+            statusAlert.className = 'alert alert-success';
+            statusAlert.textContent = 'Astrologer is ready. Join now to start the consultation.';
+        } else if (status === 'completed') {
+            renderCompletedState();
+        } else {
+            autoJoinAttempted = false;
+            joinBtn.disabled = true;
+            joinBtn.style.display = 'none';
+            setButtonLoading(joinBtn, false);
+            refreshStatusBtn.style.display = 'inline-block';
+            completedState.style.display = 'none';
+            meetingRoot.style.display = 'none';
+            statusAlert.className = 'alert alert-info';
+            statusAlert.textContent = 'Please wait for the astrologer to start the video call.';
+        }
+    }
+
+    function subscribeToRealtimeStatus() {
+        if (!window.Echo || !realtimePageData.userId) {
+            setSocketHealthyState(false);
+            return;
+        }
+
+        window.Echo.private('consultation.user.' + realtimePageData.userId)
+            .listen('.consultation.status.updated', function(event) {
+                if (Number(event.bookingId) !== Number(appointmentId)) {
+                    return;
+                }
+
+                applyRealtimeStatus({
+                    status: event.status,
+                    meetingStartedAt: event.meetingStartedAt || null,
+                    durationMinutes: resolvedDurationMinutes,
+                });
+            });
+
+        const connection = window.Echo.connector && window.Echo.connector.pusher
+            ? window.Echo.connector.pusher.connection
+            : null;
+
+        if (!connection) {
+            setSocketHealthyState(false);
+            return;
+        }
+
+        if (connection.state === 'connected') {
+            setSocketHealthyState(true);
+        }
+
+        connection.bind('connected', function() {
+            setSocketHealthyState(true);
+        });
+        connection.bind('unavailable', function() {
+            setSocketHealthyState(false);
+        });
+        connection.bind('disconnected', function() {
+            setSocketHealthyState(false);
+        });
+        connection.bind('error', function() {
+            setSocketHealthyState(false);
+        });
     }
 
     function joinConsultation() {
@@ -499,46 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(res => res.json())
         .then(data => {
             if (data.success && data.status) {
-                if (data.durationMinutes != null && Number(data.durationMinutes) > 0) {
-                    durationSeconds = Number(data.durationMinutes) * 60;
-                }
-
-                applyStatus(data.status, data.meetingStartedAt || null);
-
-                if (data.status === 'in_progress') {
-                    joinBtn.disabled = false;
-                    refreshStatusBtn.style.display = 'inline-block';
-                    if (meetingInitialized) {
-                        joinBtn.style.display = 'none';
-                        statusAlert.className = 'alert alert-success';
-                        statusAlert.textContent = 'Session is live.';
-                    } else {
-                        attemptAutoJoin();
-                    }
-                    completedState.style.display = 'none';
-                } else if (data.status === 'ready_to_start') {
-                    autoJoinAttempted = false;
-                    joinBtn.disabled = false;
-                    joinBtn.style.display = 'inline-block';
-                    setButtonLoading(joinBtn, false);
-                    refreshStatusBtn.style.display = 'inline-block';
-                    completedState.style.display = 'none';
-                    meetingRoot.style.display = 'none';
-                    statusAlert.className = 'alert alert-success';
-                    statusAlert.textContent = 'Astrologer is ready. Join now to start the consultation.';
-                } else if (data.status === 'completed') {
-                    renderCompletedState();
-                } else {
-                    autoJoinAttempted = false;
-                    joinBtn.disabled = true;
-                    joinBtn.style.display = 'none';
-                    setButtonLoading(joinBtn, false);
-                    refreshStatusBtn.style.display = 'inline-block';
-                    completedState.style.display = 'none';
-                    meetingRoot.style.display = 'none';
-                    statusAlert.className = 'alert alert-info';
-                    statusAlert.textContent = 'Please wait for the astrologer to start the video call.';
-                }
+                applyRealtimeStatus(data);
             }
         })
         .finally(() => {
@@ -557,8 +657,13 @@ document.addEventListener('DOMContentLoaded', function() {
         initMeeting();
     }
 
-    fetchStatus();
-    setInterval(fetchStatus, 10000); // Poll every 10s
+    subscribeToRealtimeStatus();
+
+    if (!window.Echo || !realtimePageData.userId) {
+        fetchStatus();
+        startStatusPolling();
+    }
+
     joinBtn.addEventListener('click', function() {
         autoJoinAttempted = true;
         joinConsultation();

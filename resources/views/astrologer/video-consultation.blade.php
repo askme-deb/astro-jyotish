@@ -23,7 +23,14 @@
         'durationMinutes' => $initialDurationMinutesValue > 0 ? $initialDurationMinutesValue : 0,
         'endedAfterLeave' => (bool) session('video_consultation_ended'),
         'bookingId' => $appointment['id'],
-        'leaveRedirectUrl' => route('astrologer.appointment.leaveVideo', ['id' => $appointment['id']]),
+        'realtimeUserIds' => array_values(array_unique(array_filter([
+            session('api_user_id') ?? data_get(session('auth.user', []), 'id'),
+            $appointment['astrologer_id'] ?? null,
+            data_get($appointment, 'astrologer.id'),
+            data_get($appointment, 'assigned_astrologer_id'),
+        ], static fn ($value) => is_numeric($value) && (int) $value > 0))),
+        'leaveRedirectUrl' => route('astrologer.appointment.details', ['id' => $appointment['id']]),
+        'appointmentDetailsUrl' => route('astrologer.appointment.details', ['id' => $appointment['id']]),
         'addSuggestedProductUrl' => route('astrologer.appointment.addSuggestedProduct', ['id' => $appointment['id']]),
         'apiKey' => config('services.videosdk.api_key'),
         'meetingId' => $meetingId,
@@ -246,6 +253,7 @@ function showToast(message) {
 
 document.addEventListener('DOMContentLoaded', function() {
     const pageData = JSON.parse(document.getElementById('video-consultation-page-data').textContent);
+    const realtimeUserIds = Array.isArray(pageData.realtimeUserIds) ? pageData.realtimeUserIds.map(Number).filter(Boolean) : [];
     const urlDurationMinutes = Number(new URLSearchParams(window.location.search).get('duration') || 0);
     const resolvedDurationMinutes = Math.max(0, Number(pageData.durationMinutes || urlDurationMinutes || 0));
     let timerInterval = null;
@@ -253,13 +261,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let durationSeconds = resolvedDurationMinutes * 60;
     let startTriggeredByJoin = false;
     let meetingInitialized = false;
-    let statusPollingInterval = null;
+    let hasHealthySocket = false;
+    let bookingChannelSubscribed = false;
+    let bookingSnapshotRequested = false;
     const endedAfterLeave = pageData.endedAfterLeave;
     let meetingStartedAtValue = pageData.meetingStartedAt || null;
 
     const timerEl = document.getElementById('session-timer');
     const bookingId = pageData.bookingId;
     const leaveRedirectUrl = pageData.leaveRedirectUrl;
+    const appointmentDetailsUrl = pageData.appointmentDetailsUrl;
     const joinConsultationBtn = document.getElementById('join-consultation-btn');
     const endBtn = document.getElementById('end-session-btn');
     const refreshStatusBtn = document.getElementById('refresh-status-btn');
@@ -730,6 +741,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         stopTimer();
         statusText.textContent = 'Completed';
+
+        if (appointmentDetailsUrl) {
+            window.setTimeout(function() {
+                window.location.href = appointmentDetailsUrl;
+            }, 1200);
+        }
+    }
+
+    function normalizeRealtimeStatus(status) {
+        if (status === 'live') {
+            return 'in_progress';
+        }
+
+        if (status === 'ended') {
+            return 'completed';
+        }
+
+        return status;
     }
 
     function updateSessionUI(s) {
@@ -814,11 +843,111 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function startStatusPolling() {
-        if (statusPollingInterval) {
-            clearInterval(statusPollingInterval);
+    function setSocketHealthyState(isHealthy) {
+        hasHealthySocket = isHealthy;
+    }
+
+    function applyRealtimeStatus(data) {
+        const status = normalizeRealtimeStatus(data.status || currentStatus);
+
+        if (data.durationMinutes != null && Number(data.durationMinutes) > 0) {
+            durationSeconds = Number(data.durationMinutes) * 60;
         }
-        statusPollingInterval = setInterval(refreshAppointmentStatus, 3000);
+
+        if (status === 'in_progress') {
+            applyMeetingStartedAt(data.meetingStartedAt || meetingStartedAtValue || null);
+        }
+
+        if (status !== currentStatus || status === 'ready_to_start' || status === 'in_progress' || status === 'completed') {
+            updateSessionUI(status);
+        }
+
+        if (status === 'ready_to_start' || status === 'in_progress') {
+            initMeeting();
+            subscribeToBookingRealtimeStatus();
+        }
+    }
+
+    function requestBookingSnapshotOnce() {
+        if (bookingSnapshotRequested || currentStatus === 'completed') {
+            return;
+        }
+
+        bookingSnapshotRequested = true;
+        refreshAppointmentStatus();
+    }
+
+    function subscribeToBookingRealtimeStatus() {
+        if (bookingChannelSubscribed || !window.Echo || !bookingId) {
+            return;
+        }
+
+        bookingChannelSubscribed = true;
+
+        const bookingChannel = window.Echo.channel('consultation.booking.' + bookingId);
+
+        if (typeof bookingChannel.subscribed === 'function') {
+            bookingChannel.subscribed(function() {
+                requestBookingSnapshotOnce();
+            });
+        }
+
+        bookingChannel
+            .listen('.consultation.booking.status.updated', function(event) {
+                if (Number(event.bookingId) !== Number(bookingId)) {
+                    return;
+                }
+
+                applyRealtimeStatus(event);
+            });
+    }
+
+    function subscribeToRealtimeStatus() {
+        if (!window.Echo || realtimeUserIds.length === 0) {
+            return;
+        }
+
+        realtimeUserIds.forEach(function(realtimeUserId) {
+            window.Echo.private('consultation.user.' + realtimeUserId)
+                .listen('.consultation.status.updated', function(event) {
+                    if (Number(event.bookingId) !== Number(bookingId)) {
+                        return;
+                    }
+
+                    applyRealtimeStatus(event);
+                });
+        });
+
+        const connection = window.Echo.connector && window.Echo.connector.pusher
+            ? window.Echo.connector.pusher.connection
+            : null;
+
+        if (!connection) {
+            return;
+        }
+
+        if (connection.state === 'connected') {
+            setSocketHealthyState(true);
+            if (currentStatus === 'ready_to_start' || currentStatus === 'in_progress') {
+                subscribeToBookingRealtimeStatus();
+            }
+        }
+
+        connection.bind('connected', function() {
+            setSocketHealthyState(true);
+            if (currentStatus === 'ready_to_start' || currentStatus === 'in_progress') {
+                subscribeToBookingRealtimeStatus();
+            }
+        });
+        connection.bind('unavailable', function() {
+            setSocketHealthyState(false);
+        });
+        connection.bind('disconnected', function() {
+            setSocketHealthyState(false);
+        });
+        connection.bind('error', function() {
+            setSocketHealthyState(false);
+        });
     }
 
     function postSession(url, onSuccess, onError) {
@@ -913,6 +1042,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 startTriggeredByJoin = false;
                 initMeeting();
                 updateSessionUI(data.status || 'ready_to_start');
+                subscribeToBookingRealtimeStatus();
             },
             function() {
                 startTriggeredByJoin = false;
@@ -934,11 +1064,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!endedAfterLeave) {
         updateSessionUI(currentStatus);
     }
-    refreshAppointmentStatus();
-    startStatusPolling();
+    subscribeToRealtimeStatus();
 
     if (!endedAfterLeave && (currentStatus === 'ready_to_start' || currentStatus === 'in_progress')) {
         initMeeting();
+        subscribeToBookingRealtimeStatus();
     }
 
     if (joinConsultationBtn) {
