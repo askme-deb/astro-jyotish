@@ -10,6 +10,10 @@ class CustomerConsultationController extends Controller
 {
     public function video(string $meetingId, Request $request, ConsultationStateService $stateService)
     {
+         $userId = session('api_user_id');
+            if (!$userId) {
+                return redirect()->route('home');
+            }
         $bookingId = (int) str_replace('astro-', '', $meetingId);
         $token = $request->cookie('auth_api_token') ?? session('auth.api_token') ?? session('auth_api_token');
         $apiService = app(\App\Services\Api\Clients\AstrologerApiService::class);

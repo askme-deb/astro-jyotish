@@ -21,6 +21,10 @@ class AstrologerAppointmentDetailsController extends Controller
 
     public function start($id, Request $request)
     {
+         $userId = session('api_user_id');
+            if (!$userId) {
+                return redirect()->route('home');
+            }
         $appointment = $this->getAppointmentById($id);
         if ($appointment && $this->isAppointmentCancelled($appointment)) {
             return Redirect::back()->with('error', self::CANCELLED_APPOINTMENT_MESSAGE);

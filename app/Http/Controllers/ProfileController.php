@@ -22,6 +22,10 @@ class ProfileController extends Controller
      */
     public function index()
     {
+         $userId = session('api_user_id');
+            if (!$userId) {
+                return redirect()->route('home');
+            }
         // Use session for now; could fetch from API if needed
         return view('profile');
     }

@@ -13,6 +13,10 @@ class DashboardController extends Controller
      */
     public function index(Request $request, AstrologerBookingService $bookingService)
     {
+         $userId = session('api_user_id');
+            if (!$userId) {
+                return redirect()->route('home');
+            }
 
         $roles = session('auth.roles', []);
         if (in_array('Astrologer', $roles)) {
