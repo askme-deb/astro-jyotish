@@ -15,6 +15,10 @@ class MyBookingsController extends Controller
      */
     public function index(Request $request, AstrologerBookingService $bookingService)
     {
+         $userId = session('api_user_id');
+            if (!$userId) {
+                return redirect()->route('home');
+            }
         $token = $request->cookie('auth_api_token');
         $response = $bookingService->getBookings($token);
         $bookings = $response['data'] ?? [];
@@ -23,6 +27,10 @@ class MyBookingsController extends Controller
 
     public function show($id, Request $request, AstrologerBookingService $bookingService)
     {
+         $userId = session('api_user_id');
+            if (!$userId) {
+                return redirect()->route('home');
+            }
         $token = $this->getUserApiToken($request);
         $booking = $this->findBookingById((int) $id, $request, $bookingService);
         $suggestedProducts = [];

@@ -14,7 +14,7 @@ class AstrologerAppointmentsController extends Controller
             // Get user ID from session (set by LoginController)
             $userId = session('api_user_id');
             if (!$userId) {
-                return redirect()->route('login');
+                return redirect()->route('home');
             }
 
         // Use existing AstrologerApiService from Services/Api/Clients
