@@ -10,7 +10,6 @@ class AstrologerAppointmentsController extends Controller
 {
     public function index(Request $request)
     {
-        // $user = Auth::user();
         // $userId = $user ? $user->id : null;
             // Get user ID from session (set by LoginController)
             $userId = session('api_user_id');
