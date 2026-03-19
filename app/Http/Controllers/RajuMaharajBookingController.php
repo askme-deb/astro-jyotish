@@ -10,7 +10,7 @@ class RajuMaharajBookingController extends Controller
 {
     protected $bookingService;
     private $bookingType = 'raju_maharaj';
-    private $rajuMaharajId = 9999; // TODO: Set actual astrologer ID for Raju Maharaj
+    private $rajuMaharajId = 15; // TODO: Set actual astrologer ID for Raju Maharaj
 
     public function __construct(AstrologerBookingService $bookingService)
     {

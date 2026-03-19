@@ -15,5 +15,5 @@ Route::middleware('api.user.auth')->group(function () {
 	Route::post('/v1/razorpay/booking', [App\Http\Controllers\RazorpayController::class, 'confirmBooking']);
 
 
-	Route::get('/astrologer/9999/slots', [RajuMaharajBookingController::class, 'getSlots']);
+	Route::get('/astrologer/15/slots', [RajuMaharajBookingController::class, 'getSlots']);
 });
