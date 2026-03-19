@@ -533,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 const bookingId = resp.data.data.id;
                 // Razorpay expects amount in paise (multiply by 100)
-                const amount = rate * 100;
+                const amount = rate;
                 const currency = resp.data.data.currency || 'INR';
                 fetch('/api/v1/razorpay/order', {
                     method: 'POST',
