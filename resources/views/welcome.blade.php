@@ -438,27 +438,27 @@
                     @foreach(array_slice($blogs, 0, 3) as $blog)
                         <div class="col-md-6 col-lg-4">
                             @php $blogUrl = url('blog/' . ($blog['slug'] ?? $blog['id'])); @endphp
-                            <div class="blog-card" >
-                                {{-- onclick="window.location.href='{{ $blogUrl }}'" --}}
-                                <div class="blog-img">
-                                    <img src="{{ $blog['image'] ?? asset('assets/images/default-blog.jpg') }}" alt="{{ $blog['title'] ?? '' }}">
-                                    {{-- <div class="blog-badge">{{ strtoupper(substr($blog['title'] ?? 'B', 0, 1)) }}</div> --}}
-                                </div>
-                                <div class="blog-body">
-                                    <div class="blog-title">
-                                        {{ $blog['title'] ?? '' }}
+                            <a href="{{ $blogUrl }}" class="text-decoration-none">
+                                <div class="blog-card">
+                                    <div class="blog-img">
+                                        <img src="{{ $blog['image'] ?? asset('assets/images/default-blog.jpg') }}" alt="{{ $blog['title'] ?? '' }}">
                                     </div>
-                                    <div class="blog-footer">
-                                        <div class="author-info">
-                                            <img src="https://i.pravatar.cc/100?u={{ urlencode($blog['author'] ?? 'blog') }}" alt="">
-                                            <span>{{ $blog['author'] ?? '' }}{{ $blog['published_at'] ? ' | ' . \Carbon\Carbon::parse($blog['published_at'])->format('D, M d, Y') : '' }}</span>
+                                    <div class="blog-body">
+                                        <div class="blog-title">
+                                            {{ $blog['title'] ?? '' }}
                                         </div>
-                                        <div class="arrow-btn">
-                                            <i class="bi bi-arrow-right"></i>
+                                        <div class="blog-footer">
+                                            <div class="author-info">
+                                                <img src="https://i.pravatar.cc/100?u={{ urlencode($blog['author'] ?? 'blog') }}" alt="">
+                                                <span>{{ $blog['author'] ?? '' }}{{ $blog['published_at'] ? ' | ' . \Carbon\Carbon::parse($blog['published_at'])->format('D, M d, Y') : '' }}</span>
+                                            </div>
+                                            <div class="arrow-btn">
+                                                <i class="bi bi-arrow-right"></i>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                     @endforeach
                 @else

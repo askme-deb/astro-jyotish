@@ -20,9 +20,9 @@
                     Trusted <span>Astrologers</span>
                 </h1>
 
-                <button class="appointment-btn">
+                <a href="{{ url('/consultation') }}" class="appointment-btn">
                     Get an Appointment
-                </button>
+                </a>
             </div>
 
         </div>
@@ -40,22 +40,22 @@
             <div class="icon-box">
                 <i class="bi bi-telephone"></i>
             </div>
-            <div>+91 98765 43210</div>
-            <div>+91 98765 43211</div>
+            <div>+91 90918 40899</div>
+            {{-- <div>+91 98765 43211</div> --}}
         </div>
         <div class="col-md-4 contact-info">
             <div class="icon-box">
                 <i class="bi bi-envelope"></i>
             </div>
-            <div>astro@email.com</div>
-            <div>support@email.com</div>
+            <div>contact@astrorajumaharaj.com</div>
+            {{-- <div>support@email.com</div> --}}
         </div>
         <div class="col-md-4 contact-info">
             <div class="icon-box">
                 <i class="bi bi-geo-alt"></i>
             </div>
-            <div>Kolkata, India</div>
-            <div>Worldwide Online</div>
+            <div>Bagda, P.S.-Puncha, Dist. - Purulia, West Bengal, Pin - 723151</div>
+            {{-- <div>Worldwide Online</div> --}}
         </div>
     </div>
     <div class="cfrom_warp">

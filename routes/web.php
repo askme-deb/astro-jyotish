@@ -102,3 +102,8 @@ Route::post('/logout', [OtpAuthController::class, 'logout'])
 
 Route::get('/customer/consultation/video/{meetingId}', [CustomerConsultationController::class, 'video'])->name('customer.consultation.video');
 
+// Blog details page
+use App\Http\Controllers\BlogController;
+
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.details');
+
