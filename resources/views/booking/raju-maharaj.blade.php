@@ -88,6 +88,43 @@
     </div>
 </div>
 
+@push('styles')
+<style>
+    #slot-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 0.5rem;
+    }
+    .slot-badge {
+        display: inline-block;
+        min-width: 110px;
+        padding: 8px 0;
+        text-align: center;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        background: #fffbe6;
+        color: #333;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+        box-shadow: 0 1px 4px #ffc10722;
+        user-select: none;
+    }
+    .slot-badge.active, .slot-badge.btn-primary {
+        background: linear-gradient(135deg, #ff9800, #f57c00);
+        color: #fff;
+        border-color: #f57c00;
+        font-weight: 600;
+        box-shadow: 0 2px 8px #ff98004d;
+    }
+    .slot-badge:focus {
+        outline: 2px solid #ffc107;
+        outline-offset: 2px;
+    }
+</style>
+@endpush
+
 <script>
     const priceDisplay = document.getElementById('price-display');
     const urgencyMessage = document.getElementById('urgency-message');
@@ -144,8 +181,8 @@
         fetch(`/api/astrologer/${rajuMaharajId}/slots?date=${date}`)
             .then(res => res.json())
             .then(data => {
-                if (data && data.slots && data.slots.length) {
-                    slotList.innerHTML = '';
+                slotList.innerHTML = '';
+                if (data.slots && Array.isArray(data.slots) && data.slots.length > 0) {
                     data.slots.forEach(slot => {
                         const badge = document.createElement('span');
                         badge.className = 'slot-badge btn btn-outline-primary';
