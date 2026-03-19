@@ -41,13 +41,7 @@
                     <div class="container py-2">
                         <div class="row">
                             <div class="col-md-12">
-                                <div class="step-list d-flex justify-content-center mb-4">
-                                    <div class="step active" data-step="0"><div class="step-circle"><i class="bi bi-file-earmark-person"></i></div><div class="step-title"><h6>Personal Info</h6></div></div>
-                                    <div class="step" data-step="1"><div class="step-circle"><i class="bi bi-cake2"></i></div><div class="step-title"><h6>Birth Details</h6></div></div>
-                                    <div class="step" data-step="2"><div class="step-circle"><i class="bi bi-people"></i></div><div class="step-title"><h6>Consultation</h6></div></div>
-                                    <div class="step" data-step="3"><div class="step-circle"><i class="bi bi-credit-card"></i></div><div class="step-title"><h6>Payment</h6></div></div>
-                                    <div class="step" data-step="4"><div class="step-circle"><i class="bi bi-check2-square"></i></div><div class="step-title"><h6>Complete</h6></div></div>
-                                </div>
+                                <!-- Stepper removed as requested -->
                                 <div id="stepper-error" style="display:none" class="alert alert-danger"></div>
                                 <form id="raju-booking-form">
                                     <!-- Step 1: Personal Info -->
