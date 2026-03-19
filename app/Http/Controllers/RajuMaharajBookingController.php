@@ -69,20 +69,21 @@ class RajuMaharajBookingController extends Controller
     {
         $date = $request->query('date');
         if (!$date) {
-            return response()->json(['slots' => []]);
+            return response()->json(['success' => true, 'slots' => []]);
         }
-        $slots = $this->bookingService->getSlots($this->rajuMaharajId, $date);
-        \Log::debug('RajuMaharajBookingController@getSlots API response', ['response' => $slots]);
-        // Normalize slots for frontend (prefer slots['slots'] if present)
-        $slotArr = $slots['slots'] ?? $slots['data'] ?? $slots ?? [];
-        $normalized = collect($slotArr)->map(function ($slot) {
-            return [
-                'slot_id' => $slot['slot_id'] ?? $slot['id'] ?? null,
-                'start_time' => $slot['start_time'] ?? $slot['from'] ?? $slot['label'] ?? $slot['time'] ?? null,
-                'end_time' => $slot['end_time'] ?? $slot['to'] ?? null,
-            ];
-        })->filter(fn($s) => $s['slot_id'] && $s['start_time'])->values();
-        return response()->json(['slots' => $normalized, 'raw' => $slots]);
+        $result = $this->bookingService->getSlots($this->rajuMaharajId, $date);
+        \Log::debug('RajuMaharajBookingController@getSlots API response', ['response' => $result]);
+        $slots = [];
+        if (is_array($result) && isset($result['slots']) && is_array($result['slots'])) {
+            foreach ($result['slots'] as $slot) {
+                $slots[] = [
+                    'slot_id' => $slot['id'] ?? '',
+                    'start_time' => $slot['start_time'] ?? '',
+                    'end_time' => $slot['end_time'] ?? '',
+                ];
+            }
+        }
+        return response()->json(['success' => true, 'slots' => $slots]);
     }
 
     private function calculatePrice($selectedDate)
