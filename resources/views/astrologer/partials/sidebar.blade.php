@@ -71,12 +71,18 @@
                                 <a class="" href="/appointments">
                                     <i class="fas fa-calendar-check"></i> Appointments
                                 </a>
-                                <a class="" href="/my-bookings">
+                                <a class="" href="{{ route('astrologer.appointments.completed') }}">
+                                    <i class="fas fa-circle-check"></i> Completed
+                                </a>
+                                <a class="" href="{{ route('astrologer.appointments.cancelled') }}">
+                                    <i class="fas fa-ban"></i> Cancelled
+                                </a>
+                                {{-- <a class="" href="/my-bookings">
                                     <i class="fas fa-calendar-check"></i> Availability
                                 </a>
                                 <a class="" href="/my-bookings">
                                     <i class="fas fa-calendar-check"></i> Earnings
-                                </a>
+                                </a> --}}
                                 <a class="" href="/profile">
                                     <i class="fas fa-user"></i> My Profile
                                 </a>

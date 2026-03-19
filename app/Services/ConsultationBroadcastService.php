@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Events\ConsultationBookingStatusUpdated;
 use App\Events\ConsultationStatusUpdated;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Throwable;
 
 class ConsultationBroadcastService
 {
@@ -37,25 +39,52 @@ class ConsultationBroadcastService
 
         $this->cacheParticipants($bookingId, $recipientUserIds);
 
-        event(new ConsultationBookingStatusUpdated(
-            bookingId: $bookingId,
-            status: $status,
-            astrologerName: $this->resolveAstrologerName($booking),
-            joinUrl: $status === 'ended' ? null : $this->buildJoinUrl($bookingId, $booking, $resolvedDuration),
-            meetingStartedAt: $booking['meeting_started_at'] ?? null,
-            durationMinutes: $resolvedDuration,
-        ));
+        $joinUrl = $status === 'ended' ? null : $this->buildJoinUrl($bookingId, $booking, $resolvedDuration);
+        $astrologerName = $this->resolveAstrologerName($booking);
+        $meetingStartedAt = $booking['meeting_started_at'] ?? null;
 
-        foreach ($recipientUserIds as $userId) {
-            event(new ConsultationStatusUpdated(
-                userId: $userId,
+        $this->dispatchBroadcastEvent(
+            new ConsultationBookingStatusUpdated(
                 bookingId: $bookingId,
                 status: $status,
-                astrologerName: $this->resolveAstrologerName($booking),
-                joinUrl: $status === 'ended' ? null : $this->buildJoinUrl($bookingId, $booking, $resolvedDuration),
-                meetingStartedAt: $booking['meeting_started_at'] ?? null,
+                astrologerName: $astrologerName,
+                joinUrl: $joinUrl,
+                meetingStartedAt: $meetingStartedAt,
                 durationMinutes: $resolvedDuration,
-            ));
+            ),
+            $bookingId,
+            $status
+        );
+
+        foreach ($recipientUserIds as $userId) {
+            $this->dispatchBroadcastEvent(
+                new ConsultationStatusUpdated(
+                    userId: $userId,
+                    bookingId: $bookingId,
+                    status: $status,
+                    astrologerName: $astrologerName,
+                    joinUrl: $joinUrl,
+                    meetingStartedAt: $meetingStartedAt,
+                    durationMinutes: $resolvedDuration,
+                ),
+                $bookingId,
+                $status,
+                $userId
+            );
+        }
+    }
+
+    private function dispatchBroadcastEvent(object $event, int $bookingId, string $status, ?int $userId = null): void
+    {
+        try {
+            event($event);
+        } catch (Throwable $exception) {
+            Log::warning('Consultation broadcast failed.', [
+                'booking_id' => $bookingId,
+                'status' => $status,
+                'user_id' => $userId,
+                'exception' => $exception->getMessage(),
+            ]);
         }
     }
 

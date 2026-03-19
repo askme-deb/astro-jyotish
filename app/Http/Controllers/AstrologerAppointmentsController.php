@@ -10,21 +10,41 @@ class AstrologerAppointmentsController extends Controller
 {
     public function index(Request $request)
     {
-        // $userId = $user ? $user->id : null;
-            // Get user ID from session (set by LoginController)
-            $userId = session('api_user_id');
-            if (!$userId) {
-                return redirect()->route('home');
-            }
+        if (!session('api_user_id')) {
+            return redirect()->route('home');
+        }
 
-        // Use existing AstrologerApiService from Services/Api/Clients
-        $apiService = app(\App\Services\Api\Clients\AstrologerApiService::class);
-        $token = session('auth.api_token');
-        $response = $apiService->getAstrologerBookings($userId, $token);
-       // dd($response);
-        $appointments = $response['data'] ?? [];
+        $appointments = $this->getAppointments();
 
         return view('astrologer.appointments', compact('appointments'));
+    }
+
+    public function completed()
+    {
+        if (!session('api_user_id')) {
+            return redirect()->route('home');
+        }
+
+        return $this->renderStatusList(
+            'Completed Appointments',
+            'Review appointments that have already been completed.',
+            ['completed'],
+            'No completed appointments found.'
+        );
+    }
+
+    public function cancelled()
+    {
+        if (!session('api_user_id')) {
+            return redirect()->route('home');
+        }
+
+        return $this->renderStatusList(
+            'Cancelled Appointments',
+            'Review appointments that were cancelled.',
+            ['cancelled'],
+            'No cancelled appointments found.'
+        );
     }
 
 
@@ -64,6 +84,32 @@ class AstrologerAppointmentsController extends Controller
         $productGrades = $this->getProductGrades();
 
         return view('astrologer.appointment-details', compact('appointment', 'suggestedProducts', 'productCategories', 'productGrades'));
+    }
+
+    private function getAppointments(): array
+    {
+        $userId = session('api_user_id');
+        $apiService = app(\App\Services\Api\Clients\AstrologerApiService::class);
+        $token = session('auth.api_token');
+        $response = $apiService->getAstrologerBookings($userId, $token);
+
+        return is_array($response['data'] ?? null) ? $response['data'] : [];
+    }
+
+    private function renderStatusList(string $pageTitle, string $pageSubtitle, array $statuses, string $emptyMessage)
+    {
+        $appointments = collect($this->getAppointments())
+            ->filter(function ($appointment) use ($statuses) {
+                return in_array($appointment['status'] ?? null, $statuses, true);
+            })
+            ->values();
+
+        return view('astrologer.appointment-status-list', compact(
+            'appointments',
+            'pageTitle',
+            'pageSubtitle',
+            'emptyMessage'
+        ));
     }
 
     private function getProductCategories(): array

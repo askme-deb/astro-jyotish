@@ -80,6 +80,12 @@
                                 <a  href="/my-bookings">
                                     <i class="fas fa-calendar-check"></i> My Bookings
                                 </a>
+                                <a href="{{ route('my-bookings.completed') }}">
+                                    <i class="fas fa-circle-check"></i> Completed
+                                </a>
+                                <a href="{{ route('my-bookings.cancelled') }}">
+                                    <i class="fas fa-ban"></i> Cancelled
+                                </a>
                                 <a class="" href="/profile">
                                     <i class="fas fa-user"></i> My Profile
                                 </a>
@@ -109,7 +115,17 @@
                 <div class="sidebar-card dashboard-card mt-4">
                     <div class="dashboard-section-head">
                         <h3>Bookings List</h3>
+                        <div class="dashboard-section-actions d-flex flex-wrap gap-2">
+                            <a href="{{ route('my-bookings.completed') }}" class="btn btn-outline-secondary btn-sm">Completed</a>
+                            <a href="{{ route('my-bookings.cancelled') }}" class="btn btn-outline-secondary btn-sm">Cancelled</a>
+                        </div>
                     </div>
+                    @php
+                        $visibleBookingStatuses = ['confirmed', 'reschedule', 'rescheduled', 'ready_to_start', 'in_progress'];
+                        $visibleBookings = collect($bookings)->filter(function ($booking) use ($visibleBookingStatuses) {
+                            return in_array($booking['status'] ?? null, $visibleBookingStatuses, true);
+                        });
+                    @endphp
                     <style>
                         .bookings-table th {
                             background: #f8f9fa;
@@ -147,7 +163,7 @@
                         }
                     </style>
                     <div class="row g-3">
-                        @forelse ($bookings as $booking)
+                        @forelse ($visibleBookings as $booking)
                             <div class="col-md-6 col-lg-6">
                                 <div class="card shadow-sm h-100" style="border-radius: 16px;">
                                     <div class="card-body">
@@ -244,7 +260,7 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="col-12 text-center text-muted py-4">No bookings found.</div>
+                            <div class="col-12 text-center text-muted py-4">No active, confirmed, or rescheduled bookings found.</div>
                         @endforelse
                     </div>
                 </div>
@@ -263,8 +279,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const pageData = JSON.parse(pageDataEl.textContent || '{}');
     const bookingIds = Array.isArray(pageData.bookingIds) ? pageData.bookingIds : [];
-    let pollingTimer = null;
-    let hasHealthySocket = false;
 
     function formatStatus(status) {
         return String(status || 'pending')
@@ -305,123 +319,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function fetchBookingStatus(bookingId) {
-        return fetch('/astrologer/appointments/' + bookingId + '/ajax-status', {
-            headers: { 'Accept': 'application/json' }
-        })
-        .then(function(res) {
-            return res.json();
-        })
-        .then(function(data) {
-            if (data && data.success && data.status) {
-                applyBookingStatus(bookingId, data.status);
-            }
-        })
-        .catch(function() {
-            // Ignore transient polling failures on the bookings list.
-        });
-    }
+    window.addEventListener('consultation-status.updated', function(event) {
+        const bookingId = Number(event.detail && event.detail.bookingId ? event.detail.bookingId : 0);
 
-    function refreshStatuses() {
-        bookingIds.forEach(function(bookingId) {
-            fetchBookingStatus(bookingId);
-        });
-    }
-
-    function startPolling() {
-        if (pollingTimer || bookingIds.length === 0) {
+        if (!bookingId || bookingIds.indexOf(bookingId) === -1) {
             return;
         }
 
-        pollingTimer = window.setInterval(refreshStatuses, 10000);
-    }
-
-    function stopPolling() {
-        if (!pollingTimer) {
-            return;
-        }
-
-        window.clearInterval(pollingTimer);
-        pollingTimer = null;
-    }
-
-    function setSocketHealthyState(isHealthy) {
-        hasHealthySocket = isHealthy;
-
-        if (hasHealthySocket) {
-            stopPolling();
-            return;
-        }
-
-        if (!document.hidden) {
-            refreshStatuses();
-        }
-
-        startPolling();
-    }
-
-    function subscribeToRealtimeStatuses() {
-        if (!window.Echo || !pageData.userId) {
-            setSocketHealthyState(false);
-            return;
-        }
-
-        window.Echo.private('consultation.user.' + pageData.userId)
-            .listen('.consultation.status.updated', function(event) {
-                const bookingId = Number(event.bookingId || 0);
-
-                if (!bookingId || bookingIds.indexOf(bookingId) === -1) {
-                    return;
-                }
-
-                applyBookingStatus(bookingId, event.status);
-            });
-
-        const connection = window.Echo.connector && window.Echo.connector.pusher
-            ? window.Echo.connector.pusher.connection
-            : null;
-
-        if (!connection) {
-            setSocketHealthyState(false);
-            return;
-        }
-
-        if (connection.state === 'connected') {
-            setSocketHealthyState(true);
-        }
-
-        connection.bind('connected', function() {
-            setSocketHealthyState(true);
-        });
-        connection.bind('unavailable', function() {
-            setSocketHealthyState(false);
-        });
-        connection.bind('disconnected', function() {
-            setSocketHealthyState(false);
-        });
-        connection.bind('error', function() {
-            setSocketHealthyState(false);
-        });
-    }
-
-    document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
-            stopPolling();
-            return;
-        }
-
-        if (!hasHealthySocket) {
-            refreshStatuses();
-            startPolling();
-        }
+        applyBookingStatus(bookingId, event.detail.status);
     });
-
-    subscribeToRealtimeStatuses();
-
-    if (!window.Echo || !pageData.userId) {
-        refreshStatuses();
-        startPolling();
-    }
 });
 </script>
 @endsection

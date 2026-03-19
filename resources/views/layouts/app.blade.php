@@ -22,7 +22,6 @@
         $globalLiveConsultationData = [
             'enabled' => (bool) request()->cookie('auth_api_token') && !in_array('Astrologer', session('auth.roles', []), true),
             'userId' => session('api_user_id') ?? data_get(session('auth.user', []), 'id'),
-            'statusUrl' => route('customer.liveConsultationStatus'),
             'iconUrl' => asset('assets/images/Logo.png'),
             'currentUrl' => url()->current(),
         ];

@@ -845,8 +845,6 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const pageData = JSON.parse(document.getElementById('booking-details-page-data').textContent || '{}');
-        const realtimePageDataEl = document.getElementById('global-live-consultation-data');
-        const realtimePageData = realtimePageDataEl ? JSON.parse(realtimePageDataEl.textContent || '{}') : {};
         const bookingId = pageData.bookingId;
         const badge = document.getElementById('booking-status-badge');
         const joinBtn = document.getElementById('booking-join-consultation-btn');
@@ -854,8 +852,6 @@
         const notePdfBtn = document.getElementById('booking-download-note-pdf-btn');
         const scheduledDateCell = document.getElementById('booking-scheduled-date-cell');
         const scheduledSlotCell = document.getElementById('booking-scheduled-slot-cell');
-        let pollingTimer = null;
-        let hasHealthySocket = false;
 
         if (!bookingId || !badge) {
             return;
@@ -973,115 +969,13 @@
             }
         }
 
-        function refreshStatus() {
-            fetch('/astrologer/appointments/' + bookingId + '/ajax-status', {
-                headers: { 'Accept': 'application/json' }
-            })
-            .then(function(res) {
-                return res.json();
-            })
-            .then(function(data) {
-                if (data && data.success && data.status) {
-                    applyStatus(data.status);
-                }
-            })
-            .catch(function() {
-                // Ignore transient polling failures on the booking details page.
-            });
-        }
-
-        function startPolling() {
-            if (pollingTimer) {
+        window.addEventListener('consultation-status.updated', function(event) {
+            if (!event.detail || Number(event.detail.bookingId) !== Number(bookingId)) {
                 return;
             }
 
-            pollingTimer = window.setInterval(refreshStatus, 10000);
-        }
-
-        function stopPolling() {
-            if (!pollingTimer) {
-                return;
-            }
-
-            window.clearInterval(pollingTimer);
-            pollingTimer = null;
-        }
-
-        function setSocketHealthyState(isHealthy) {
-            hasHealthySocket = isHealthy;
-
-            if (hasHealthySocket) {
-                stopPolling();
-                return;
-            }
-
-            if (!document.hidden) {
-                refreshStatus();
-            }
-
-            startPolling();
-        }
-
-        function subscribeToRealtimeStatus() {
-            if (!window.Echo || !realtimePageData.userId) {
-                setSocketHealthyState(false);
-                return;
-            }
-
-            window.Echo.private('consultation.user.' + realtimePageData.userId)
-                .listen('.consultation.status.updated', function(event) {
-                    if (Number(event.bookingId) !== Number(bookingId)) {
-                        return;
-                    }
-
-                    applyStatus(event.status);
-                });
-
-            const connection = window.Echo.connector && window.Echo.connector.pusher
-                ? window.Echo.connector.pusher.connection
-                : null;
-
-            if (!connection) {
-                setSocketHealthyState(false);
-                return;
-            }
-
-            if (connection.state === 'connected') {
-                setSocketHealthyState(true);
-            }
-
-            connection.bind('connected', function() {
-                setSocketHealthyState(true);
-            });
-            connection.bind('unavailable', function() {
-                setSocketHealthyState(false);
-            });
-            connection.bind('disconnected', function() {
-                setSocketHealthyState(false);
-            });
-            connection.bind('error', function() {
-                setSocketHealthyState(false);
-            });
-        }
-
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                stopPolling();
-                return;
-            }
-
-            if (!hasHealthySocket) {
-                refreshStatus();
-                startPolling();
-            }
+            applyStatus(event.detail.status);
         });
-
-        subscribeToRealtimeStatus();
-
-        if (!window.Echo || !realtimePageData.userId) {
-            refreshStatus();
-            startPolling();
-        }
     });
     </script>
     @endif

@@ -613,6 +613,43 @@ class AstrologerAppointmentDetailsController extends Controller
         }
 
         $status = $appointment['status'] ?? null;
+        if ($status === 'ready_to_start' || $status === 'in_progress') {
+            $stateService = app(ConsultationStateService::class);
+            $localState = $status === 'ready_to_start'
+                ? $stateService->markReadyToStart(
+                    (int) $id,
+                    'astro-' . $id,
+                    isset($appointment['duration']) && is_numeric($appointment['duration']) ? (int) $appointment['duration'] : null
+                )
+                : $stateService->markInProgress(
+                    (int) $id,
+                    $appointment['meeting_started_at'] ?? null,
+                    'astro-' . $id,
+                    isset($appointment['duration']) && is_numeric($appointment['duration']) ? (int) $appointment['duration'] : null
+                );
+
+            $broadcastPayload = array_merge($appointment, $localState, ['id' => (int) $id]);
+            $broadcastService = app(ConsultationBroadcastService::class);
+
+            if ($status === 'ready_to_start') {
+                $broadcastService->broadcastReadyToStart(
+                    $broadcastPayload,
+                    isset($localState['duration']) && is_numeric($localState['duration']) ? (int) $localState['duration'] : null
+                );
+            } else {
+                $broadcastService->broadcastLive(
+                    $broadcastPayload,
+                    isset($localState['duration']) && is_numeric($localState['duration']) ? (int) $localState['duration'] : null
+                );
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $this->startBlockedMessage($status),
+                'status' => $status,
+            ]);
+        }
+
         if (!in_array($status, self::STARTABLE_VIDEO_STATUSES, true)) {
             return $this->jsonError($this->startBlockedMessage($status), 422, ['status' => $status]);
         }

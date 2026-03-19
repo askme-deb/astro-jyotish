@@ -3,7 +3,6 @@ import Pusher from 'pusher-js';
 
 const PAGE_DATA_ID = 'global-live-consultation-data';
 const LAST_NOTIFICATION_KEY = 'globalLiveConsultationLastNotification';
-const POLLING_INTERVAL_MS = 8000;
 const sharedEcho = initializeEchoClient();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const pageData = JSON.parse(pageDataElement.textContent || '{}');
 
-    if (!pageData.enabled || !pageData.statusUrl || !pageData.userId) {
+    if (!pageData.enabled || !pageData.userId) {
         return;
     }
 
@@ -27,18 +26,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let activeBooking = null;
     let dismissedNotificationKey = null;
-    let pollingTimer = null;
-    let isFetchingStatus = false;
-    let hasHealthySocket = false;
 
     ensureNotificationPermission();
 
     const echo = sharedEcho;
 
     if (echo) {
-        subscribeToConsultationChannel(echo, pageData.userId, pageData, handleConsultationUpdate, setSocketHealthyState);
-    } else {
-        startPolling();
+        subscribeToConsultationChannel(echo, pageData.userId, pageData, handleConsultationUpdate);
     }
 
     if (joinButton) {
@@ -55,22 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (!document.hidden && !echo) {
-        fetchLiveConsultationStatus();
-    }
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            stopPolling();
-            return;
-        }
-
-        if (!hasHealthySocket) {
-            fetchLiveConsultationStatus();
-            startPolling();
-        }
-    });
-
     function ensureNotificationPermission() {
         if (!('Notification' in window)) {
             return;
@@ -81,78 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function setSocketHealthyState(isHealthy) {
-        hasHealthySocket = isHealthy;
-
-        if (hasHealthySocket) {
-            stopPolling();
-            return;
-        }
-
-        if (!document.hidden) {
-            fetchLiveConsultationStatus();
-        }
-
-        startPolling();
-    }
-
-    function fetchLiveConsultationStatus() {
-        if (document.hidden || isFetchingStatus) {
-            return Promise.resolve();
-        }
-
-        isFetchingStatus = true;
-
-        return fetch(pageData.statusUrl, {
-            credentials: 'same-origin',
-            headers: {
-                Accept: 'application/json',
-            },
-        })
-            .then((response) => response.json())
-            .then((payload) => {
-                if (!payload || !payload.success) {
-                    return;
-                }
-
-                if (!payload.active || !payload.bookingId) {
-                    activeBooking = null;
-                    dismissedNotificationKey = null;
-                    hidePopup();
-                    return;
-                }
-
-                handleConsultationUpdate(payload);
-            })
-            .catch(() => {})
-            .finally(() => {
-                isFetchingStatus = false;
-            });
-    }
-
-    function startPolling() {
-        if (pollingTimer) {
-            return;
-        }
-
-        pollingTimer = window.setInterval(fetchLiveConsultationStatus, POLLING_INTERVAL_MS);
-    }
-
-    function stopPolling() {
-        if (!pollingTimer) {
-            return;
-        }
-
-        window.clearInterval(pollingTimer);
-        pollingTimer = null;
-    }
-
     function handleConsultationUpdate(payload) {
         const booking = normalizeBookingPayload(payload, pageData);
 
         if (!booking) {
             return;
         }
+
+        dispatchConsultationStatusUpdated(booking);
 
         if (booking.status === 'ended') {
             if (activeBooking && activeBooking.bookingId === booking.bookingId) {
@@ -273,27 +187,11 @@ function initializeEchoClient() {
     return window.Echo;
 }
 
-function subscribeToConsultationChannel(echo, userId, pageData, handler, onSocketStateChanged) {
+function subscribeToConsultationChannel(echo, userId, pageData, handler) {
     echo.private(`consultation.user.${userId}`)
         .listen('.consultation.status.updated', (event) => {
             handler(event, pageData);
         });
-
-    const connection = echo.connector?.pusher?.connection;
-
-    if (!connection) {
-        onSocketStateChanged(false);
-        return;
-    }
-
-    if (connection.state === 'connected') {
-        onSocketStateChanged(true);
-    }
-
-    connection.bind('connected', () => onSocketStateChanged(true));
-    connection.bind('unavailable', () => onSocketStateChanged(false));
-    connection.bind('disconnected', () => onSocketStateChanged(false));
-    connection.bind('error', () => onSocketStateChanged(false));
 }
 
 function normalizeBookingPayload(payload, pageData) {
@@ -334,6 +232,12 @@ function normalizeStatus(status) {
 
 function notificationKey(booking) {
     return `${booking.bookingId}:${booking.status}`;
+}
+
+function dispatchConsultationStatusUpdated(booking) {
+    window.dispatchEvent(new CustomEvent('consultation-status.updated', {
+        detail: booking,
+    }));
 }
 
 function redirectToJoinUrl(booking) {

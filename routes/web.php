@@ -54,7 +54,8 @@ Route::middleware(['guest'])->group(function () {
 Route::get('/consultation/session-duration', [ConsultationController::class, 'sessionDuration'])->name('consultation.sessionDuration');
 
 Route::get('/my-bookings', [MyBookingsController::class, 'index'])->name('my-bookings');
-Route::get('/customer/live-consultation-status', [MyBookingsController::class, 'activeConsultationStatus'])->name('customer.liveConsultationStatus');
+Route::get('/my-bookings/completed', [MyBookingsController::class, 'completed'])->name('my-bookings.completed');
+Route::get('/my-bookings/cancelled', [MyBookingsController::class, 'cancelled'])->name('my-bookings.cancelled');
 Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
 Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
@@ -65,6 +66,8 @@ Route::post('/booking/{id}/reschedule', [MyBookingsController::class, 'reschedul
 Route::match(['GET', 'POST'], '/booking/{id}/join-consultation', [MyBookingsController::class, 'joinConsultation'])->name('booking.consultation.join');
 
 Route::get('/appointments', [AstrologerAppointmentsController::class, 'index'])->name('astrologer.appointments');
+Route::get('/appointments/completed', [AstrologerAppointmentsController::class, 'completed'])->name('astrologer.appointments.completed');
+Route::get('/appointments/cancelled', [AstrologerAppointmentsController::class, 'cancelled'])->name('astrologer.appointments.cancelled');
 Route::get('/astrologer/appointments/{id}', [AstrologerAppointmentsController::class, 'show'])->name('astrologer.appointment.details');
 
 // Astrologer Appointment Actions

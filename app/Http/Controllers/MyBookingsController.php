@@ -19,10 +19,42 @@ class MyBookingsController extends Controller
             if (!$userId) {
                 return redirect()->route('home');
             }
-        $token = $request->cookie('auth_api_token');
-        $response = $bookingService->getBookings($token);
-        $bookings = $response['data'] ?? [];
+        $bookings = $this->getBookingsWithState($request, $bookingService);
         return view('my-bookings', compact('bookings'));
+    }
+
+    public function completed(Request $request, AstrologerBookingService $bookingService)
+    {
+        $userId = session('api_user_id');
+        if (!$userId) {
+            return redirect()->route('home');
+        }
+
+        return $this->renderBookingStatusList(
+            $request,
+            $bookingService,
+            'Completed Bookings',
+            'Review your completed consultation bookings.',
+            ['completed'],
+            'No completed bookings found.'
+        );
+    }
+
+    public function cancelled(Request $request, AstrologerBookingService $bookingService)
+    {
+        $userId = session('api_user_id');
+        if (!$userId) {
+            return redirect()->route('home');
+        }
+
+        return $this->renderBookingStatusList(
+            $request,
+            $bookingService,
+            'Cancelled Bookings',
+            'Review your cancelled consultation bookings.',
+            ['cancelled'],
+            'No cancelled bookings found.'
+        );
     }
 
     public function show($id, Request $request, AstrologerBookingService $bookingService)
@@ -62,6 +94,28 @@ class MyBookingsController extends Controller
         }
 
         return view('booking-details', compact('booking', 'astroInitials', 'suggestedProducts'));
+    }
+
+    private function renderBookingStatusList(
+        Request $request,
+        AstrologerBookingService $bookingService,
+        string $pageTitle,
+        string $pageSubtitle,
+        array $statuses,
+        string $emptyMessage
+    ) {
+        $bookings = collect($this->getBookingsWithState($request, $bookingService))
+            ->filter(function ($booking) use ($statuses) {
+                return in_array($booking['status'] ?? null, $statuses, true);
+            })
+            ->values();
+
+        return view('booking-status-list', compact(
+            'bookings',
+            'pageTitle',
+            'pageSubtitle',
+            'emptyMessage'
+        ));
     }
 
     public function downloadNotesPdf($id, Request $request, AstrologerBookingService $bookingService)
@@ -318,16 +372,33 @@ class MyBookingsController extends Controller
 
     private function findBookingById(int $id, Request $request, AstrologerBookingService $bookingService): ?array
     {
+        $booking = collect($this->getBookingsWithState($request, $bookingService))->firstWhere('id', $id);
+
+        return is_array($booking) && !empty($booking) ? $booking : null;
+    }
+
+    private function getBookingsWithState(Request $request, AstrologerBookingService $bookingService): array
+    {
         $token = $this->getUserApiToken($request);
 
         if (!$token) {
-            return null;
+            return [];
         }
 
         $response = $bookingService->getBookings($token);
-        $booking = collect($response['data'] ?? [])->firstWhere('id', $id);
+        $stateService = app(ConsultationStateService::class);
 
-        return is_array($booking) && !empty($booking) ? $booking : null;
+        return collect($response['data'] ?? [])
+            ->map(function ($booking) use ($stateService) {
+                return is_array($booking)
+                    ? $stateService->mergeIntoBooking($booking, (int) ($booking['id'] ?? 0))
+                    : $booking;
+            })
+            ->filter(function ($booking) {
+                return is_array($booking) && !empty($booking);
+            })
+            ->values()
+            ->all();
     }
 
     private function getUserApiToken(Request $request): ?string

@@ -33,7 +33,7 @@
                     </div>
                     <div class="dashboard-header-right">
                         <span class="dashboard-status"><span class="dot"></span> Online</span>
-                        <a class="btn btn-primary btn-sm" href="/my-bookings"><i class="fas fa-calendar-check me-1"></i> My Bookings</a>
+                        <a class="btn btn-primary btn-sm" style="margin-top:0px;" href="/my-bookings"><i class="fas fa-calendar-check me-1"></i> My Bookings</a>
                         <a class="btn btn-outline-secondary btn-sm" href="/profile"><i class="fas fa-user me-1"></i> My Profile</a>
                     </div>
                 </div>
@@ -193,8 +193,17 @@
                                 }
                             </style>
                             <div>
-                                @if($bookings->count())
-                                    @foreach($bookings as $booking)
+                                @php
+                                    $upcomingConfirmedBookings = $bookings->filter(function ($booking) {
+                                        if (($booking['status'] ?? null) !== 'confirmed' || empty($booking['scheduled_at'])) {
+                                            return false;
+                                        }
+
+                                        return \Carbon\Carbon::parse($booking['scheduled_at'])->greaterThanOrEqualTo(now());
+                                    });
+                                @endphp
+                                @if($upcomingConfirmedBookings->count())
+                                    @foreach($upcomingConfirmedBookings as $booking)
                                         <div class="dashboard-booking-card">
                                             <div class="dashboard-booking-header">
                                                 <div>
@@ -214,14 +223,14 @@
                                                 <div class="dashboard-booking-value">₹{{ $booking['rate'] ?? '-' }}</div>
                                             </div>
                                             <div class="dashboard-booking-actions">
-                                                <a href="#" class="btn btn-outline-theme btn-sm">
+                                                <a href="{{ route('astrologer.appointment.details', ['id' => $booking['id']]) }}" class="btn btn-outline-theme btn-sm">
                                                     <i class="fa-regular fa-eye"></i> View Details
                                                 </a>
                                             </div>
                                         </div>
                                     @endforeach
                                 @else
-                                    <div class="dashboard-booking-card text-center text-muted py-4">No upcoming bookings.</div>
+                                    <div class="dashboard-booking-card text-center text-muted py-4">No confirmed upcoming bookings.</div>
                                 @endif
                             </div>
                         </div>
