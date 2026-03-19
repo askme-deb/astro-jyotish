@@ -353,21 +353,59 @@ document.addEventListener('DOMContentLoaded', function () {
         dateInput.addEventListener('change', fetchSlots);
     }
 
+
     // --- PRICE LOGIC ---
     const rateInput = document.getElementById('rate');
+    // Add price display UI
+    let priceDisplay = document.getElementById('price-display');
+    if (!priceDisplay) {
+        priceDisplay = document.createElement('div');
+        priceDisplay.id = 'price-display';
+        priceDisplay.className = 'fs-4 fw-bold text-primary mb-2';
+        const consultSection = sections[2];
+        if (consultSection) consultSection.insertBefore(priceDisplay, consultSection.querySelector('.row.g-3'));
+    }
+    let urgencyMessage = document.getElementById('urgency-message');
+    if (!urgencyMessage) {
+        urgencyMessage = document.createElement('div');
+        urgencyMessage.id = 'urgency-message';
+        urgencyMessage.className = 'text-sm mt-1 mb-2';
+        priceDisplay.parentNode.insertBefore(urgencyMessage, priceDisplay.nextSibling);
+    }
     function updatePrice() {
         const today = new Date();
         const selected = new Date(dateInput.value);
         const diffTime = selected - today;
         const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         let price = null;
-        if (days < 0 || days > 45) price = null;
-        else if (days <= 2) price = 21000;
-        else if (days <= 15) price = 11000;
-        else if (days <= 45) price = 5000;
+        let urgency = '';
+        let color = 'text-primary';
+        if (days < 0 || days > 45) {
+            priceDisplay.textContent = 'Not allowed';
+            priceDisplay.className = 'fs-4 fw-bold text-secondary mb-2';
+            urgencyMessage.textContent = 'Booking is only allowed within 45 days.';
+            price = '';
+        } else if (days <= 2) {
+            price = 21000;
+            priceDisplay.textContent = '₹21,000';
+            priceDisplay.className = 'fs-4 fw-bold text-danger mb-2';
+            urgencyMessage.textContent = 'Highest urgency!';
+        } else if (days <= 15) {
+            price = 11000;
+            priceDisplay.textContent = '₹11,000';
+            priceDisplay.className = 'fs-4 fw-bold text-warning mb-2';
+            urgencyMessage.textContent = 'Book soon for better price!';
+        } else if (days <= 45) {
+            price = 5000;
+            priceDisplay.textContent = '₹5,000';
+            priceDisplay.className = 'fs-4 fw-bold text-success mb-2';
+            urgencyMessage.textContent = '';
+        }
         if (rateInput) rateInput.value = price || '';
     }
     if (dateInput) dateInput.addEventListener('change', updatePrice);
+    // Initial price update
+    updatePrice();
 
     // --- RAZORPAY PAYMENT ---
     const razorpayBtn = document.getElementById('razorpay-pay-btn');
