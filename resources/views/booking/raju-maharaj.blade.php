@@ -1,69 +1,87 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container max-w-2xl mx-auto py-8">
-    <div class="mb-6">
-        <span class="inline-block bg-yellow-400 text-black px-3 py-1 rounded-full font-semibold text-sm mb-2">Premium Consultation with Raju Maharaj</span>
-        <h2 class="text-2xl font-bold mb-2">Book Your Session</h2>
-        <p class="text-gray-700">Select a date and time slot for your premium consultation. Pricing is based on how soon you book.</p>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="card shadow-lg border-0 mb-4" style="border-radius: 18px;">
+                <div class="card-body p-4">
+                    <div class="mb-3 text-center">
+                        <span class="badge bg-warning text-dark fs-6 mb-2 px-3 py-2" style="border-radius: 12px;"><i class="fa-solid fa-star text-orange-500 me-1"></i> Premium Consultation with <span class="fw-bold">Raju Maharaj</span></span>
+                        <h2 class="fw-bold mb-1" style="font-size:2rem; color:#f57c00;">Book Your Session</h2>
+                        <p class="text-muted mb-0">Select a date and time slot for your premium consultation. Pricing is based on how soon you book.</p>
+                    </div>
+                    <div class="mb-4 p-3" style="background: linear-gradient(90deg, #fffbe6 60%, #fff1e6 100%); border-radius: 12px; border: 1px solid #ffe082;">
+                        <h5 class="fw-semibold mb-2"><i class="fa-solid fa-indian-rupee-sign text-warning me-2"></i>Pricing Tiers</h5>
+                        <ul class="mb-0 ps-3" style="list-style: disc;">
+                            <li><span class="fw-bold">Within 2 days:</span> <span class="text-danger fw-bold">₹21,000</span> <span class="badge bg-danger ms-2">Highest urgency!</span></li>
+                            <li><span class="fw-bold">Within 15 days:</span> <span class="text-warning fw-bold">₹11,000</span> <span class="badge bg-warning text-dark ms-2">Book soon for better price</span></li>
+                            <li><span class="fw-bold">Within 45 days:</span> <span class="text-success fw-bold">₹5,000</span></li>
+                            <li><span class="fw-bold">More than 45 days:</span> <span class="text-secondary">Not allowed</span></li>
+                        </ul>
+                    </div>
+
+                    @if(session('success'))
+                        <div class="alert alert-success mb-3">{{ session('success') }}</div>
+                    @endif
+                    @if($errors->any())
+                        <div class="alert alert-danger mb-3">
+                            <ul class="mb-0 ps-3" style="list-style: disc;">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    {{-- Always show the booking form, even after success --}}
+                    <form id="raju-booking-form" method="POST" action="{{ route('booking.raju-maharaj.submit') }}">
+                        @csrf
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <label for="selected_date" class="form-label fw-semibold">Select Date</label>
+                                <input type="date" id="selected_date" name="selected_date" class="form-control" min="{{ now()->toDateString() }}" max="{{ now()->addDays(45)->toDateString() }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="slot_id" class="form-label fw-semibold">Select Time Slot</label>
+                                <select id="slot_id" name="slot_id" class="form-select" required>
+                                    <option value="">-- Select a slot --</option>
+                                    <!-- Slots will be loaded dynamically -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <label for="user_name" class="form-label fw-semibold">Your Name</label>
+                                <input type="text" id="user_name" name="user_name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="user_phone" class="form-label fw-semibold">Phone Number</label>
+                                <input type="text" id="user_phone" name="user_phone" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-12">
+                                <label for="user_email" class="form-label fw-semibold">Email (optional)</label>
+                                <input type="email" id="user_email" name="user_email" class="form-control">
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-3 align-items-center">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Price</label>
+                                <div id="price-display" class="fs-4 fw-bold text-primary">--</div>
+                                <div id="urgency-message" class="text-sm mt-1"></div>
+                            </div>
+                        </div>
+                        <div class="d-grid mt-3">
+                            <button type="submit" class="btn btn-warning text-white fw-bold py-2" style="background: linear-gradient(135deg, #ff9800, #f57c00); border: none; font-size: 1.1rem; border-radius: 10px; box-shadow: 0 2px 8px #ff98004d;">Book Now <i class="fa-solid fa-arrow-right ms-2"></i></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="mb-4 p-4 bg-blue-50 rounded">
-        <h3 class="font-semibold mb-2">Pricing Tiers</h3>
-        <ul class="space-y-1">
-            <li><span class="font-bold">Within 2 days:</span> <span class="text-red-600 font-bold">₹21,000</span> <span class="ml-2 text-xs text-red-500">(Highest urgency!)</span></li>
-            <li><span class="font-bold">Within 15 days:</span> <span class="text-orange-600 font-bold">₹11,000</span> <span class="ml-2 text-xs text-orange-500">(Book soon for better price)</span></li>
-            <li><span class="font-bold">Within 45 days:</span> <span class="text-green-600 font-bold">₹5,000</span></li>
-            <li><span class="font-bold">More than 45 days:</span> <span class="text-gray-500">Not allowed</span></li>
-        </ul>
-    </div>
-
-    @if(session('success'))
-        <div class="bg-green-100 text-green-800 p-3 rounded mb-4">{{ session('success') }}</div>
-    @endif
-    @if($errors->any())
-        <div class="bg-red-100 text-red-800 p-3 rounded mb-4">
-            <ul class="list-disc pl-5">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    {{-- Always show the booking form, even after success --}}
-    <form id="raju-booking-form" method="POST" action="{{ route('booking.raju-maharaj.submit') }}" class="space-y-4">
-        @csrf
-        <div>
-            <label for="selected_date" class="block font-semibold">Select Date</label>
-            <input type="date" id="selected_date" name="selected_date" class="form-input mt-1 block w-full" min="{{ now()->toDateString() }}" max="{{ now()->addDays(45)->toDateString() }}" required>
-        </div>
-        <div>
-            <label for="slot_id" class="block font-semibold">Select Time Slot</label>
-            <select id="slot_id" name="slot_id" class="form-select mt-1 block w-full" required>
-                <option value="">-- Select a slot --</option>
-                <!-- Slots will be loaded dynamically -->
-            </select>
-        </div>
-        <div>
-            <label for="user_name" class="block font-semibold">Your Name</label>
-            <input type="text" id="user_name" name="user_name" class="form-input mt-1 block w-full" required>
-        </div>
-        <div>
-            <label for="user_phone" class="block font-semibold">Phone Number</label>
-            <input type="text" id="user_phone" name="user_phone" class="form-input mt-1 block w-full" required>
-        </div>
-        <div>
-            <label for="user_email" class="block font-semibold">Email (optional)</label>
-            <input type="email" id="user_email" name="user_email" class="form-input mt-1 block w-full">
-        </div>
-        <div>
-            <label class="block font-semibold">Price</label>
-            <div id="price-display" class="text-xl font-bold text-blue-700">--</div>
-            <div id="urgency-message" class="text-sm mt-1"></div>
-        </div>
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Book Now</button>
-    </form>
 </div>
 
 <script>
