@@ -25,6 +25,11 @@ class RajuMaharajBookingController extends Controller
     public function submit(Request $request)
     {
         $validated = $request->validate([
+            'user_name' => 'required|string|max:255',
+            'user_phone' => 'required|string|max:20',
+            'user_email' => 'required|email',
+            'consultation_type' => 'required|string',
+            'duration' => 'required|integer',
             'selected_date' => ['required', 'date', function ($attribute, $value, $fail) {
                 $days = now()->diffInDays(Carbon::parse($value), false);
                 if ($days > 45) {
@@ -34,34 +39,53 @@ class RajuMaharajBookingController extends Controller
                     $fail('Booking date cannot be in the past.');
                 }
             }],
-            'slot_id' => ['required', 'string'],
-            'user_name' => ['required', 'string', 'max:255'],
-            'user_phone' => ['required', 'string', 'max:20'],
-            'user_email' => ['nullable', 'email'],
+            'slot_id' => 'required',
+            'birth_date' => 'nullable|date',
+            'birth_time' => 'nullable|string',
+            'place' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'payment_method' => 'required|string',
+            'type' => 'required|string',
+            'rate' => 'required|numeric',
         ]);
 
-        $price = $this->calculatePrice($validated['selected_date']);
-        if ($price === null) {
-            return back()->withErrors(['selected_date' => 'Booking is only allowed within 45 days from today.']);
+        // Map fields to match API expectations
+        $apiPayload = $validated;
+        $apiPayload['astrologer_id'] = $this->rajuMaharajId;
+        $apiPayload['email'] = $validated['user_email'];
+        $apiPayload['date'] = $validated['selected_date'];
+        unset($apiPayload['user_email']);
+        unset($apiPayload['selected_date']);
+
+        // Ensure date is Y-m-d
+        if (!empty($apiPayload['date'])) {
+            try {
+                $apiPayload['date'] = \Carbon\Carbon::parse($apiPayload['date'])->format('Y-m-d');
+            } catch (\Exception $e) {
+                // fallback: leave as is if parse fails
+            }
         }
 
-        $data = [
-            'astrologer_id' => $this->rajuMaharajId,
-            'date' => $validated['selected_date'],
-            'slot_id' => $validated['slot_id'],
-            'user_name' => $validated['user_name'],
-            'user_phone' => $validated['user_phone'],
-            'user_email' => $validated['user_email'],
-            'price' => $price,
-            'booking_type' => $this->bookingType,
-        ];
-
-        $result = $this->bookingService->bookConsultation($data);
-        if (isset($result['success']) && $result['success']) {
-            // Redirect to payment or confirmation page as per existing flow
-            return redirect()->route('booking.raju-maharaj.form')->with('success', 'Booking created! Proceed to payment.');
+        // Get token from cookie (if needed)
+        $token = $request->cookie('auth_api_token');
+        try {
+            $result = $this->bookingService->bookConsultation($apiPayload, $token);
+            // If AJAX, return JSON
+            if ($request->expectsJson()) {
+                return response()->json(['success' => true, 'data' => $result]);
+            }
+            // Else, redirect as before
+            if (isset($result['success']) && $result['success']) {
+                return redirect()->route('booking.raju-maharaj.form')->with('success', 'Booking created! Proceed to payment.');
+            }
+            return back()->withErrors(['general' => $result['message'] ?? 'Booking failed. Please try again.']);
+        } catch (\Exception $e) {
+            \Log::error('Booking error: ' . $e->getMessage());
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Booking failed.'], 500);
+            }
+            return back()->withErrors(['general' => 'Booking failed. Please try again.']);
         }
-        return back()->withErrors(['general' => $result['message'] ?? 'Booking failed. Please try again.']);
     }
 
         // AJAX: Get available slots for Raju Maharaj
