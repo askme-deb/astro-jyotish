@@ -56,7 +56,7 @@
                                         <div class="mb-3"><label>Name</label><input type="text" class="form-control" name="name" required></div>
                                         <div class="mb-3"><label>Email</label><input type="email" class="form-control" name="user_email" required></div>
                                         <div class="mb-3"><label>Phone</label><input type="tel" class="form-control" name="phone" required></div>
-                                        <button type="button" class="btn btn-next next theme-btn">Next</button>
+                                        <button type="button" class="btn btn-next next btn theme-btn btn-lg">Next</button>
                                     </div>
                                     <!-- Step 2: Birth Details -->
                                     <div class="form-section">
@@ -64,8 +64,8 @@
                                         <div class="mb-3"><label>Date of Birth</label><input type="date" class="form-control" name="birth_date" required></div>
                                         <div class="mb-3"><label>Time of Birth</label><input type="time" class="form-control" name="birth_time" required></div>
                                         <div class="mb-3"><label>Place of Birth</label><input type="text" class="form-control" name="place"></div>
-                                        <button type="button" class="btn btn-secondary btn-prev prev theme-btn">Previous</button>
-                                        <button type="button" class="btn btn-next next theme-btn">Next</button>
+                                        <button type="button" class="btn btn-prev prev btn theme-btn btn-lg">Previous</button>
+                                        <button type="button" class="btn btn-next next btn theme-btn btn-lg">Next</button>
                                     </div>
                                     <!-- Step 3: Consultation -->
                                     <div class="form-section">
@@ -103,8 +103,8 @@
                                                 <textarea class="form-control" name="notes" rows="3" placeholder="Briefly describe your concern"></textarea>
                                             </div>
                                             <div class="col-12">
-                                                <button type="button" class="btn btn-secondary btn-prev prev theme-btn">Previous</button>
-                                                <button type="button" class="btn btn-next next theme-btn">Next</button>
+                                                <button type="button" class="btn btn-prev prev btn theme-btn btn-lg">Previous</button>
+                                                <button type="button" class="btn btn-next next btn theme-btn btn-lg">Next</button>
                                             </div>
                                         </div>
                                     </div>
@@ -117,8 +117,8 @@
                                             <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" value="card"><label class="form-check-label">Credit / Debit Card</label></div>
                                             <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" value="netbanking"><label class="form-check-label">Net Banking</label></div>
                                         </div>
-                                        <button type="button" class="btn btn-secondary btn-prev prev theme-btn">Previous</button>
-                                        <button type="button" class="btn btn-next next theme-btn">Next</button>
+                                        <button type="button" class="btn btn-prev prev btn theme-btn btn-lg">Previous</button>
+                                        <button type="button" class="btn btn-next next btn theme-btn btn-lg">Next</button>
                                     </div>
                                     <!-- Step 5: Terms -->
                                     <div class="form-section">
@@ -131,9 +131,9 @@
                                             <label class="form-check-label">I agree to Terms & Conditions</label>
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center gap-3">
-                                            <button type="button" class="btn btn-secondary btn-prev prev theme-btn">Previous</button>
+                                            <button type="button" class="btn btn-prev prev btn theme-btn btn-lg">Previous</button>
                                             <input type="hidden" name="rate" id="rate">
-                                            <button type="button" id="razorpay-pay-btn" class="btn btn-next ms-auto theme-btn">Pay with Razorpay</button>
+                                            <button type="button" id="razorpay-pay-btn" class="btn btn-next ms-auto btn theme-btn btn-lg">Pay with Razorpay</button>
                                         </div>
                                     </div>
                                 </form>
@@ -153,9 +153,14 @@
         color: #fff !important;
         border: none !important;
         font-weight: 600;
-        border-radius: 10px;
+        border-radius: 10px !important;
         box-shadow: 0 2px 8px #ff98004d;
         transition: background 0.2s;
+        padding: 0.75rem 2rem !important;
+        font-size: 1.15rem !important;
+        display: inline-block;
+        min-width: 120px;
+        text-align: center;
     }
     .theme-btn:hover, .theme-btn:focus {
         background: linear-gradient(135deg, #f57c00, #ff9800) !important;
