@@ -31,6 +31,7 @@
         </div>
     @endif
 
+    {{-- Always show the booking form, even after success --}}
     <form id="raju-booking-form" method="POST" action="{{ route('booking.raju-maharaj.submit') }}" class="space-y-4">
         @csrf
         <div>
