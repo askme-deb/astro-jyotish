@@ -584,7 +584,7 @@
 <div class="container" style="max-width: 900px; margin: 40px auto;">
     @if(isset($booking))
         <div class="booking-header-custom">
-            <div style="font-size:1.3rem;font-weight:600;"><i class="fa-solid fa-clipboard-list me-2"></i>Astro Consultation Details</div>
+            <div style="font-size:1.3rem;font-weight:600;"><i class="fa-solid fa-clipboard-list me-2"></i>Astrologer Consultation Details</div>
             <div style="font-size:0.98rem;opacity:0.95;">Booking ID : BKNG{{ $booking['id'] }}</div>
             <span class="booking-status-badge {{ $booking['status'] }}" id="booking-status-badge">{{ str_replace('_', ' ', ucfirst($booking['status'])) }}</span>
         </div>
@@ -744,6 +744,33 @@
                                     <p class="note-document-empty mb-0">No astrologer note was provided for this appointment.</p>
                                 @endif
                             </div>
+                            @if(isset($suggestedProducts) && is_array($suggestedProducts) && count($suggestedProducts) > 0)
+                                <div class="note-document-suggested-products mt-4">
+                                    <div class="note-document-field-label mb-1">Astrologer Suggested Products</div>
+                                    <ul class="ps-3 mb-0" style="font-size:0.97rem;">
+                                        @foreach($suggestedProducts as $product)
+                                            <li>
+                                                <strong>{{ $product['name'] ?? 'Product' }}</strong>
+                                                @if(!empty($product['price']))
+                                                    &ndash; {{ ($product['currency_symbol'] ?? '₹') . number_format((float) ($product['price'] ?? 0), 2) }}
+                                                @endif
+                                                @if(!empty($product['grade']))
+                                                    , Grade: {{ $product['grade'] }}
+                                                @endif
+                                                @if(!empty($product['ratti']))
+                                                    , Ratti: {{ $product['ratti'] }}
+                                                @endif
+                                                @if(!empty($product['carat']))
+                                                    , Carat: {{ $product['carat'] }}
+                                                @endif
+                                                @if(!empty($product['quantity']))
+                                                    , Qty: {{ (int) $product['quantity'] }}
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
                         </div>
                         <div class="note-document-footer">
                             <div class="note-document-footer-card">
@@ -796,15 +823,15 @@
                                         <span class="badge bg-light text-dark border">Variation: {{ $product['variation_id'] }}</span>
                                     @endif
                                 </div>
-                                @if(!empty($product['url']))
+                                {{-- @if(!empty($product['url'])) --}}
                                     <div class="mt-3">
-                                        <a href="{{ $product['url'] }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary" @if(!empty($product['slug'])) data-product-slug="{{ $product['slug'] }}" @endif>
+                                        <a href="https://shop.astrorajumaharaj.com/cart" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary" @if(!empty($product['slug'])) data-product-slug="{{ $product['slug'] }}" @endif>
                                             <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View Product
                                         </a>
                                     </div>
-                                @elseif(!empty($product['slug']))
-                                    <div class="mt-3 text-muted small">Product Slug: {{ $product['slug'] }}</div>
-                                @endif
+                                {{-- @elseif(!empty($product['slug'])) --}}
+                                    {{-- <div class="mt-3 text-muted small">Product Slug: {{ $product['slug'] }}</div> --}}
+                                {{-- @endif --}}
                             </div>
                         @endforeach
                     </div>

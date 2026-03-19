@@ -162,7 +162,7 @@
                 <div class="col-lg-2 col-md-6 mb-4">
                     <div class="filter_warp">
                         <button class="btn btn-warning" type="button" data-bs-toggle="modal" data-bs-target="#filterModal">
-                            Open Filters
+                            Filters
                         </button>
 
 

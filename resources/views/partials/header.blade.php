@@ -4,7 +4,8 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="top-bar">
-                    <i class="bi bi-telephone-forward"></i> +91 1236548790 | <i class="bi bi-envelope-at"></i> info@test.com
+                    <i class="bi bi-telephone-forward"></i> +91 90918 40899 | <i class="bi bi-envelope-at"></i> contact@astrorajumaharaj.com
+
                 </div>
             </div>
             <div class="col-md-6">

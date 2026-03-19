@@ -1083,7 +1083,7 @@ $meetingId = 'astro-' . $appointment['id'];
                     <div class="booking-details-value">No customer details found.</div>
                 @endif
             </div>
-        
+
             <div class="flex-grow-1 d-flex flex-column align-items-end justify-content-between">
                 <div class="booking-details-label mb-2">Total Amount</div>
                 <div class="booking-details-value" style="font-size:1.5rem;font-weight:700;color:#219150;">₹{{ $appointment['rate'] ?? '-' }}</div>
@@ -1174,7 +1174,7 @@ $meetingId = 'astro-' . $appointment['id'];
                             <div class="note-document-field">
                                 <span class="note-document-field-label">Name</span>
                                 <span class="note-document-field-value">{{ $customerDisplayName !== '' ? $customerDisplayName : 'Not provided' }}</span>
-                                
+
                             </div>
                             <div class="note-document-field">
                                 <span class="note-document-field-label">Consultation</span>
@@ -1189,7 +1189,7 @@ $meetingId = 'astro-' . $appointment['id'];
                                 <span class="note-document-field-value">{{ !empty($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('h:i A') : '-' }}</span>
                             </div>
                         </div>
-                      
+
                     </div>
                     <div class="note-document-writing-area">
                         <div class="note-document-watermark" aria-hidden="true">
@@ -1820,13 +1820,13 @@ $meetingId = 'astro-' . $appointment['id'];
                 + '<div class="fw-semibold mb-1">' + escapeHtml(product.name || 'Suggested Product') + '</div>'
                 + '<div class="booking-details-value mb-2">' + escapeHtml(formatCurrency(product.price ?? product.original_price ?? 0, product.currency_symbol))
                 + (hasDisplayValue(product.discount_rate) ? '<span class="badge bg-danger ms-2">' + escapeHtml(String(product.discount_rate).replace(/\.0+$/, '')) + '% off</span>' : '')
+                + (hasDisplayValue(product.quantity) ? '<span class="badge bg-light text-dark border ms-2">Qty: ' + escapeHtml(product.quantity) + '</span>' : '')
                 + '</div>'
                 + ((hasDisplayValue(product.original_price) && hasDisplayValue(product.discount_rate)) ? '<div class="text-muted small mb-2">Base Price: ' + escapeHtml(formatCurrency(product.original_price, product.currency_symbol)) + '</div>' : '')
                 + '<div class="suggested-product-meta">'
                 + (hasDisplayValue(product.grade) ? '<span class="badge bg-info text-dark">Grade: ' + escapeHtml(product.grade) + '</span>' : '')
                 + (hasDisplayValue(product.ratti) ? '<span class="badge bg-primary">Ratti: ' + escapeHtml(product.ratti) + '</span>' : '')
                 + (hasDisplayValue(product.carat) ? '<span class="badge bg-warning text-dark">Carat: ' + escapeHtml(product.carat) + '</span>' : '')
-                + '<span class="badge bg-light text-dark border">Qty: ' + escapeHtml(product.quantity || 1) + '</span>'
                 + (hasDisplayValue(product.variation_id) ? '<span class="badge bg-light text-dark border">Variation: ' + escapeHtml(product.variation_id) + '</span>' : '')
                 + '</div>'
                 + '<div class="suggested-product-actions">'

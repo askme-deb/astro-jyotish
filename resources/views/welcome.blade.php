@@ -20,7 +20,8 @@
                         <div class="hero-banner d-flex flex-column flex-md-row align-items-center justify-content-between">
                             <div class="content_warp">
                                 <h1>Discover Your Destiny with <br> Trusted <span class="text-danger">Astrologers</span></h1>
-                                <button class="btn btn-danger mt-3"> Get an Appointment</button>
+                                    @php $isLoggedIn = session('auth.user') ? true : false; @endphp
+                                    <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Get an Appointment</button>
                             </div>
                             <img src="{{ asset('assets/images/banner-1.png') }}" class="img-fluid rounded">
                         </div>
