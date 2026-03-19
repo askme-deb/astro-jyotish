@@ -44,11 +44,12 @@
                                 <input type="date" id="selected_date" name="selected_date" class="form-control" min="{{ now()->toDateString() }}" max="{{ now()->addDays(45)->toDateString() }}" required>
                             </div>
                             <div class="col-md-6">
-                                <label for="slot_id" class="form-label fw-semibold">Select Time Slot</label>
-                                <select id="slot_id" name="slot_id" class="form-select" required>
-                                    <option value="">-- Select a slot --</option>
-                                    <!-- Slots will be loaded dynamically -->
-                                </select>
+                                <label class="form-label fw-semibold mb-2">Select Time Slot</label>
+                                <div id="slot-list" class="d-flex flex-wrap gap-2 mb-2">
+                                    <div class="text-muted small">Select a date to view slots</div>
+                                </div>
+                                <input type="hidden" id="slot_id" name="slot_id" required>
+                                <div id="slot-error" class="invalid-feedback d-block" style="display:none;">Please select a time slot.</div>
                             </div>
                         </div>
                         <div class="row g-3 mb-2">
@@ -88,7 +89,9 @@
     const priceDisplay = document.getElementById('price-display');
     const urgencyMessage = document.getElementById('urgency-message');
     const dateInput = document.getElementById('selected_date');
-    const slotSelect = document.getElementById('slot_id');
+    const slotList = document.getElementById('slot-list');
+    const slotInput = document.getElementById('slot_id');
+    const slotError = document.getElementById('slot-error');
     const rajuMaharajId = 9999; // TODO: Set actual astrologer ID
 
     function getPrice(days) {
@@ -127,28 +130,51 @@
         loadSlots();
     });
     function loadSlots() {
-        slotSelect.innerHTML = '<option value="">Loading...</option>';
+        slotList.innerHTML = '<div class="text-muted small">Loading...</div>';
+        slotInput.value = '';
         const date = dateInput.value;
-        if (!date) return;
+        if (!date) {
+            slotList.innerHTML = '<div class="text-muted small">Select a date to view slots</div>';
+            return;
+        }
         fetch(`/api/astrologer/${rajuMaharajId}/slots?date=${date}`)
             .then(res => res.json())
             .then(data => {
-                slotSelect.innerHTML = '<option value="">-- Select a slot --</option>';
                 if (data && data.slots && data.slots.length) {
+                    slotList.innerHTML = '';
                     data.slots.forEach(slot => {
-                        const opt = document.createElement('option');
-                        opt.value = slot.id;
-                        opt.textContent = slot.label || slot.time || slot.id;
-                        slotSelect.appendChild(opt);
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-outline-primary slot-btn';
+                        btn.textContent = slot.label || slot.time || slot.id;
+                        btn.dataset.slotId = slot.id;
+                        btn.style.minWidth = '100px';
+                        btn.onclick = function() {
+                            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+                            btn.classList.add('active', 'btn-primary');
+                            slotInput.value = slot.id;
+                            slotError.style.display = 'none';
+                        };
+                        slotList.appendChild(btn);
                     });
                 } else {
-                    slotSelect.innerHTML = '<option value="">No slots available</option>';
+                    slotList.innerHTML = '<div class="text-danger small">No slots available</div>';
                 }
             })
             .catch(() => {
-                slotSelect.innerHTML = '<option value="">Error loading slots</option>';
+                slotList.innerHTML = '<div class="text-danger small">Error loading slots</div>';
             });
     }
+
+    // Validate slot selection on submit
+    document.getElementById('raju-booking-form').addEventListener('submit', function(e) {
+        if (!slotInput.value) {
+            slotError.style.display = 'block';
+            e.preventDefault();
+        } else {
+            slotError.style.display = 'none';
+        }
+    });
     // Disable dates > 45 days in the future
     dateInput.setAttribute('max', new Date(Date.now() + 45*24*60*60*1000).toISOString().split('T')[0]);
     // Initial price update
