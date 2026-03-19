@@ -503,9 +503,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 place: formData.get('place'),
                 notes: formData.get('notes'),
             };
+            // Validate rate
+            const rate = parseInt(bookingPayload.rate, 10);
             if (!bookingPayload.name || !bookingPayload.phone || !bookingPayload.email || !bookingPayload.consultation_type || !bookingPayload.astrologer_id || !bookingPayload.date || !bookingPayload.slot_id) {
                 setRazorpayButtonLoading(false);
                 toast('Please fill all required fields and select a slot.', true);
+                return;
+            }
+            if (!rate || isNaN(rate) || rate < 100) {
+                setRazorpayButtonLoading(false);
+                toast('Invalid or missing price. Please select a valid date.', true);
                 return;
             }
             fetch('/api/v1/bookings', {
@@ -525,7 +532,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
                 const bookingId = resp.data.data.id;
-                const amount = resp.data.data.rate;
+                // Razorpay expects amount in paise (multiply by 100)
+                const amount = rate * 100;
                 const currency = resp.data.data.currency || 'INR';
                 fetch('/api/v1/razorpay/order', {
                     method: 'POST',
