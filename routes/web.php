@@ -107,3 +107,8 @@ use App\Http\Controllers\BlogController;
 
 Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.details');
 
+// Raju Maharaj Booking
+use App\Http\Controllers\RajuMaharajBookingController;
+Route::get('/booking/raju-maharaj', [RajuMaharajBookingController::class, 'showForm'])->name('booking.raju-maharaj.form');
+Route::post('/booking/raju-maharaj', [RajuMaharajBookingController::class, 'submit'])->name('booking.raju-maharaj.submit');
+
