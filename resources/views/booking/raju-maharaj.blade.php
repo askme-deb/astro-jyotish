@@ -49,6 +49,9 @@
                                     <div class="text-muted small">Select a date to view slots</div>
                                 </div>
                                 <input type="hidden" id="slot_id" name="slot_id" required>
+                                <div class="mt-1 text-muted small">
+                                    Selected Slot: <strong id="slotText">None</strong>
+                                </div>
                                 <div id="slot-error" class="invalid-feedback d-block" style="display:none;">Please select a time slot.</div>
                             </div>
                         </div>
@@ -132,6 +135,7 @@
     function loadSlots() {
         slotList.innerHTML = '<div class="text-muted small">Loading...</div>';
         slotInput.value = '';
+        document.getElementById('slotText').textContent = 'None';
         const date = dateInput.value;
         if (!date) {
             slotList.innerHTML = '<div class="text-muted small">Select a date to view slots</div>';
@@ -143,19 +147,31 @@
                 if (data && data.slots && data.slots.length) {
                     slotList.innerHTML = '';
                     data.slots.forEach(slot => {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'btn btn-outline-primary slot-btn';
-                        btn.textContent = slot.label || slot.time || slot.id;
-                        btn.dataset.slotId = slot.id;
-                        btn.style.minWidth = '100px';
-                        btn.onclick = function() {
-                            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
-                            btn.classList.add('active', 'btn-primary');
-                            slotInput.value = slot.id;
+                        const badge = document.createElement('span');
+                        badge.className = 'slot-badge btn btn-outline-primary';
+                        badge.tabIndex = 0;
+                        badge.textContent = slot.end_time ? `${slot.start_time} - ${slot.end_time}` : slot.start_time;
+                        badge.dataset.slotId = slot.slot_id;
+                        badge.setAttribute('role', 'button');
+                        badge.setAttribute('aria-pressed', 'false');
+                        badge.onclick = function() {
+                            slotList.querySelectorAll('.slot-badge').forEach(b => {
+                                b.classList.remove('active', 'btn-primary');
+                                b.setAttribute('aria-pressed', 'false');
+                            });
+                            badge.classList.add('active', 'btn-primary');
+                            badge.setAttribute('aria-pressed', 'true');
+                            slotInput.value = slot.slot_id;
+                            document.getElementById('slotText').textContent = badge.textContent;
                             slotError.style.display = 'none';
                         };
-                        slotList.appendChild(btn);
+                        badge.onkeydown = function(e) {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                badge.click();
+                            }
+                        };
+                        slotList.appendChild(badge);
                     });
                 } else {
                     slotList.innerHTML = '<div class="text-danger small">No slots available</div>';

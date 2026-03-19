@@ -65,22 +65,24 @@ class RajuMaharajBookingController extends Controller
     }
 
         // AJAX: Get available slots for Raju Maharaj
-        public function getSlots(Request $request)
-        {
-            $date = $request->query('date');
-            if (!$date) {
-                return response()->json(['slots' => []]);
-            }
-            $slots = $this->bookingService->getSlots($this->rajuMaharajId, $date);
-            // Normalize slots for frontend
-            $normalized = collect($slots['data'] ?? $slots ?? [])->map(function ($slot) {
-                return [
-                    'id' => $slot['id'] ?? $slot['slot_id'] ?? null,
-                    'label' => $slot['label'] ?? $slot['time'] ?? null,
-                ];
-            })->filter(fn($s) => $s['id'] && $s['label'])->values();
-            return response()->json(['slots' => $normalized]);
+    public function getSlots(Request $request)
+    {
+        $date = $request->query('date');
+        if (!$date) {
+            return response()->json(['slots' => []]);
         }
+        $slots = $this->bookingService->getSlots($this->rajuMaharajId, $date);
+        \Log::debug('RajuMaharajBookingController@getSlots API response', ['response' => $slots]);
+        // Normalize slots for frontend
+        $normalized = collect($slots['data'] ?? $slots ?? [])->map(function ($slot) {
+            return [
+                'slot_id' => $slot['slot_id'] ?? $slot['id'] ?? null,
+                'start_time' => $slot['start_time'] ?? $slot['from'] ?? $slot['label'] ?? $slot['time'] ?? null,
+                'end_time' => $slot['end_time'] ?? $slot['to'] ?? null,
+            ];
+        })->filter(fn($s) => $s['slot_id'] && $s['start_time'])->values();
+        return response()->json(['slots' => $normalized, 'raw' => $slots]);
+    }
 
     private function calculatePrice($selectedDate)
     {
