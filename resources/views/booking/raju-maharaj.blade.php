@@ -148,12 +148,6 @@
 
 @push('styles')
 <style>
-    #slot-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 0.5rem;
-    }
     .slot-badge {
         display: inline-block;
         min-width: 110px;
@@ -169,7 +163,7 @@
         box-shadow: 0 1px 4px #ffc10722;
         user-select: none;
     }
-    .slot-badge.active, .slot-badge.btn-primary {
+    .slot-badge.active {
         background: linear-gradient(135deg, #ff9800, #f57c00);
         color: #fff;
         border-color: #f57c00;
@@ -183,112 +177,404 @@
 </style>
 @endpush
 
+@push('scripts')
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-    const priceDisplay = document.getElementById('price-display');
-    const urgencyMessage = document.getElementById('urgency-message');
-    const dateInput = document.getElementById('selected_date');
-    const slotList = document.getElementById('slot-list');
-    const slotInput = document.getElementById('slot_id');
-    const slotError = document.getElementById('slot-error');
-    const rajuMaharajId = 15; // TODO: Set actual astrologer ID
+document.addEventListener('DOMContentLoaded', function () {
+    // --- STEPPER LOGIC ---
+    const sections = Array.from(document.querySelectorAll('.form-section'));
+    const steps = Array.from(document.querySelectorAll('.step'));
+    const nextBtns = document.querySelectorAll('.btn-next');
+    const prevBtns = document.querySelectorAll('.btn-prev');
+    let currentStep = 0;
+    sections.forEach(section => section.classList.remove('active'));
+    steps.forEach(step => step.classList.remove('active'));
+    if (sections.length > 0) sections[0].classList.add('active');
+    if (steps.length > 0) steps[0].classList.add('active');
+    function showStep(step) {
+        if (step < 0) step = 0;
+        if (step >= sections.length) step = sections.length - 1;
+        sections.forEach((section, idx) => {
+            if (idx === step) section.classList.add('active');
+            else section.classList.remove('active');
+        });
+        steps.forEach((stepEl, idx) => {
+            if (idx === step) stepEl.classList.add('active');
+            else stepEl.classList.remove('active');
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        currentStep = step;
+    }
+    function validateStep(step) {
+        let valid = true;
+        const currentSection = sections[step];
+        if (currentSection) {
+            currentSection.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            currentSection.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+        }
+        if (step === 0) {
+            const name = document.querySelector('[name="name"]');
+            const email = document.querySelector('[name="user_email"]');
+            const phone = document.querySelector('[name="phone"]');
+            if (!name.value.trim()) { showError(name, 'Name is required'); valid = false; }
+            if (!email.value.trim() || !email.checkValidity()) { showError(email, 'Valid email required'); valid = false; }
+            if (!phone.value.trim()) { showError(phone, 'Phone is required'); valid = false; }
+        }
+        if (step === 1) {
+            const birthDate = document.querySelector('[name="birth_date"]');
+            const birthTime = document.querySelector('[name="birth_time"]');
+            if (!birthDate.value) { showError(birthDate, 'Birth date is required'); valid = false; }
+            if (!birthTime.value) { showError(birthTime, 'Birth time is required'); valid = false; }
+        }
+        if (step === 2) {
+            const consultationType = document.querySelector('[name="consultation_type"]');
+            const duration = document.querySelector('[name="duration"]');
+            const scheduledAt = document.querySelector('[name="scheduled_at"]');
+            const slotId = document.querySelector('[name="slot_id"]');
+            if (!consultationType.value) { showError(consultationType, 'Select consultation type'); valid = false; }
+            if (!duration.value) { showError(duration, 'Duration required'); valid = false; }
+            if (!scheduledAt.value) { showError(scheduledAt, 'Select date'); valid = false; }
+            if (!slotId.value) { showError(slotId, 'Select a slot'); valid = false; }
+        }
+        if (step === 3) {
+            const payment = document.querySelector('[name="payment_method"]:checked');
+            if (!payment) {
+                const radios = document.querySelectorAll('[name="payment_method"]');
+                if (radios.length) showError(radios[0].closest('.form-check'), 'Select payment method');
+                valid = false;
+            }
+        }
+        if (step === 4) {
+            const terms = document.getElementById('termsCheck');
+            if (!terms.checked) { showError(terms, 'You must agree to continue'); valid = false; }
+        }
+        return valid;
+    }
+    function showError(input, message) {
+        if (!input) return;
+        input.classList.add('is-invalid');
+        let feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback';
+        feedback.textContent = message;
+        if (input.parentNode) input.parentNode.appendChild(feedback);
+    }
+    nextBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            if (validateStep(currentStep)) {
+                if (currentStep < sections.length - 1) {
+                    currentStep++;
+                    showStep(currentStep);
+                }
+            }
+        });
+    });
+    prevBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            if (currentStep > 0) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        });
+    });
+    showStep(currentStep);
 
-    function getPrice(days) {
-        if (days < 0 || days > 45) return null;
-        if (days <= 2) return 21000;
-        if (days <= 15) return 11000;
-        if (days <= 45) return 5000;
-        return null;
+    // --- DURATION FETCH ---
+    const durationInput = document.getElementById('duration');
+    if (durationInput) {
+        fetch('/consultation/session-duration?astrologer_id=15')
+            .then(res => res.json())
+            .then(data => { if (data && data.duration) durationInput.value = data.duration; });
     }
-    function getUrgencyMsg(days) {
-        if (days <= 2) return 'Highest urgency!';
-        if (days <= 15) return 'Book soon for better price!';
-        if (days <= 45) return '';
-        return '';
+
+    // --- SLOT FETCH ---
+    const dateInput = document.getElementById('consultation_date');
+    const slotGrid = document.getElementById('slotGrid');
+    const slotIdInput = document.getElementById('slot_id');
+    const slotText = document.getElementById('slotText');
+    function clearSlotGrid() {
+        if (slotGrid) slotGrid.innerHTML = '';
+        if (slotIdInput) slotIdInput.value = '';
+        if (slotText) slotText.textContent = 'None';
     }
+    function showSlotSkeletons(count = 5) {
+        if (!slotGrid) return;
+        slotGrid.innerHTML = '';
+        for (let i = 0; i < count; i++) {
+            const skel = document.createElement('div');
+            skel.className = 'slot-skeleton';
+            slotGrid.appendChild(skel);
+        }
+    }
+    function fetchSlots() {
+        const date = dateInput.value;
+        clearSlotGrid();
+        if (!date) return;
+        showSlotSkeletons(5);
+        fetch(`/api/astrologer/15/slots?date=${date}`)
+            .then(res => res.json())
+            .then(data => {
+                slotGrid.innerHTML = '';
+                if (data.success && Array.isArray(data.slots) && data.slots.length > 0) {
+                    data.slots.forEach(slot => {
+                        const badge = document.createElement('span');
+                        badge.className = 'slot-badge';
+                        badge.tabIndex = 0;
+                        badge.textContent = `${slot.start_time} - ${slot.end_time}`;
+                        badge.dataset.slotId = slot.slot_id;
+                        badge.setAttribute('role', 'button');
+                        badge.setAttribute('aria-pressed', 'false');
+                        badge.addEventListener('click', function () {
+                            slotGrid.querySelectorAll('.slot-badge').forEach(b => {
+                                b.classList.remove('active');
+                                b.setAttribute('aria-pressed', 'false');
+                            });
+                            badge.classList.add('active');
+                            badge.setAttribute('aria-pressed', 'true');
+                            slotIdInput.value = slot.slot_id;
+                            slotText.textContent = `${slot.start_time} - ${slot.end_time}`;
+                        });
+                        badge.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                badge.click();
+                            }
+                        });
+                        slotGrid.appendChild(badge);
+                    });
+                } else {
+                    slotGrid.innerHTML = '<span class="text-danger">No slots available</span>';
+                }
+            })
+            .catch(() => {
+                slotGrid.innerHTML = '<span class="text-danger">Error loading slots</span>';
+            });
+    }
+    if (dateInput && slotGrid && slotIdInput && slotText) {
+        dateInput.addEventListener('change', fetchSlots);
+    }
+
+    // --- PRICE LOGIC ---
+    const rateInput = document.getElementById('rate');
     function updatePrice() {
         const today = new Date();
         const selected = new Date(dateInput.value);
         const diffTime = selected - today;
         const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const price = getPrice(days);
-        if (price === null) {
-            priceDisplay.textContent = 'Not allowed';
-            priceDisplay.className = 'text-gray-500 font-bold';
-            urgencyMessage.textContent = 'Booking is only allowed within 45 days.';
-        } else {
-            priceDisplay.textContent = '₹' + price.toLocaleString();
-            if (days <= 2) priceDisplay.className = 'text-red-600 font-bold text-xl';
-            else if (days <= 15) priceDisplay.className = 'text-orange-600 font-bold text-xl';
-            else priceDisplay.className = 'text-green-600 font-bold text-xl';
-            urgencyMessage.textContent = getUrgencyMsg(days);
-        }
+        let price = null;
+        if (days < 0 || days > 45) price = null;
+        else if (days <= 2) price = 21000;
+        else if (days <= 15) price = 11000;
+        else if (days <= 45) price = 5000;
+        if (rateInput) rateInput.value = price || '';
     }
-    dateInput.addEventListener('change', function() {
-        updatePrice();
-        loadSlots();
-    });
-    function loadSlots() {
-        slotList.innerHTML = '<div class="text-muted small">Loading...</div>';
-        slotInput.value = '';
-        document.getElementById('slotText').textContent = 'None';
-        const date = dateInput.value;
-        if (!date) {
-            slotList.innerHTML = '<div class="text-muted small">Select a date to view slots</div>';
-            return;
+    if (dateInput) dateInput.addEventListener('change', updatePrice);
+
+    // --- RAZORPAY PAYMENT ---
+    const razorpayBtn = document.getElementById('razorpay-pay-btn');
+    function setRazorpayButtonLoading(isLoading) {
+        if (!razorpayBtn) return;
+        if (!razorpayBtn.dataset.defaultLabel) razorpayBtn.dataset.defaultLabel = razorpayBtn.innerHTML;
+        razorpayBtn.disabled = isLoading;
+        razorpayBtn.innerHTML = isLoading
+            ? '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...'
+            : razorpayBtn.dataset.defaultLabel;
+    }
+    function getBearerToken() {
+        return localStorage.getItem('authToken') || '';
+    }
+    function toast(message, isError = false) {
+        let toastEl = document.getElementById('checkout-toast');
+        if (!toastEl) {
+            toastEl = document.createElement('div');
+            toastEl.id = 'checkout-toast';
+            toastEl.style.position = 'fixed';
+            toastEl.style.left = '50%';
+            toastEl.style.bottom = '24px';
+            toastEl.style.transform = 'translateX(-50%) translateY(20px)';
+            toastEl.style.zIndex = '9999';
+            toastEl.style.padding = '12px 18px';
+            toastEl.style.borderRadius = '6px';
+            toastEl.style.fontSize = '14px';
+            toastEl.style.fontWeight = '500';
+            toastEl.style.color = '#fff';
+            toastEl.style.boxShadow = '0 6px 16px rgba(0,0,0,0.25)';
+            toastEl.style.maxWidth = '90%';
+            toastEl.style.textAlign = 'center';
+            toastEl.style.opacity = '0';
+            toastEl.style.transition = 'all 0.3s ease';
+            document.body.appendChild(toastEl);
         }
-        fetch(`/api/astrologer/${rajuMaharajId}/slots?date=${date}`)
+        toastEl.textContent = message;
+        toastEl.style.backgroundColor = isError ? '#e53935' : '#2e7d32';
+        toastEl.style.opacity = '1';
+        toastEl.style.transform = 'translateX(-50%) translateY(0)';
+        clearTimeout(toastEl._hideTimer);
+        toastEl._hideTimer = setTimeout(() => {
+            toastEl.style.opacity = '0';
+            toastEl.style.transform = 'translateX(-50%) translateY(20px)';
+        }, 3000);
+    }
+    function redirectToBookingDetails(bookingId) {
+        if (!bookingId) return;
+        window.location.href = '/booking/' + encodeURIComponent(bookingId);
+    }
+    function resolveBookingId(payload) {
+        if (!payload || typeof payload !== 'object') return null;
+        return payload.booking_id || payload.id || payload.data?.id || payload.data?.booking_id || payload.data?.data?.id || payload.data?.data?.booking_id || null;
+    }
+    if (razorpayBtn) {
+        razorpayBtn.addEventListener('click', function () {
+            setRazorpayButtonLoading(true);
+            const form = document.getElementById('raju-booking-form');
+            const formData = new FormData(form);
+            const bookingPayload = {
+                name: formData.get('name'),
+                phone: formData.get('phone'),
+                email: formData.get('user_email'),
+                user_email: formData.get('user_email'),
+                consultation_type: formData.get('consultation_type'),
+                astrologer_id: 15,
+                date: formData.get('scheduled_at'),
+                scheduled_at: formData.get('scheduled_at'),
+                slot_id: formData.get('slot_id'),
+                payment_method: 'razorpay',
+                duration: formData.get('duration'),
+                type: formData.get('consultation_type') || 'Online',
+                rate: formData.get('rate'),
+                birth_date: formData.get('birth_date'),
+                birth_time: formData.get('birth_time'),
+                place: formData.get('place'),
+                notes: formData.get('notes'),
+            };
+            if (!bookingPayload.name || !bookingPayload.phone || !bookingPayload.email || !bookingPayload.consultation_type || !bookingPayload.astrologer_id || !bookingPayload.date || !bookingPayload.slot_id) {
+                setRazorpayButtonLoading(false);
+                toast('Please fill all required fields and select a slot.', true);
+                return;
+            }
+            fetch('/api/v1/bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + getBearerToken()
+                },
+                body: JSON.stringify(bookingPayload)
+            })
             .then(res => res.json())
-            .then(data => {
-                slotList.innerHTML = '';
-                if (data.slots && Array.isArray(data.slots) && data.slots.length > 0) {
-                    data.slots.forEach(slot => {
-                        const badge = document.createElement('span');
-                        badge.className = 'slot-badge btn btn-outline-primary';
-                        badge.tabIndex = 0;
-                        badge.textContent = slot.end_time ? `${slot.start_time} - ${slot.end_time}` : slot.start_time;
-                        badge.dataset.slotId = slot.slot_id;
-                        badge.setAttribute('role', 'button');
-                        badge.setAttribute('aria-pressed', 'false');
-                        badge.onclick = function() {
-                            slotList.querySelectorAll('.slot-badge').forEach(b => {
-                                b.classList.remove('active', 'btn-primary');
-                                b.setAttribute('aria-pressed', 'false');
-                            });
-                            badge.classList.add('active', 'btn-primary');
-                            badge.setAttribute('aria-pressed', 'true');
-                            slotInput.value = slot.slot_id;
-                            document.getElementById('slotText').textContent = badge.textContent;
-                            slotError.style.display = 'none';
-                        };
-                        badge.onkeydown = function(e) {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                badge.click();
-                            }
-                        };
-                        slotList.appendChild(badge);
-                    });
-                } else {
-                    slotList.innerHTML = '<div class="text-danger small">No slots available</div>';
+            .then(resp => {
+                if (!resp.success || !resp.data || !resp.data.data || !resp.data.data.id) {
+                    setRazorpayButtonLoading(false);
+                    toast(resp.message || 'Failed to create booking.', true);
+                    return;
                 }
+                const bookingId = resp.data.data.id;
+                const amount = resp.data.data.rate;
+                const currency = resp.data.data.currency || 'INR';
+                fetch('/api/v1/razorpay/order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + getBearerToken()
+                    },
+                    body: JSON.stringify({ booking_id: bookingId, amount: amount, currency: currency })
+                })
+                .then(res => res.json())
+                .then(orderResp => {
+                    if (!orderResp.status || !orderResp.data || !orderResp.data.razorpay_order_id) {
+                        setRazorpayButtonLoading(false);
+                        toast(orderResp.message || 'Failed to initiate payment.', true);
+                        return;
+                    }
+                    const options = {
+                        key: orderResp.data.key || 'rzp_test_3WmknLIqcUo9er',
+                        amount: orderResp.data.amount,
+                        currency: orderResp.data.currency,
+                        name: 'Astro Jyotish',
+                        description: 'Consultation Booking',
+                        order_id: orderResp.data.razorpay_order_id,
+                        handler: function (response) {
+                            fetch('/api/v1/razorpay/verify', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'Authorization': 'Bearer ' + getBearerToken()
+                                },
+                                body: JSON.stringify({
+                                    booking_id: bookingId,
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(verifyResp => {
+                                if (verifyResp.status) {
+                                    fetch('/api/v1/razorpay/booking', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json',
+                                            'Authorization': 'Bearer ' + getBearerToken()
+                                        },
+                                        body: JSON.stringify({
+                                            booking_id: bookingId,
+                                            razorpay_order_id: response.razorpay_order_id,
+                                            razorpay_payment_id: response.razorpay_payment_id,
+                                            razorpay_signature: response.razorpay_signature
+                                        })
+                                    })
+                                    .then(res => res.json())
+                                    .then(confirmResp => {
+                                        if (confirmResp.status) {
+                                            setRazorpayButtonLoading(false);
+                                            toast('Booking and payment successful!');
+                                            redirectToBookingDetails(bookingId);
+                                        } else {
+                                            setRazorpayButtonLoading(false);
+                                            toast(confirmResp.message || 'Booking confirmation failed.', true);
+                                        }
+                                    })
+                                    .catch(() => {
+                                        setRazorpayButtonLoading(false);
+                                        toast('Error confirming booking.', true);
+                                    });
+                                } else {
+                                    setRazorpayButtonLoading(false);
+                                    toast(verifyResp.message || 'Payment verification failed.', true);
+                                }
+                            })
+                            .catch(() => {
+                                setRazorpayButtonLoading(false);
+                                toast('Payment verification error.', true);
+                            });
+                        },
+                        modal: {
+                            ondismiss: function () { setRazorpayButtonLoading(false); }
+                        },
+                        prefill: {
+                            name: bookingPayload.name,
+                            email: bookingPayload.email,
+                            contact: bookingPayload.phone
+                        },
+                        theme: { color: '#0d6efd' }
+                    };
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                })
+                .catch(() => {
+                    setRazorpayButtonLoading(false);
+                    toast('Error initiating payment.', true);
+                });
             })
             .catch(() => {
-                slotList.innerHTML = '<div class="text-danger small">Error loading slots</div>';
+                setRazorpayButtonLoading(false);
+                toast('Error creating booking.', true);
             });
+        });
     }
-
-    // Validate slot selection on submit
-    document.getElementById('raju-booking-form').addEventListener('submit', function(e) {
-        if (!slotInput.value) {
-            slotError.style.display = 'block';
-            e.preventDefault();
-        } else {
-            slotError.style.display = 'none';
-        }
-    });
-    // Disable dates > 45 days in the future
-    dateInput.setAttribute('max', new Date(Date.now() + 45*24*60*60*1000).toISOString().split('T')[0]);
-    // Initial price update
-    updatePrice();
+});
 </script>
+@endpush
 @endsection
