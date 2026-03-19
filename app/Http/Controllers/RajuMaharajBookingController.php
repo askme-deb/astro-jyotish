@@ -73,8 +73,9 @@ class RajuMaharajBookingController extends Controller
         }
         $slots = $this->bookingService->getSlots($this->rajuMaharajId, $date);
         \Log::debug('RajuMaharajBookingController@getSlots API response', ['response' => $slots]);
-        // Normalize slots for frontend
-        $normalized = collect($slots['data'] ?? $slots ?? [])->map(function ($slot) {
+        // Normalize slots for frontend (prefer slots['slots'] if present)
+        $slotArr = $slots['slots'] ?? $slots['data'] ?? $slots ?? [];
+        $normalized = collect($slotArr)->map(function ($slot) {
             return [
                 'slot_id' => $slot['slot_id'] ?? $slot['id'] ?? null,
                 'start_time' => $slot['start_time'] ?? $slot['from'] ?? $slot['label'] ?? $slot['time'] ?? null,
