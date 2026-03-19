@@ -166,7 +166,7 @@
         <section class="schedule-section">
             <div class="container">
                 <div class="live-show">
-                    <a class="live-show-box" href="/astrologer/book-appointment">
+                    <a class="live-show-box" href="/consultation">
                         <div class="schedule-category">
                             <div class="schedule-icon">
                                 <img loading="lazy" src="{{ asset('assets/images/hend.png') }}" alt="Reiki Healing">
@@ -174,7 +174,7 @@
                             <span>Career Counseling</span>
                         </div>
                     </a>
-                    <a class="live-show-box" href="/astrologer/book-appointment">
+                    <a class="live-show-box" href="/consultation">
                         <div class="schedule-category">
                             <div class="schedule-icon">
                                 <img loading="lazy" src="{{ asset('assets/images/astology.png') }}" alt="Popular Astrologer">
@@ -182,7 +182,7 @@
                             <span>Face Reading</span>
                         </div>
                     </a>
-                    <a class="live-show-box" href="/astrologer/book-appointment">
+                    <a class="live-show-box" href="/consultation">
                         <div class="schedule-category">
                             <div class="schedule-icon">
                                 <img loading="lazy" src="{{ asset('assets/images/tarot.png') }}" alt="Learn Tarot">
@@ -190,7 +190,7 @@
                             <span>Gems Stone Guidance</span>
                         </div>
                     </a>
-                    <!-- <a class="live-show-box" href="/astrologer/book-appointment">
+                    <!-- <a class="live-show-box" href="/consultation">
                    <div class="schedule-category">
                        <div class="schedule-icon">
                            <img loading="lazy" src="https://images.astroyogi.com/strapicmsprod/assets/Rudra_Abhishek_Pooja_0779457b37.svg" alt="Rudra Abhishek Pooja">
@@ -344,7 +344,7 @@
             <div class="row g-4">
                 <!-- Card Item -->
                 <div class="col-6 col-md-4 col-lg-2">
-                    <a href="career-counseling.php" class="text-decoration-none">
+                    <a href="javascript:;" class="text-decoration-none">
                         <div class="reading-card">
                             <img src="{{asset('assets/images/readings/match_making.png')}}" alt="Career Counseling">
                             <p>Career Counseling</p>
@@ -352,7 +352,7 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <a href="career-counseling.php" class="text-decoration-none">
+                    <a href="javascript:;" class="text-decoration-none">
                         <div class="reading-card">
                             <img src="{{asset('assets/images/readings/kundli.png')}}" alt="Face Reading">
                             <p>Face Reading</p>
@@ -360,7 +360,7 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <a href="career-counseling.php" class="text-decoration-none">
+                    <a href="javascript:;" class="text-decoration-none">
                         <div class="reading-card">
                             <img src="{{asset('assets/images/readings/planet.png')}}" alt="Gems Stone Guidance">
                             <p>Gems Stone Guidance</p>
@@ -368,7 +368,7 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <a href="career-counseling.php" class="text-decoration-none">
+                    <a href="javascript:;" class="text-decoration-none">
                         <div class="reading-card">
                             <img src="{{asset('assets/images/readings/remedies.png')}}" alt="Horoscope Reading">
                             <p>Horoscope Reading</p>
@@ -376,7 +376,7 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <a href="career-counseling.php" class="text-decoration-none">
+                    <a href="javascript:;" class="text-decoration-none">
                         <div class="reading-card">
                             <img src="{{asset('assets/images/readings/love.png')}}" alt="Kundli Matching">
                             <p>Kundli Matching</p>
@@ -384,7 +384,7 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <a href="career-counseling.php" class="text-decoration-none">
+                    <a href="javascript:;" class="text-decoration-none">
                         <div class="reading-card">
                             <img src="{{asset('assets/images/readings/panchang.png')}}" alt="Muhurat">
                             <p>Muhurat</p>
@@ -392,7 +392,7 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <a href="career-counseling.php" class="text-decoration-none">
+                    <a href="javascript:;" class="text-decoration-none">
                         <div class="reading-card">
                             <img src="{{asset('assets/images/readings/tarot.png')}}" alt="Palm Reading">
                             <p>Palm Reading</p>
@@ -400,7 +400,7 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <a href="career-counseling.php" class="text-decoration-none">
+                    <a href="javascript:;" class="text-decoration-none">
                         <div class="reading-card">
                             <img src="{{asset('assets/images/readings/numerology.png')}}" alt="Prashna Kundali">
                             <p>Prashna Kundali</p>
@@ -408,7 +408,7 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <a href="career-counseling.php" class="text-decoration-none">
+                    <a href="javascript:;" class="text-decoration-none">
                         <div class="reading-card">
                             <img src="{{asset('assets/images/readings/vastu.png')}}" alt="Vastu Shastra">
                             <p>Vastu Shastra</p>
@@ -416,7 +416,7 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-4 col-lg-2">
-                    <a href="career-counseling.php" class="text-decoration-none">
+                    <a href="javascript:;" class="text-decoration-none">
                         <div class="reading-card">
                             <img src="{{asset('assets/images/readings/zodiac.png')}}" alt="Vedic Astrology">
                             <p>Vedic Astrology</p>
@@ -437,10 +437,11 @@
                     @foreach(array_slice($blogs, 0, 3) as $blog)
                         <div class="col-md-6 col-lg-4">
                             @php $blogUrl = url('blog/' . ($blog['slug'] ?? $blog['id'])); @endphp
-                            <div class="blog-card" onclick="window.location.href='{{ $blogUrl }}'">
+                            <div class="blog-card" >
+                                {{-- onclick="window.location.href='{{ $blogUrl }}'" --}}
                                 <div class="blog-img">
                                     <img src="{{ $blog['image'] ?? asset('assets/images/default-blog.jpg') }}" alt="{{ $blog['title'] ?? '' }}">
-                                    <div class="blog-badge">{{ strtoupper(substr($blog['title'] ?? 'B', 0, 1)) }}</div>
+                                    {{-- <div class="blog-badge">{{ strtoupper(substr($blog['title'] ?? 'B', 0, 1)) }}</div> --}}
                                 </div>
                                 <div class="blog-body">
                                     <div class="blog-title">
