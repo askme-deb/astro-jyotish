@@ -174,6 +174,8 @@
         outline: 2px solid #ffc107;
         outline-offset: 2px;
     }
+    .form-section { display: none; }
+    .form-section.active { display: block; }
 </style>
 @endpush
 
@@ -195,8 +197,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (step < 0) step = 0;
         if (step >= sections.length) step = sections.length - 1;
         sections.forEach((section, idx) => {
-            if (idx === step) section.classList.add('active');
-            else section.classList.remove('active');
+            if (idx === step) {
+                section.classList.add('active');
+                section.style.display = 'block';
+            } else {
+                section.classList.remove('active');
+                section.style.display = 'none';
+            }
         });
         steps.forEach((stepEl, idx) => {
             if (idx === step) stepEl.classList.add('active');
