@@ -36,52 +36,110 @@
                     @endif
 
                     {{-- Always show the booking form, even after success --}}
-                    <form id="raju-booking-form" method="POST" action="{{ route('booking.raju-maharaj.submit') }}">
-                        @csrf
-                        <div class="row g-3 mb-2">
-                            <div class="col-md-6">
-                                <label for="selected_date" class="form-label fw-semibold">Select Date</label>
-                                <input type="date" id="selected_date" name="selected_date" class="form-control" min="{{ now()->toDateString() }}" max="{{ now()->addDays(45)->toDateString() }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold mb-2">Select Time Slot</label>
-                                <div id="slot-list" class="d-flex flex-wrap gap-2 mb-2">
-                                    <div class="text-muted small">Select a date to view slots</div>
-                                </div>
-                                <input type="hidden" id="slot_id" name="slot_id" required>
-                                <div class="mt-1 text-muted small">
-                                    Selected Slot: <strong id="slotText">None</strong>
-                                </div>
-                                <div id="slot-error" class="invalid-feedback d-block" style="display:none;">Please select a time slot.</div>
-                            </div>
-                        </div>
-                        <div class="row g-3 mb-2">
-                            <div class="col-md-6">
-                                <label for="user_name" class="form-label fw-semibold">Your Name</label>
-                                <input type="text" id="user_name" name="user_name" class="form-control" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="user_phone" class="form-label fw-semibold">Phone Number</label>
-                                <input type="text" id="user_phone" name="user_phone" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="row g-3 mb-2">
+
+                    <!-- Multi-step form matching consultation form -->
+                    <div class="container py-2">
+                        <div class="row">
                             <div class="col-md-12">
-                                <label for="user_email" class="form-label fw-semibold">Email (optional)</label>
-                                <input type="email" id="user_email" name="user_email" class="form-control">
+                                <div class="step-list d-flex justify-content-center mb-4">
+                                    <div class="step active" data-step="0"><div class="step-circle"><i class="bi bi-file-earmark-person"></i></div><div class="step-title"><h6>Personal Info</h6></div></div>
+                                    <div class="step" data-step="1"><div class="step-circle"><i class="bi bi-cake2"></i></div><div class="step-title"><h6>Birth Details</h6></div></div>
+                                    <div class="step" data-step="2"><div class="step-circle"><i class="bi bi-people"></i></div><div class="step-title"><h6>Consultation</h6></div></div>
+                                    <div class="step" data-step="3"><div class="step-circle"><i class="bi bi-credit-card"></i></div><div class="step-title"><h6>Payment</h6></div></div>
+                                    <div class="step" data-step="4"><div class="step-circle"><i class="bi bi-check2-square"></i></div><div class="step-title"><h6>Complete</h6></div></div>
+                                </div>
+                                <div id="stepper-error" style="display:none" class="alert alert-danger"></div>
+                                <form id="raju-booking-form">
+                                    <!-- Step 1: Personal Info -->
+                                    <div class="form-section">
+                                        <h4>Personal Information</h4>
+                                        <div class="mb-3"><label>Name</label><input type="text" class="form-control" name="name" required></div>
+                                        <div class="mb-3"><label>Email</label><input type="email" class="form-control" name="user_email" required></div>
+                                        <div class="mb-3"><label>Phone</label><input type="tel" class="form-control" name="phone" required></div>
+                                        <button type="button" class="btn btn-next next">Next</button>
+                                    </div>
+                                    <!-- Step 2: Birth Details -->
+                                    <div class="form-section">
+                                        <h4>Birth Details</h4>
+                                        <div class="mb-3"><label>Date of Birth</label><input type="date" class="form-control" name="birth_date" required></div>
+                                        <div class="mb-3"><label>Time of Birth</label><input type="time" class="form-control" name="birth_time" required></div>
+                                        <div class="mb-3"><label>Place of Birth</label><input type="text" class="form-control" name="place"></div>
+                                        <button type="button" class="btn btn-secondary btn-prev prev">Previous</button>
+                                        <button type="button" class="btn btn-next next">Next</button>
+                                    </div>
+                                    <!-- Step 3: Consultation -->
+                                    <div class="form-section">
+                                        <h4>Consultation</h4>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Consultation Type</label>
+                                                <select class="form-select" name="consultation_type" id="consultation_type">
+                                                    <option value="video">Video Call</option>
+                                                    <option value="phone">Phone Call</option>
+                                                    <option value="inperson">In-person</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Astrologer</label>
+                                                <input type="text" class="form-control" value="Raju Maharaj" readonly>
+                                                <input type="hidden" name="astrologer_id" id="astrologer_id" value="15">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Session Duration</label>
+                                                <input type="text" class="form-control" id="duration" name="duration" readonly>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Preferred Date</label>
+                                                <input type="date" class="form-control" name="scheduled_at" id="consultation_date">
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-semibold">Available Slots</label>
+                                                <div id="slotGrid" class="d-flex flex-wrap gap-2 mb-2"></div>
+                                                <input type="hidden" name="slot_id" id="slot_id">
+                                                <div class="mt-1 text-muted small">Selected Slot: <strong id="slotText">None</strong></div>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-semibold">Notes / Questions</label>
+                                                <textarea class="form-control" name="notes" rows="3" placeholder="Briefly describe your concern"></textarea>
+                                            </div>
+                                            <div class="col-12">
+                                                <button type="button" class="btn btn-secondary btn-prev prev">Previous</button>
+                                                <button type="button" class="btn btn-next next">Next</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Step 4: Payment -->
+                                    <div class="form-section">
+                                        <h4>Payment</h4>
+                                        <div class="mb-3">
+                                            <label>Select Payment Method</label>
+                                            <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" value="upi"><label class="form-check-label">UPI</label></div>
+                                            <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" value="card"><label class="form-check-label">Credit / Debit Card</label></div>
+                                            <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" value="netbanking"><label class="form-check-label">Net Banking</label></div>
+                                        </div>
+                                        <button type="button" class="btn btn-secondary btn-prev prev">Previous</button>
+                                        <button type="button" class="btn btn-next next">Next</button>
+                                    </div>
+                                    <!-- Step 5: Terms -->
+                                    <div class="form-section">
+                                        <h4>Terms & Conditions</h4>
+                                        <div class="mb-3" style="max-height:150px; overflow:auto; background:white; color:black; padding:10px; border-radius:10px;">
+                                            <p>By booking this consultation, you agree that astrology guidance is based on belief systems and should not replace professional medical, legal, or financial advice. Payments are non-refundable once the consultation is completed.</p>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                                            <label class="form-check-label">I agree to Terms & Conditions</label>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center gap-3">
+                                            <button type="button" class="btn btn-secondary btn-prev prev">Previous</button>
+                                            <input type="hidden" name="rate" id="rate">
+                                            <button type="button" id="razorpay-pay-btn" class="btn btn-next ms-auto">Pay with Razorpay</button>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
-                        <div class="row g-3 mb-3 align-items-center">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Price</label>
-                                <div id="price-display" class="fs-4 fw-bold text-primary">--</div>
-                                <div id="urgency-message" class="text-sm mt-1"></div>
-                            </div>
-                        </div>
-                        <div class="d-grid mt-3">
-                            <button type="submit" class="btn btn-warning text-white fw-bold py-2" style="background: linear-gradient(135deg, #ff9800, #f57c00); border: none; font-size: 1.1rem; border-radius: 10px; box-shadow: 0 2px 8px #ff98004d;">Book Now <i class="fa-solid fa-arrow-right ms-2"></i></button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
