@@ -95,7 +95,7 @@
     const slotList = document.getElementById('slot-list');
     const slotInput = document.getElementById('slot_id');
     const slotError = document.getElementById('slot-error');
-    const rajuMaharajId = 9999; // TODO: Set actual astrologer ID
+    const rajuMaharajId = 15; // TODO: Set actual astrologer ID
 
     function getPrice(days) {
         if (days < 0 || days > 45) return null;
