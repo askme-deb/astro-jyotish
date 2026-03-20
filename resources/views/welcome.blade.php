@@ -20,7 +20,7 @@
                         <div class="hero-banner d-flex flex-column flex-md-row align-items-center justify-content-between">
                             <div class="content_warp">
                                 <h1>Not Just Astrology. <br>A Deeper Perspective of Life.</h1>
-                               <p>With Astrologer Raju Maharaj Ji
+                               <p style="color: #fff;">With Astrologer Raju Maharaj Ji
                                 Go beyond predictions and understand<br> the true
                                 influence of planetary energies in your journey.</p>
                                     @php $isLoggedIn = session('auth.user') ? true : false; @endphp
