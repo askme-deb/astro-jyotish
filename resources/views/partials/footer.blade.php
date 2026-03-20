@@ -6,7 +6,7 @@
             <!-- Logo & App Section -->
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="logo_foot">
-                    <img src="{{ asset('assets/images/Logo.png') }}" alt="logo" class="mb-3">
+                    <img src="{{ asset('assets/images/Logo_old.png') }}" alt="logo" class="mb-3">
                 </div>
                 <h5>Coming Soon</h5>
                 <div class="app-btn">
