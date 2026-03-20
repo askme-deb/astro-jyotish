@@ -11,7 +11,7 @@
             <div class="carousel-indicators">
                 <button type="button" data-bs-target="#heroSlider" data-bs-slide-to="0" class="active"></button>
                 <button type="button" data-bs-target="#heroSlider" data-bs-slide-to="1"></button>
-                <button type="button" data-bs-target="#heroSlider" data-bs-slide-to="2"></button>
+                <!-- <button type="button" data-bs-target="#heroSlider" data-bs-slide-to="2"></button> -->
             </div>
             <div class="carousel-inner">
                 <!-- Slide 1 -->
@@ -19,9 +19,12 @@
                     <div class="container">
                         <div class="hero-banner d-flex flex-column flex-md-row align-items-center justify-content-between">
                             <div class="content_warp">
-                                <h1>Discover Your Destiny with <br> Trusted <span class="text-danger">Astrologers</span></h1>
+                                <h1>Not Just Astrology. A Deeper Perspective of Life.
+With Astrologer Raju Maharaj Ji
+Go beyond predictions and understand the true
+influence of planetary energies in your journey.</h1>
                                     @php $isLoggedIn = session('auth.user') ? true : false; @endphp
-                                    <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Get an Appointment</button>
+                                    <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Consult Now</button>
                             </div>
                             <img src="{{ asset('assets/images/banner-01.png') }}" class="img-fluid rounded">
                         </div>
@@ -32,16 +35,18 @@
                     <div class="container">
                         <div class="hero-banner d-flex flex-column flex-md-row align-items-center justify-content-between">
                             <div class="content_warp">
-                                <h1>Discover Your Destiny with <br> Trusted <span class="text-danger">Astrologers</span></h1>
+                                <h1>Guided by the Wisdom of Vedic Astrology
+Trusted Expertise • Accurate Predictions • Meaningful Guidance
+Discover deeper insights into your life through authentic astrology practices.</h1>
                     @php $isLoggedIn = session('auth.user') ? true : false; @endphp
-                    <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Get an Appointment</button>
+                    <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Consult Now</button>
                             </div>
                             <img src="{{ asset('assets/images/banner-02.png') }}" class="img-fluid rounded">
                         </div>
                     </div>
                 </div>
                 <!-- Slide 3 -->
-                <div class="carousel-item">
+                <!-- <div class="carousel-item">
                     <div class="container">
                         <div class="hero-banner d-flex flex-column flex-md-row align-items-center justify-content-between">
                             <div class="content_warp">
@@ -53,7 +58,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
             <!-- Controls -->
             <button class="carousel-control-prev" type="button" data-bs-target="#heroSlider" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon"></span>
@@ -152,8 +157,12 @@
         <div class="container">
             <div class="sale-banner-placeholder">
                 <div class="banner-content">
-                    <h2>15% OFF <br> SUPER SALE</h2>
-                    <button>ORDER NOW</button>
+                    <h4>Find the Right Gemstone for Your Kundli</h4>
+                    <p>Astrology-Based Gemstone Guidance & Recommendations
+Choose authentic stones aligned with your planetary positions
+to enhance balance, growth, and positivity in life.</p>
+
+                    <button>Explore Gemstones</button>
                 </div>
             </div>
         </div>
@@ -486,39 +495,37 @@
                                 <div class="col-md-6 col-lg-4">
                                     <div class="testimonial-card">
                                         <div class="testimonial-text">
-                                            The best astrologer in this platform with whom i have spoken.
-                                            You have not only shown the path but also added the motivation
+                                            I was confused about my career direction for a long time. After consultation, I got clear guidance and confidence. The predictions were very accurate and practical.
                                         </div>
                                         <div class="user-info">
-                                            <div class="user-avatar">S</div>
-                                            <div>S X.</div>
+                                            <div class="user-avatar">RS</div>
+                                            <div>Rahul Sharma, Pune</div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6 col-lg-4">
                                     <div class="testimonial-card">
                                         <div class="testimonial-text">
-                                            The best astrologer in this platform with whom i have spoken.
-                                            You have not only shown the path but also added the motivation
+                                           I had concerns regarding my marriage, and the guidance I received was very helpful. The remedies were simple and effective, and things have improved a lot.
                                         </div>
                                         <div class="user-info">
-                                            <div class="user-avatar">N</div>
-                                            <div>N X.</div>
+                                            <div class="user-avatar">AM</div>
+                                            <div>Anjali Mehta, Mumbai</div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6 col-lg-4 d-none d-lg-block">
                                     <div class="testimonial-card">
                                         <div class="testimonial-text">
-                                            The best astrologer in this platform with whom i have spoken.
-                                            You have not only shown the path but also added the motivation
+                                            I consulted for my business issues, and I was impressed with the accuracy of analysis. The suggestions helped me take better financial decisions.
                                         </div>
                                         <div class="user-info">
-                                            <div class="user-avatar">D</div>
-                                            <div>D P.</div>
+                                            <div class="user-avatar">PS</div>
+                                            <div>Prakash Singh, Delhi</div>
                                         </div>
                                     </div>
                                 </div>
+                                
                             </div>
                         </div>
                         <!-- Slide 2 -->
