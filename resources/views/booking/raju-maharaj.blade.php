@@ -2,16 +2,17 @@
 
 @section('content')
 
-<div class="container py-5 book_ing">
-    <div class="form-container">
-        <div class="row">
-            <div class="col-md-4 dri">
-                <div class="premium-card text-center p-4 mb-4">
-                    <img src="{{ asset('assets/images/login.jpg') }}" class="img-fluid rounded shadow mb-3" style="max-width: 180px; border: 4px solid #ffd700; background: #fffbe6;" alt="Premium Astrologer">
-                    <span class="badge bg-warning text-dark fs-6 mb-2 px-3 py-2" style="border-radius: 12px;"><i class="fa-solid fa-star text-orange-500 me-1"></i> Premium Consultation with <span class="fw-bold">Raju Maharaj</span></span>
-                    <h2 class="fw-bold mb-1 mt-2" style="font-size:2rem; color:#f57c00;">Book Your Session</h2>
-                    <p class="text-muted mb-0">Select a date and time slot for your premium consultation. Pricing is based on how soon you book.</p>
-                    <div class="mt-4 p-3 premium-pricing" style="background: linear-gradient(90deg, #fffbe6 60%, #fff1e6 100%); border-radius: 12px; border: 1px solid #ffe082;">
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="card shadow-lg border-0 mb-4" style="border-radius: 18px;">
+                <div class="card-body p-4">
+                    <div class="mb-3 text-center">
+                        <span class="badge bg-warning text-dark fs-6 mb-2 px-3 py-2" style="border-radius: 12px;"><i class="fa-solid fa-star text-orange-500 me-1"></i> Premium Consultation with <span class="fw-bold">Raju Maharaj</span></span>
+                        <h2 class="fw-bold mb-1" style="font-size:2rem; color:#f57c00;">Book Your Session</h2>
+                        <p class="text-muted mb-0">Select a date and time slot for your premium consultation. Pricing is based on how soon you book.</p>
+                    </div>
+                    <div class="mb-4 p-3" style="background: linear-gradient(90deg, #fffbe6 60%, #fff1e6 100%); border-radius: 12px; border: 1px solid #ffe082;">
                         <h5 class="fw-semibold mb-2"><i class="fa-solid fa-indian-rupee-sign text-warning me-2"></i>Pricing Tiers</h5>
                         <ul class="mb-0 ps-3" style="list-style: disc;">
                             <li><span class="fw-bold">Within 2 days:</span> <span class="text-danger fw-bold">₹21,000</span> <span class="badge bg-danger ms-2">Highest urgency!</span></li>
@@ -20,144 +21,6 @@
                             <li><span class="fw-bold">More than 45 days:</span> <span class="text-secondary">Not allowed</span></li>
                         </ul>
                     </div>
-                </div>
-                <!-- Stepper -->
-                <div class="step-list mt-4">
-                    <div class="step active" data-step="0">
-                        <div class="step-circle"><i class="bi bi-file-earmark-person"></i></div>
-                        <div class="step-title">
-                            <h6>Personal Info</h6>
-                            <small>Enter details</small>
-                        </div>
-                    </div>
-                    <div class="step" data-step="1">
-                        <div class="step-circle"><i class="bi bi-cake2"></i></div>
-                        <div class="step-title">
-                            <h6>Birth Details</h6>
-                            <small>Your birth info</small>
-                        </div>
-                    </div>
-                    <div class="step" data-step="2">
-                        <div class="step-circle"><i class="bi bi-people"></i></div>
-                        <div class="step-title">
-                            <h6>Consultation</h6>
-                            <small>Select service</small>
-                        </div>
-                    </div>
-                    <div class="step" data-step="3">
-                        <div class="step-circle"><i class="bi bi-credit-card"></i></div>
-                        <div class="step-title">
-                            <h6>Payment</h6>
-                            <small>Choose method</small>
-                        </div>
-                    </div>
-                    <div class="step" data-step="4">
-                        <div class="step-circle"><i class="bi bi-check2-square"></i></div>
-                        <div class="step-title">
-                            <h6>Complete</h6>
-                            <small>Submit form</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-8 cdser">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div id="stepper-error" style="display:none" class="alert alert-danger"></div>
-                        <form id="raju-booking-form">
-                            <!-- Step 1: Personal Info -->
-                            <div class="form-section">
-                                <h4>Personal Information</h4>
-                                <div class="mb-3"><label>Name</label><input type="text" class="form-control" name="name" required></div>
-                                <div class="mb-3"><label>Email</label><input type="email" class="form-control" name="user_email" required></div>
-                                <div class="mb-3"><label>Phone</label><input type="tel" class="form-control" name="phone" required></div>
-                                <button type="button" class="btn btn-next next btn theme-btn btn-lg">Next</button>
-                            </div>
-                            <!-- Step 2: Birth Details -->
-                            <div class="form-section">
-                                <h4>Birth Details</h4>
-                                <div class="mb-3"><label>Date of Birth</label><input type="date" class="form-control" name="birth_date" required></div>
-                                <div class="mb-3"><label>Time of Birth</label><input type="time" class="form-control" name="birth_time" required></div>
-                                <div class="mb-3"><label>Place of Birth</label><input type="text" class="form-control" name="place"></div>
-                                <button type="button" class="btn btn-prev prev btn theme-btn btn-lg">Previous</button>
-                                <button type="button" class="btn btn-next next btn theme-btn btn-lg">Next</button>
-                            </div>
-                            <!-- Step 3: Consultation -->
-                            <div class="form-section">
-                                <h4>Consultation</h4>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Consultation Type</label>
-                                        <select class="form-select" name="consultation_type" id="consultation_type">
-                                            <option value="video">Video Call</option>
-                                            <option value="phone">Phone Call</option>
-                                            <option value="inperson">In-person</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Astrologer</label>
-                                        <input type="text" class="form-control" value="Raju Maharaj" readonly>
-                                        <input type="hidden" name="astrologer_id" id="astrologer_id" value="15">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Session Duration</label>
-                                        <input type="text" class="form-control" id="duration" name="duration" readonly>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Preferred Date</label>
-                                        <input type="date" class="form-control" name="scheduled_at" id="consultation_date">
-                                    </div>
-                                    <div class="col-md-12">
-                                        <label class="form-label fw-semibold">Available Slots</label>
-                                        <div id="slotGrid" class="d-flex flex-wrap gap-2 mb-2"></div>
-                                        <input type="hidden" name="slot_id" id="slot_id">
-                                        <div class="mt-1 text-muted small">Selected Slot: <strong id="slotText">None</strong></div>
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold">Notes / Questions</label>
-                                        <textarea class="form-control" name="notes" rows="3" placeholder="Briefly describe your concern"></textarea>
-                                    </div>
-                                    <div class="col-12">
-                                        <button type="button" class="btn btn-prev prev btn theme-btn btn-lg">Previous</button>
-                                        <button type="button" class="btn btn-next next btn theme-btn btn-lg">Next</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Step 4: Payment -->
-                            <div class="form-section">
-                                <h4>Payment</h4>
-                                <div class="mb-3">
-                                    <label>Select Payment Method</label>
-                                    <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" value="upi"><label class="form-check-label">UPI</label></div>
-                                    <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" value="card"><label class="form-check-label">Credit / Debit Card</label></div>
-                                    <div class="form-check"><input class="form-check-input" type="radio" name="payment_method" value="netbanking"><label class="form-check-label">Net Banking</label></div>
-                                </div>
-                                <button type="button" class="btn btn-prev prev btn theme-btn btn-lg">Previous</button>
-                                <button type="button" class="btn btn-next next btn theme-btn btn-lg">Next</button>
-                            </div>
-                            <!-- Step 5: Terms -->
-                            <div class="form-section">
-                                <h4>Terms & Conditions</h4>
-                                <div class="mb-3" style="max-height:150px; overflow:auto; background:white; color:black; padding:10px; border-radius:10px;">
-                                    <p>By booking this consultation, you agree that astrology guidance is based on belief systems and should not replace professional medical, legal, or financial advice. Payments are non-refundable once the consultation is completed.</p>
-                                </div>
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="termsCheck" required>
-                                    <label class="form-check-label">I agree to Terms & Conditions</label>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center gap-3">
-                                    <button type="button" class="btn btn-prev prev btn theme-btn btn-lg">Previous</button>
-                                    <input type="hidden" name="rate" id="rate">
-                                    <button type="button" id="razorpay-pay-btn" class="btn btn-next ms-auto btn theme-btn btn-lg">Pay with Razorpay</button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
                     @if(session('success'))
                         <div class="alert alert-success mb-3">{{ session('success') }}</div>
@@ -560,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (rateInput) rateInput.value = price || '';
     }
     if (dateInput) dateInput.addEventListener('change', updatePrice);
-    // Ensure price is set on page load
+    // Initial price update
     updatePrice();
 
     // --- RAZORPAY PAYMENT ---
