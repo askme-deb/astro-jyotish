@@ -37,9 +37,9 @@
                             <div class="content_warp">
                                 <h1>Guided by the Wisdom<br> of Vedic Astrology</h1>
                                 <ul style="color: #fff; list-style-type: none; padding-left: 0;">
-                                    <li>✔ Trusted Expertise</li>
-                                    <li>✔ Accurate Predictions</li>
-                                    <li>✔ Meaningful Guidance</li>
+                                    <li> Trusted Expertise</li>
+                                    <li> Accurate Predictions</li>
+                                    <li> Meaningful Guidance</li>
                                 </ul>
                                 <p style="color: #fff;">Discover deeper insights into your life through authentic astrology practices.</p>
                     @php $isLoggedIn = session('auth.user') ? true : false; @endphp
