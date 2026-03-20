@@ -163,7 +163,7 @@
                 <div class="banner-content">
                     <h4>Find the Right Gemstone for Your Kundli</h4>
                     <p>Astrology-Based Gemstone Guidance & Recommendations
-Choose authentic stones aligned with your planetary positions
+Choose<br>authentic stones aligned with your planetary positions
 to enhance balance, growth, and positivity in life.</p>
 
                     <button>Explore Gemstones</button>
