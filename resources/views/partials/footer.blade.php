@@ -6,7 +6,7 @@
             <!-- Logo & App Section -->
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="logo_foot">
-                    <img src="{{ asset('assets/images/Logo_old.png') }}" alt="logo" class="mb-3">
+                    <img src="{{ asset('assets/images/Logo.png') }}" alt="logo" class="mb-3">
                 </div>
                 <h5>Coming Soon</h5>
                 <div class="app-btn">
@@ -27,10 +27,7 @@
                 <h5>Quick Links</h5>
                 <a href="javascript:;">Chat with Astrologer</a>
                 <a href="javascript:;">Astrologer</a>
-                <a href="javascript:;">Tarot Readers</a>
-                <a href="javascript:;">Numerologist</a>
                 <a href="javascript:;">Vastu Experts</a>
-                <a href="javascript:;">Fengshui Astrologer</a>
                 <a href="javascript:;">Financial Astrologer</a>
                 <a href="javascript:;">Marriage Astrologer</a>
                 <a href="javascript:;">Free Astrology Consultation</a>
@@ -41,17 +38,11 @@
                 <h5>Useful Links</h5>
                 <a href="javascript:;">About Us</a>
                 <a href="javascript:;">Contact Us</a>
-                <a href="javascript:;">Astrologer Registration</a>
-                <a href="javascript:;">Partner Us</a>
                 <a href="javascript:;">Career</a>
                 <a href="javascript:;">Site Map</a>
-                <a href="javascript:;">Karma & Destiny</a>
                 <a href="javascript:;">Refund Policy</a>
-                <a href="javascript:;">Yogii Mall Refund Policy</a>
                 <a href="javascript:;">Shipping Policy</a>
-                <a href="javascript:;">Astroyogi Academy</a>
-                <a href="javascript:;">Media Coverage</a>
-                <a href="javascript:;">Authors</a>
+          
             </div>
             <div class="col-lg-3 col-md-6 mb-4">
                 <div class="footer-col newsletter">
