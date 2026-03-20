@@ -36,14 +36,14 @@
                         <div class="hero-banner d-flex flex-column flex-md-row align-items-center justify-content-between">
                             <div class="content_warp">
                                 <h1>Guided by the Wisdom<br> of Vedic Astrology</h1>
-                                <ul>
-                                    <li>Trusted Expertise</li>
-                                    <li>Accurate Predictions</li>
-                                    <li>Meaningful Guidance</li>
+                                <ul style="color: #fff; list-style-type: none; padding-left: 0;">
+                                    <li>✔ Trusted Expertise</li>
+                                    <li>✔ Accurate Predictions</li>
+                                    <li>✔ Meaningful Guidance</li>
                                 </ul>
-                                <p>Discover deeper insights into your life through authentic astrology practices.</p>
+                                <p style="color: #fff;">Discover deeper insights into your life through authentic astrology practices.</p>
                     @php $isLoggedIn = session('auth.user') ? true : false; @endphp
-                    <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Consult Now</button>
+                    <!-- <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Consult Now</button> -->
                             </div>
                             <img src="{{ asset('assets/images/banner-02.png') }}" class="img-fluid rounded">
                         </div>
