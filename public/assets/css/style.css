@@ -904,11 +904,11 @@ span.skill-badge {
 	width: 100%;
 }
 
-.logo_foot img {
+/* .logo_foot img {
 	width: 110px;
 	background: #fff;
 	border-radius: 100%;
-}
+} */
 
 #testimonialSlider .carousel-indicators {
 	display: none;
@@ -2343,9 +2343,9 @@ span.skill-badge {
 }
 
 .logo_foot img {
-	width: 110px;
-	background: #fff;
-	border-radius: 100%;
+	width: 250px;
+	/* background: #fff;
+	border-radius: 100%; */
 }
 
 #testimonialSlider .carousel-indicators {
