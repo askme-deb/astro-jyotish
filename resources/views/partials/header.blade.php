@@ -79,7 +79,7 @@
                 <div class="col-md-5 d-none d-md-flex align-items-center justify-content-center text-white p-4" style="background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);">
                     <div class="text-center w-100">
                         <div style="background:rgba(255,255,255,0.85);border-radius:1rem;display:inline-block;padding:0.5rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-                            <img src="{{ asset('assets/images/Logo.png') }}" alt="Logo" class="mb-4 animate__animated animate__fadeInDown" style="max-width:100px;display:block;">
+                            <img src="{{ asset('assets/images/Logo.png') }}" alt="Logo" class="animate__animated animate__fadeInDown" style="max-width:150px;display:block;">
                         </div>
                         <h3 class="fw-bold mb-2 animate__animated animate__fadeInUp">Welcome!</h3>
                         <p class="mb-0 animate__animated animate__fadeInUp animate__delay-1s">Sign in or create an account to access personalized astrology services.</p>
