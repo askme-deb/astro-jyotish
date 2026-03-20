@@ -17,7 +17,7 @@
     <div class="banner">
 
         <!-- Background Image -->
-        <img src="{{ asset('assets/images/consul2.png') }}" alt="Astrology Banner">
+        <img src="{{ asset('assets/images/astrologer_banner_inside.jpg') }}" alt="Astrology Banner">
 
         <!-- Overlay -->
         <div class="banner-overlay">

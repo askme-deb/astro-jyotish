@@ -122,7 +122,7 @@
     <div class="banner">
 
         <!-- Background Image -->
-        <img src="{{ asset('assets/images/consult.png') }}" alt="Astrology Banner">
+        <img src="{{ asset('assets/images/consultation_banner.jpg') }}" alt="Astrology Banner">
 
         <!-- Overlay -->
         <div class="banner-overlay">

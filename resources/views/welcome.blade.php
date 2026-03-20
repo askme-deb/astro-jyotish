@@ -23,7 +23,7 @@
                                     @php $isLoggedIn = session('auth.user') ? true : false; @endphp
                                     <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Get an Appointment</button>
                             </div>
-                            <img src="{{ asset('assets/images/banner-1.png') }}" class="img-fluid rounded">
+                            <img src="{{ asset('assets/images/banner-01.png') }}" class="img-fluid rounded">
                         </div>
                     </div>
                 </div>
@@ -36,7 +36,7 @@
                     @php $isLoggedIn = session('auth.user') ? true : false; @endphp
                     <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Get an Appointment</button>
                             </div>
-                            <img src="{{ asset('assets/images/banner-2.png') }}" class="img-fluid rounded">
+                            <img src="{{ asset('assets/images/banner-02.png') }}" class="img-fluid rounded">
                         </div>
                     </div>
                 </div>
