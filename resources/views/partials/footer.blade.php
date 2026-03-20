@@ -58,28 +58,26 @@
         <section class="payment-section">
             <div class="container">
                 <ul class="payment-icons">
-                    <li><img src="https://imgcdn1.gempundit.com/media/wysiwyg/visa.svg" alt="Visa" loading="lazy" decoding="async" referrerpolicy="no-referrer"></li>
-                    <li><img src="https://imgcdn1.gempundit.com/media/wysiwyg/mastercard.svg" alt="Mastercard" loading="lazy" decoding="async" referrerpolicy="no-referrer"></li>
-                    <li><img src="https://imgcdn1.gempundit.com/media/wysiwyg/PayPal.svg" alt="PayPal" loading="lazy" decoding="async" referrerpolicy="no-referrer"></li>
-                    <li><img src="https://imgcdn1.gempundit.com/media/wysiwyg/Netbanking__.svg" alt="Net Banking" loading="lazy" decoding="async" referrerpolicy="no-referrer"></li>
-                    <li><img src="https://imgcdn1.gempundit.com/media/wysiwyg/american-express.svg" alt="American Express" loading="lazy" decoding="async" referrerpolicy="no-referrer"></li>
-                    <li><img src="https://imgcdn1.gempundit.com/media/wysiwyg/rupay.png" alt="RuPay" loading="lazy" decoding="async" referrerpolicy="no-referrer"></li>
-                    <li><img src="https://imgcdn1.gempundit.com/media/wysiwyg/Bhim.svg" alt="BHIM UPI" loading="lazy" decoding="async" referrerpolicy="no-referrer"></li>
+                    <li><img src="{{ asset('assets/images/payments/maestro.svg') }}" alt="Visa"></li>
+                    <li><img src="{{ asset('assets/images/payments/mastercard.png') }}" alt="Mastercard"></li>
+                    <li><img src="{{ asset('assets/images/payments/razorpay.svg') }}" alt="Net Banking"></li>
+                    <li><img src="{{ asset('assets/images/payments/rupay.png') }}" alt="American Express"></li>
+                    <li><img src="{{ asset('assets/images/payments/visa.svg') }}" alt="RuPay"></li>
                     <li class="custom-option">
                         <a href="javascript:;">
-                            <img src="https://imgcdn1.gempundit.com/media/wysiwyg/footer-icon1.svg" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                            <img src="{{ asset('assets/images/payments/footer-icon1.svg') }}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">
                             <span>Cash on Delivery</span>
                         </a>
                     </li>
                     <li class="custom-option">
                         <a href="javascript:;">
-                            <img src="https://imgcdn1.gempundit.com/media/wysiwyg/footer-icon2.svg" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                            <img src="{{ asset('assets/images/payments/footer-icon2.svg') }}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">
                             <span>Lab Certified</span>
                         </a>
                     </li>
                     <li class="custom-option">
                         <a href="javascript:;">
-                            <img src="https://imgcdn1.gempundit.com/media/wysiwyg/footer-icon3.svg" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+                            <img src="{{ asset('assets/images/payments/footer-icon3.svg') }}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">
                             <span>Easy Returns</span>
                         </a>
                     </li>
