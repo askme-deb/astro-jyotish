@@ -19,10 +19,10 @@
                     <div class="container">
                         <div class="hero-banner d-flex flex-column flex-md-row align-items-center justify-content-between">
                             <div class="content_warp">
-                                <h1>Not Just Astrology. A Deeper Perspective of Life.
-With Astrologer Raju Maharaj Ji
-Go beyond predictions and understand the true
-influence of planetary energies in your journey.</h1>
+                                <h1>Not Just Astrology. A Deeper Perspective of Life.</h1>
+                               <p>With Astrologer Raju Maharaj Ji
+                                Go beyond predictions and understand the true
+                                influence of planetary energies in your journey.</p>
                                     @php $isLoggedIn = session('auth.user') ? true : false; @endphp
                                     <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Consult Now</button>
                             </div>
@@ -35,9 +35,13 @@ influence of planetary energies in your journey.</h1>
                     <div class="container">
                         <div class="hero-banner d-flex flex-column flex-md-row align-items-center justify-content-between">
                             <div class="content_warp">
-                                <h1>Guided by the Wisdom of Vedic Astrology
-Trusted Expertise • Accurate Predictions • Meaningful Guidance
-Discover deeper insights into your life through authentic astrology practices.</h1>
+                                <h1>Guided by the Wisdom of Vedic Astrology</h1>
+                                <ul>
+                                    <li>Trusted Expertise</li>
+                                    <li>Accurate Predictions</li>
+                                    <li>Meaningful Guidance</li>
+                                </ul>
+                                <p>Discover deeper insights into your life through authentic astrology practices.</p>
                     @php $isLoggedIn = session('auth.user') ? true : false; @endphp
                     <button class="btn btn-danger mt-3" onclick="@if(!$isLoggedIn) showAuthModal(); @else window.location.href='/consultation'; @endif"> Consult Now</button>
                             </div>
@@ -525,7 +529,7 @@ to enhance balance, growth, and positivity in life.</p>
                                         </div>
                                     </div>
                                 </div>
-                                
+
                             </div>
                         </div>
                         <!-- Slide 2 -->
