@@ -31,7 +31,9 @@
                     $net = $base - $commission; // astrologer earning
                 @endphp
                 <tr>
-                    <td>BKNG{{ $booking['id'] }}</td>
+                    <td>
+                        <a href="{{ route('astrologer.appointment.details', ['id' => $booking['id']]) }}" target="_blank">BKNG{{ $booking['id'] }}</a>
+                    </td>
                     <td>{{ isset($booking['scheduled_at']) ? \Carbon\Carbon::parse($booking['scheduled_at'])->format('d M Y') : '-' }}</td>
                     <td>{{ $booking['name'] ?? '-' }}</td>
                     <td>{{ ucfirst($booking['consultation_type'] ?? '-') }}</td>
