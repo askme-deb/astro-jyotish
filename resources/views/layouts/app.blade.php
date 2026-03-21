@@ -7,7 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>@yield('title', config('app.name'))</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="icon" type="image/png" href="{{ asset('assets/images/Logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('assets/images/fab.png') }}">
     <!-- Style CSS -->
          <link href="{{ asset('assets/css/style2.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/style.css') }}" rel="stylesheet">
