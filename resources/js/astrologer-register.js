@@ -23,12 +23,18 @@ $(document).ready(function () {
         eduIndex++;
     }
     // Add initial education entry
+    function ensureAtLeastOneEducation() {
+        if ($('#education-section .education-entry').length === 0) {
+            addEducationEntry();
+        }
+    }
     addEducationEntry();
     $('#add-education').click(function () {
         addEducationEntry();
     });
     $(document).on('click', '.remove-education', function () {
         $(this).closest('.education-entry').remove();
+        setTimeout(ensureAtLeastOneEducation, 10);
     });
 
     // --- Availability Section ---
@@ -70,12 +76,18 @@ $(document).ready(function () {
         availIndex++;
     }
     // Add initial availability entry
+    function ensureAtLeastOneAvailability() {
+        if ($('#availability-section .availability-entry').length === 0) {
+            addAvailabilityEntry();
+        }
+    }
     addAvailabilityEntry();
     $('#add-availability').click(function () {
         addAvailabilityEntry();
     });
     $(document).on('click', '.remove-availability', function () {
         $(this).closest('.availability-entry').remove();
+        setTimeout(ensureAtLeastOneAvailability, 10);
     });
     // Add more slots to a day
     $(document).on('click', '.add-slot', function () {
