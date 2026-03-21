@@ -24,14 +24,15 @@
             <tbody>
             @forelse($bookings as $booking)
                 @php
-                    $rate = (float)($booking['rate'] ?? 0);
-                    $gst = $rate * (18/118);
-                    $commission = $rate * 0.30;
-                    $net = $rate - $commission;
+                    $rate = (float)($booking['rate'] ?? 0); // GST inclusive
+                    $gst = $rate * (18/118); // GST part
+                    $base = $rate - $gst; // GST exclusive
+                    $commission = $base * 0.30; // 30% of base
+                    $net = $base - $commission; // astrologer earning
                 @endphp
                 <tr>
                     <td>BKNG{{ $booking['id'] }}</td>
-                    <td>{{ \Carbon\Carbon::parse($booking['scheduled_at'])->format('d M Y') }}</td>
+                    <td>{{ isset($booking['scheduled_at']) ? \Carbon\Carbon::parse($booking['scheduled_at'])->format('d M Y') : '-' }}</td>
                     <td>{{ $booking['customer']['name'] ?? '-' }}</td>
                     <td>{{ ucfirst($booking['consultation_type'] ?? '-') }}</td>
                     <td>{{ number_format($rate, 2) }}</td>
