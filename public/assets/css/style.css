@@ -3887,3 +3887,13 @@ section.sear_pat {
 .book_ing img {height: 100vh; object-fit: cover;}
 
 }
+
+@media (min-width: 1024px) and (max-width: 1280px) {
+.live-show-box {
+    text-decoration: none;
+    width: 244px;
+}
+.logo_foot img {
+    width: 190px;
+}
+}
