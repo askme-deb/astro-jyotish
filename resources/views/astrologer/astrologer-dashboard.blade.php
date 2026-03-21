@@ -115,10 +115,11 @@
                         </div>
                     </div>
                     @php
-                        $totalAmount = $bookings->sum(function($b) { return (float)($b['rate'] ?? 0); });
-                        $totalGST = $totalAmount * (18/118); // GST part from GST-inclusive
-                        $platformCommission = $totalAmount * 0.30;
-                        $astrologerEarning = $totalAmount - $platformCommission;
+                        $totalAmount = $bookings->sum(function($b) { return (float)($b['rate'] ?? 0); }); // GST inclusive
+                        $totalGST = $totalAmount * (18/118); // GST part
+                        $baseAmount = $totalAmount - $totalGST; // GST exclusive
+                        $platformCommission = $baseAmount * 0.30; // 30% of base
+                        $astrologerEarning = $baseAmount - $platformCommission; // astrologer earning
                     @endphp
                     <div class="col-md-6 col-xl-3">
                         <div class="dashboard-kpi-modern">
@@ -135,8 +136,8 @@
                             <div class="kpi-icon"><i class="fas fa-coins"></i></div>
                             <div class="kpi-label">Your Net Earnings</div>
                             <div class="kpi-value">₹{{ number_format($astrologerEarning, 2) }}</div>
-                            <div class="kpi-note">After 30% commission</div>
-                            <div style="font-size:0.9em;color:#888;">GST part: ₹{{ number_format($totalGST, 2) }}</div>
+                            <div class="kpi-note">After 30% commission (on base)</div>
+                            <div style="font-size:0.9em;color:#888;">GST: ₹{{ number_format($totalGST, 2) }} | Base: ₹{{ number_format($baseAmount, 2) }} | Commission: ₹{{ number_format($platformCommission, 2) }}</div>
                         </div>
                     </div>
                 </div>
