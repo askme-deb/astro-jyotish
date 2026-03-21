@@ -1,9 +1,3 @@
-// Astrologer Earnings Breakdown
-use App\Http\Controllers\AstrologerEarningsController;
-Route::middleware(['auth'])->group(function () {
-    Route::get('/astrologer/earnings', [AstrologerEarningsController::class, 'index'])->name('astrologer.earnings');
-    Route::get('/astrologer/earnings/export', [AstrologerEarningsController::class, 'export'])->name('astrologer.earnings.export');
-});
 <?php
 use App\Http\Controllers\OtpAuthController;
 
@@ -26,6 +20,8 @@ use App\Http\Controllers\CustomerConsultationController;
 use App\Http\Controllers\AstrologerAppointmentsController;
 
 use App\Http\Controllers\AstrologerRegistrationController;
+// Astrologer Earnings Breakdown
+use App\Http\Controllers\AstrologerEarningsController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/consultants', [ConsultantController::class, 'show'])->name('consultant');
@@ -94,6 +90,8 @@ use App\Http\Controllers\AstrologerAppointmentDetailsController;
     Route::post('/astrologer/appointments/{id}/reschedule', [AstrologerAppointmentDetailsController::class, 'reschedule'])->name('astrologer.appointment.reschedule');
     Route::post('/astrologer/appointments/{id}/send-link', [\App\Http\Controllers\AstrologerAppointmentDetailsController::class, 'sendCustomerJoinLink'])->name('astrologer.appointment.sendLink');
 // });
+    Route::get('/astrologer/earnings', [AstrologerEarningsController::class, 'index'])->name('astrologer.earnings');
+    Route::get('/astrologer/earnings/export', [AstrologerEarningsController::class, 'export'])->name('astrologer.earnings.export');
 
 
 
