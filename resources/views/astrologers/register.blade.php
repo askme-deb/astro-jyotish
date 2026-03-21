@@ -4,7 +4,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-10 col-xl-8">
             <div class="card shadow-lg border-0">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header text-white" style="background: linear-gradient(135deg, #ff9800, #f57c00);">
                     <h3 class="mb-0">Astrologer Registration</h3>
                 </div>
                 <div class="card-body">
@@ -77,7 +77,23 @@
                         <div class="mt-4">
                             <label class="form-label">Education</label>
                             <div id="education-section">
-                                <!-- Dynamic education entries here -->
+                                <div class="row g-2 align-items-end education-entry mb-2 border rounded p-2 bg-light">
+                                    <div class="col-md-3">
+                                        <input type="text" name="education[0][degree]" placeholder="Degree" class="form-control">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" name="education[0][institution]" placeholder="Institution" class="form-control">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" name="education[0][year]" placeholder="Year" class="form-control">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="file" name="education[0][document]" class="form-control">
+                                    </div>
+                                    <div class="col-md-1 text-end">
+                                        <button type="button" class="btn btn-danger btn-sm remove-education"><i class="bi bi-x"></i></button>
+                                    </div>
+                                </div>
                             </div>
                             <button type="button" id="add-education" class="btn btn-outline-secondary btn-sm mt-2"><i class="bi bi-plus-circle"></i> Add Education</button>
                         </div>
@@ -125,7 +141,37 @@
                         <!-- Step 4: Availability -->
                         <h5 class="mb-3">Availability</h5>
                         <div id="availability-section">
-                            <!-- Dynamic availability entries here -->
+                            <div class="availability-entry border rounded p-2 mb-2 bg-light">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-3">
+                                        <select name="availabilities[0][day]" class="form-select">
+                                            <option value="Monday">Monday</option>
+                                            <option value="Tuesday">Tuesday</option>
+                                            <option value="Wednesday">Wednesday</option>
+                                            <option value="Thursday">Thursday</option>
+                                            <option value="Friday">Friday</option>
+                                            <option value="Saturday">Saturday</option>
+                                            <option value="Sunday">Sunday</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-8 slots-section">
+                                        <div class="row g-2 slot-row">
+                                            <div class="col">
+                                                <input type="time" name="availabilities[0][slots][0][from]" class="form-control">
+                                            </div>
+                                            <div class="col">
+                                                <input type="time" name="availabilities[0][slots][0][to]" class="form-control">
+                                            </div>
+                                            <div class="col-auto">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm add-slot" data-avail="0"><i class="bi bi-plus"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1 text-end">
+                                        <button type="button" class="btn btn-danger btn-sm remove-availability"><i class="bi bi-x"></i></button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <button type="button" id="add-availability" class="btn btn-outline-secondary btn-sm mt-2"><i class="bi bi-plus-circle"></i> Add Availability</button>
                         <div class="d-grid mt-4">
