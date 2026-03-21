@@ -96,7 +96,7 @@
                     }
                 </style>
                 <div class="row g-4" data-aos="fade-up" data-aos-delay="110">
-                    <div class="col-md-6 col-xl-4">
+                    <div class="col-md-6 col-xl-3">
                         <div class="dashboard-kpi-modern">
                             <div class="kpi-accent"></div>
                             <div class="kpi-icon"><i class="fas fa-calendar-day"></i></div>
@@ -105,7 +105,7 @@
                             <div class="kpi-note">Next 7 days</div>
                         </div>
                     </div>
-                    <div class="col-md-6 col-xl-4">
+                    <div class="col-md-6 col-xl-3">
                         <div class="dashboard-kpi-modern">
                             <div class="kpi-accent"></div>
                             <div class="kpi-icon"><i class="fas fa-users"></i></div>
@@ -114,13 +114,29 @@
                             <div class="kpi-note">All time</div>
                         </div>
                     </div>
-                    <div class="col-md-6 col-xl-4">
+                    @php
+                        $totalAmount = $bookings->sum(function($b) { return (float)($b['rate'] ?? 0); });
+                        $totalGST = $totalAmount * (18/118); // GST part from GST-inclusive
+                        $platformCommission = $totalAmount * 0.30;
+                        $astrologerEarning = $totalAmount - $platformCommission;
+                    @endphp
+                    <div class="col-md-6 col-xl-3">
                         <div class="dashboard-kpi-modern">
                             <div class="kpi-accent"></div>
                             <div class="kpi-icon"><i class="fas fa-wallet"></i></div>
                             <div class="kpi-label">Total Earnings</div>
-                            <div class="kpi-value">₹0.00</div>
-                            <div class="kpi-note">Available for use</div>
+                            <div class="kpi-value">₹{{ number_format($totalAmount, 2) }}</div>
+                            <div class="kpi-note">Gross (incl. GST)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-xl-3">
+                        <div class="dashboard-kpi-modern">
+                            <div class="kpi-accent"></div>
+                            <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+                            <div class="kpi-label">Your Net Earnings</div>
+                            <div class="kpi-value">₹{{ number_format($astrologerEarning, 2) }}</div>
+                            <div class="kpi-note">After 30% commission</div>
+                            <div style="font-size:0.9em;color:#888;">GST part: ₹{{ number_format($totalGST, 2) }}</div>
                         </div>
                     </div>
                 </div>
