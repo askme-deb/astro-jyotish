@@ -111,20 +111,36 @@ $(document).ready(function () {
         $(this).closest('.slot-row').remove();
     });
 
-    // --- Fetch languages and skills ---
-    $.get('/api/v1/languages', function (data) {
-        let options = '';
-        data.forEach(function (lang) {
-            options += `<option value="${lang.id}">${lang.name}</option>`;
-        });
-        $('#languages-select').html(options);
+    // --- Fetch languages and skills from API ---
+    $.ajax({
+        url: '/api/v1/languages',
+        type: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            let options = '';
+            (Array.isArray(data) ? data : (data.data || [])).forEach(function (lang) {
+                options += `<option value="${lang.id}">${lang.name}</option>`;
+            });
+            $('#languages-select').html(options);
+        },
+        error: function () {
+            $('#languages-select').html('<option disabled>Error loading languages</option>');
+        }
     });
-    $.get('/api/v1/skills', function (data) {
-        let options = '';
-        data.forEach(function (skill) {
-            options += `<option value="${skill.id}">${skill.name}</option>`;
-        });
-        $('#skills-select').html(options);
+    $.ajax({
+        url: '/api/v1/skills',
+        type: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            let options = '';
+            (Array.isArray(data) ? data : (data.data || [])).forEach(function (skill) {
+                options += `<option value="${skill.id}">${skill.name}</option>`;
+            });
+            $('#skills-select').html(options);
+        },
+        error: function () {
+            $('#skills-select').html('<option disabled>Error loading skills</option>');
+        }
     });
 
     // --- Form Submission ---
