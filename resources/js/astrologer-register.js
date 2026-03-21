@@ -117,10 +117,14 @@ $(document).ready(function () {
         type: 'GET',
         dataType: 'json',
         success: function (data) {
+            console.log('Languages API response:', data);
             let options = '';
             (Array.isArray(data) ? data : (data.data || [])).forEach(function (lang) {
-                options += `<option value="${lang.id}">${lang.name}</option>`;
+                options += `<option value=\"${lang.id}\">${lang.name}</option>`;
             });
+            if(options === '') {
+                options = '<option disabled>No languages found</option>';
+            }
             $('#languages-select').html(options);
         },
         error: function () {
@@ -132,10 +136,14 @@ $(document).ready(function () {
         type: 'GET',
         dataType: 'json',
         success: function (data) {
+            console.log('Skills API response:', data);
             let options = '';
             (Array.isArray(data) ? data : (data.data || [])).forEach(function (skill) {
-                options += `<option value="${skill.id}">${skill.name}</option>`;
+                options += `<option value=\"${skill.id}\">${skill.name}</option>`;
             });
+            if(options === '') {
+                options = '<option disabled>No skills found</option>';
+            }
             $('#skills-select').html(options);
         },
         error: function () {
