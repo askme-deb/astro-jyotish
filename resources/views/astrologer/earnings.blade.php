@@ -33,7 +33,7 @@
                 <tr>
                     <td>BKNG{{ $booking['id'] }}</td>
                     <td>{{ isset($booking['scheduled_at']) ? \Carbon\Carbon::parse($booking['scheduled_at'])->format('d M Y') : '-' }}</td>
-                    <td>{{ $booking['customer']['name'] ?? '-' }}</td>
+                    <td>{{ $booking['name'] ?? '-' }}</td>
                     <td>{{ ucfirst($booking['consultation_type'] ?? '-') }}</td>
                     <td>{{ number_format($rate, 2) }}</td>
                     <td>{{ number_format($gst, 2) }}</td>
