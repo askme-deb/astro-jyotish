@@ -1,6 +1,8 @@
 @if(!empty($astrologers) && is_array($astrologers))
     @foreach($astrologers as $astrologer)
-        <x-astrologer-card :astrologer="$astrologer" />
+        @if(!isset($astrologer['name']) || $astrologer['name'] !== 'Raju Maharaj')
+            <x-astrologer-card :astrologer="$astrologer" />
+        @endif
     @endforeach
 @else
     <div class="col-12">
