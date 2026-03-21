@@ -19,6 +19,8 @@ use App\Http\Controllers\CustomerConsultationController;
 
 use App\Http\Controllers\AstrologerAppointmentsController;
 
+use App\Http\Controllers\AstrologerRegistrationController;
+
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/consultants', [ConsultantController::class, 'show'])->name('consultant');
 Route::get('/consultants/filter', [ConsultantController::class, 'filter'])->name('consultant.filter');
@@ -106,6 +108,9 @@ Route::get('/customer/consultation/video/{meetingId}', [CustomerConsultationCont
 use App\Http\Controllers\BlogController;
 
 Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.details');
+
+// Astrologer Registration Form
+Route::get('/astrologer/register', [AstrologerRegistrationController::class, 'showForm'])->name('astrologer.register');
 
 // Raju Maharaj Booking
 use App\Http\Controllers\RajuMaharajBookingController;
