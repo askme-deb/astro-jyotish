@@ -32,7 +32,9 @@ Route::get('/services/{slug}', [ServicesController::class, 'service'])->name('se
 Route::get('/consultation', [ConsultationController::class, 'index'])->name('consultation');
 Route::get('/consultation/slots', [ConsultationController::class, 'getSlots'])->name('consultation.slots');
 Route::post('/consultation/book', [ConsultationController::class, 'store'])->name('consultation.book');
+// Astrologer dashboard alias for earnings page back button
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/astrologer/dashboard', [DashboardController::class, 'index'])->name('astrologer.dashboard');
 // OTP Login (modal)
 Route::middleware(['guest'])->group(function () {
     Route::post('/login/otp/request', [OtpAuthController::class, 'requestOtp'])
