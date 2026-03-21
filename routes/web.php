@@ -1,3 +1,9 @@
+// Astrologer Earnings Breakdown
+use App\Http\Controllers\AstrologerEarningsController;
+Route::middleware(['auth'])->group(function () {
+    Route::get('/astrologer/earnings', [AstrologerEarningsController::class, 'index'])->name('astrologer.earnings');
+    Route::get('/astrologer/earnings/export', [AstrologerEarningsController::class, 'export'])->name('astrologer.earnings.export');
+});
 <?php
 use App\Http\Controllers\OtpAuthController;
 
