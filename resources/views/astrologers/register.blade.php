@@ -302,21 +302,39 @@
         $(this).closest('.slot-row').remove();
     });
 
-    // --- Fetch languages and skills ---
-    $.get('/api/v1/languages', function (data) {
-        let options = '';
-        data.forEach(function (lang) {
-            options += `<option value="${lang.id}">${lang.name}</option>`;
-        });
-        $('#languages-select').html(options);
-    });
-    $.get('/api/v1/skills', function (data) {
-        let options = '';
-        data.forEach(function (skill) {
-            options += `<option value="${skill.id}">${skill.name}</option>`;
-        });
-        $('#skills-select').html(options);
-    });
+    // --- Fetch languages and skills using axios and ASTRO_API_BASE_URL ---
+    const ASTRO_API_BASE_URL = (window.ASTRO_API_BASE_URL || import.meta.env.VITE_ASTRO_API_BASE_URL || 'https://astroapi.jyotish.com');
+
+    function fetchLanguages() {
+        axios.get(`${ASTRO_API_BASE_URL}/api/v1/languages`)
+            .then(function (response) {
+                let options = '';
+                (response.data || []).forEach(function (lang) {
+                    options += `<option value="${lang.id}">${lang.name}</option>`;
+                });
+                $('#languages-select').html(options);
+            })
+            .catch(function (error) {
+                $('#languages-select').html('<option disabled>Error loading languages</option>');
+                console.error('Failed to load languages:', error);
+            });
+    }
+    function fetchSkills() {
+        axios.get(`${ASTRO_API_BASE_URL}/api/v1/skills`)
+            .then(function (response) {
+                let options = '';
+                (response.data || []).forEach(function (skill) {
+                    options += `<option value="${skill.id}">${skill.name}</option>`;
+                });
+                $('#skills-select').html(options);
+            })
+            .catch(function (error) {
+                $('#skills-select').html('<option disabled>Error loading skills</option>');
+                console.error('Failed to load skills:', error);
+            });
+    }
+    fetchLanguages();
+    fetchSkills();
 
     // --- Form Submission ---
     $('#astrologer-registration-form').submit(function (e) {
