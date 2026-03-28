@@ -1,6 +1,7 @@
 @extends('layouts.app')
 @section('content')
-<div class="container py-5">
+<div class="astrologerReg">
+ <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-10 col-xl-8">
             <div class="card shadow-lg border-0">
@@ -186,6 +187,8 @@
         </div>
     </div>
 </div>
+</div>
+
 @endsection
 @push('scripts')
 <script >
