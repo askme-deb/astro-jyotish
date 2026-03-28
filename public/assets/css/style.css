@@ -3897,3 +3897,118 @@ section.sear_pat {
     width: 190px;
 }
 }
+
+
+
+
+
+
+/* Consultation */
+
+
+
+.astrologer-card button {
+    font-size: 11px !important;
+}
+
+@media (max-width:768px) and (min-width:748px){
+.astrologer-card {
+    display: block!important;
+    min-width: 110%!important;
+}
+}
+
+@media (max-width:320px){
+.app-btn img {
+    min-width: 80px !important;
+}
+.price {
+    font-size: 13px;
+    font-weight: 600;
+}
+}
+
+.logo_foot img {
+    width: 210px !important;
+}
+
+@media (max-width: 768px) {
+    .testimonial-section {
+        padding: 1px!important;
+    }
+
+}
+
+
+
+@media (max-width: 768px) {
+    #heroSlider .carousel-inner {
+        height: auto;
+    }
+}
+
+
+@media(min-width:376px) and (max-width:425px){
+.carousel-inner {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    font-size: 9px;
+    }
+        .hero-banner h1 {
+        font-size: 12px !important;
+      }
+.hero-banner p{
+	font-size:10px;
+	line-height: 12px;
+}
+}
+
+
+@media(min-width:321px) and (max-width:375px){
+.carousel-inner {
+
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    font-size: 9px;
+    }
+        .hero-banner h1 {
+			padding:0px;
+
+        font-size: 8px !important;
+      }
+.hero-banner p{
+	font-size:8px;
+	line-height: 12px;
+}
+.hero-banner button.btn.btn-danger {
+		font-size: 11px;
+		padding: 1px 5px !important;
+		margin: 0px !important;
+	}
+}
+
+@media(min-width:300px) and (max-width:320px){
+.carousel-inner {
+
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    font-size: 8px;
+    }
+        .hero-banner h1 {
+			padding:0px;
+			margin-top:0px;
+        font-size: 8px !important;
+      }
+.hero-banner p{
+	font-size:8px;
+	line-height: 12px;
+}
+	.hero-banner button.btn.btn-danger {
+		font-size: 18px;
+		padding: 0.5px 5px !important;
+		margin-bottom: 0px !important;
+	}
+}
