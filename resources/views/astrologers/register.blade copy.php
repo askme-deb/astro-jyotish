@@ -1,30 +1,9 @@
 @extends('layouts.app')
 @section('content')
-<style>
-    .bg-primary {
-        background: linear-gradient(135deg, #ff9800, #f57c00) !important;
-    }
-    .text-warning{
-        color: #f57c00 !important;
-    }
-    .bg-secondary {
-        background: #ffe0b2 !important;
-        color: #a77946  !important;
-    }
-    .text-primary{
-        color: #f57c00 !important;
-    }
-
-    /* Custom style for checked checkboxes/radios */
-    .form-check-input:checked {
-        background-color: #f57c00 !important;
-        border-color: #f57c00 !important;
-    }
-</style>
 <div class="astrologerReg" style="background: linear-gradient(120deg, #fff7e6 60%, #ffe0b2 100%); min-height:100vh;">
  <div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-lg-10 col-xl-10">
+        <div class="col-lg-10 col-xl-8">
             <div class="card shadow-lg border-0 p-3 p-md-4" style="border-radius: 18px;">
                 <div class="card-header text-white d-flex align-items-center gap-3" style="background: linear-gradient(135deg, #ff9800, #f57c00); border-radius: 14px;">
                     <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Astrologer Avatar" class="reg-avatar">
@@ -64,7 +43,7 @@
 
                     <form id="astrologer-registration-form" enctype="multipart/form-data" autocomplete="off">
                         @csrf
-
+                        <div id="form-message" class="mb-3"></div>
 
                         <!-- ── Step 1: Basic Information ── -->
                         <div class="form-section" data-section="1"> <!-- Basic Info -->
@@ -78,9 +57,8 @@
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label">Last Name * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Enter your legal last name."></i></label>
+                                            <label class="form-label">Last Name</label>
                                             <input type="text" name="astrologer_last_name" class="form-control">
-                                                <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label">Email * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="We'll never share your email."></i></label>
@@ -118,7 +96,7 @@
                                             <textarea name="astrologer_short_intro" class="form-control" maxlength="200" rows="3"></textarea>
                                         </div>
                                         <div class="col-md-12">
-                                            <label class="form-label">Details Bio <span class="text-muted">(min 150-200 words)</span> * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Describe your background, approach, and expertise."></i></label>
+                                            <label class="form-label">Details Bio <span class="text-muted">(min 150-200 words)</span> <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Describe your background, approach, and expertise."></i></label>
                                             <textarea name="astrologer_details_bio" class="form-control" rows="4" minlength="900" required></textarea>
                                             <div class="form-text" id="bio-word-count">Words left: 150</div>
                                             <div class="invalid-feedback"></div>
@@ -126,25 +104,24 @@
                                     </div>
                                     <div class="row g-3 mt-2">
                                         <div class="col-md-12">
-                                            <label class="form-label">Address * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Street address, house no., etc."></i></label>
+                                            <label class="form-label">Address <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Street address, house no., etc."></i></label>
                                             <input type="text" name="astrologer_address" class="form-control mb-2" placeholder="Street address, house no., etc.">
                                             <div class="row g-2">
                                                 <div class="col-md-4">
-                                                    <label class="form-label">State * </label>
+                                                    <label class="form-label">State</label>
                                                     <select name="astrologer_state" id="astrologer_state" class="form-select" required>
                                                         <option value="">Select State</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">City * </label>
+                                                    <label class="form-label">City</label>
                                                     <select name="astrologer_city" id="astrologer_city" class="form-select" required>
                                                         <option value="">Select City</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Pin Code * </label>
-                                                    <input type="text" name="astrologer_pin" class="form-control" placeholder="Pin Code" required maxlength="6" pattern="\d{6}">
-                                                    <div class="invalid-feedback"></div>
+                                                    <label class="form-label">Pin Code</label>
+                                                    <input type="text" name="astrologer_pin" class="form-control" placeholder="Pin Code">
                                                 </div>
                                             </div>
                                         </div>
@@ -182,14 +159,12 @@
                                     <h5 class="mb-3 text-primary"><i class="bi bi-briefcase me-2"></i>Professional Details</h5>
                                     <div class="row g-3">
                                         <div class="col-md-4">
-                                            <label class="form-label">Experience (years) * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Total years of professional experience."></i></label>
-                                            <input type="number" name="astrologer_experience" class="form-control" min="0" required>
-                                            <div class="invalid-feedback"></div>
+                                            <label class="form-label">Experience (years) <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Total years of professional experience."></i></label>
+                                            <input type="number" name="astrologer_experience" class="form-control" min="0">
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label">Rate (per session) * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Your consultation fee."></i></label>
-                                            <input type="number" name="astrologer_rate" class="form-control" min="0" step="0.01" required>
-                                            <div class="invalid-feedback"></div>
+                                            <label class="form-label">Rate (per session) <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Your consultation fee."></i></label>
+                                            <input type="number" name="astrologer_rate" class="form-control" min="0" step="0.01">
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label">Duration * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Session duration is fixed at 30 minutes."></i></label>
@@ -204,9 +179,9 @@
                                             <div class="invalid-feedback d-block" id="languages-feedback"></div>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label">Skills * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Select your astrological skills."></i></label>
+                                            <label class="form-label">Skills <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Select your astrological skills."></i></label>
                                             <div id="skills-badges" class="d-flex flex-wrap gap-2"></div>
-                                            <input type="hidden" name="astrologer_skills" id="astrologer_skills-hidden" required>
+                                            <input type="hidden" name="astrologer_skills" id="astrologer_skills-hidden">
                                             <div class="invalid-feedback d-block" id="skills-feedback"></div>
                                         </div>
                                     </div>
@@ -234,56 +209,32 @@
                                 <div class="card-body pb-1">
                                     <h5 class="mb-3 text-primary"><i class="bi bi-shield-check me-2"></i>KYC Details</h5>
                                     <div class="row g-3">
-
-                                        <div class="col-md-6">
-                                            <label class="form-label">Aadhar Number *</label>
-                                            <input type="text" name="astrologer_aadhar_number" class="form-control" maxlength="12" required>
-                                            <div class="invalid-feedback"></div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">PAN Number *</label>
-                                            <input type="text" name="astrologer_pan_number" class="form-control" maxlength="10" required>
-                                            <div class="invalid-feedback"></div>
-                                        </div>
                                         <div class="col-md-4">
                                             <label class="form-label">Photo *
                                                 <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Upload a recent, clear passport-size photo. JPG, PNG, or JPEG format. Max size: 2MB. Face should be clearly visible, no sunglasses or hats."></i>
                                             </label>
-                                            <div id="photo-dropzone" class="border border-2 border-dashed rounded-3 p-3 text-center bg-light position-relative" style="cursor:pointer; min-height: 140px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                                                <div id="photo-preview" class="mb-2" style="display:none;"></div>
-                                                <div id="photo-dropzone-text">
-                                                    <i class="bi bi-cloud-arrow-up" style="font-size:2rem;color:#f57c00;"></i><br>
-                                                    <span class="text-muted">Drag & drop photo here<br>or <span class="text-primary text-decoration-underline" style="cursor:pointer;">browse</span></span>
-                                                </div>
-                                                <input type="file" name="astrologer_photo" id="astrologer_photo" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0" accept="image/*" required style="z-index:2;cursor:pointer;">
-                                            </div>
+                                            <input type="file" name="astrologer_photo" class="form-control" accept="image/*" required>
                                             <div class="form-text text-muted small">Accepted: JPG, PNG, JPEG. Max 2MB. Face must be clearly visible.</div>
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label">Aadhar Document (PDF/JPG/PNG) *</label>
-                                            <div id="aadhar-dropzone" class="border border-2 border-dashed rounded-3 p-3 text-center bg-light position-relative" style="cursor:pointer; min-height: 100px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                                                <div id="aadhar-preview" class="mb-2" style="display:none;"></div>
-                                                <div id="aadhar-dropzone-text">
-                                                    <i class="bi bi-cloud-arrow-up" style="font-size:2rem;color:#f57c00;"></i><br>
-                                                    <span class="text-muted">Drag & drop Aadhar file here<br>or <span class="text-primary text-decoration-underline" style="cursor:pointer;">browse</span></span>
-                                                </div>
-                                                <input type="file" name="astrologer_aadhar_document" id="astrologer_aadhar_document" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,image/*" required style="z-index:2;cursor:pointer;">
-                                            </div>
-                                            <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 2MB.</div>
+                                            <label class="form-label">Aadhar Number *</label>
+                                            <input type="text" name="astrologer_aadhar_number" class="form-control" maxlength="12" required>
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-4">
+                                            <label class="form-label">PAN Number *</label>
+                                            <input type="text" name="astrologer_pan_number" class="form-control" maxlength="10" required>
+                                            <div class="invalid-feedback"></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Aadhar Document (PDF/JPG/PNG) *</label>
+                                            <input type="file" name="astrologer_aadhar_document" class="form-control" accept=".pdf,image/*" required>
+                                            <div class="invalid-feedback"></div>
+                                        </div>
+                                        <div class="col-md-6">
                                             <label class="form-label">PAN Document (PDF/JPG/PNG) *</label>
-                                            <div id="pan-dropzone" class="border border-2 border-dashed rounded-3 p-3 text-center bg-light position-relative" style="cursor:pointer; min-height: 100px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                                                <div id="pan-preview" class="mb-2" style="display:none;"></div>
-                                                <div id="pan-dropzone-text">
-                                                    <i class="bi bi-cloud-arrow-up" style="font-size:2rem;color:#f57c00;"></i><br>
-                                                    <span class="text-muted">Drag & drop PAN file here<br>or <span class="text-primary text-decoration-underline" style="cursor:pointer;">browse</span></span>
-                                                </div>
-                                                <input type="file" name="astrologer_pan_document" id="astrologer_pan_document" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,image/*" required style="z-index:2;cursor:pointer;">
-                                            </div>
-                                            <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 2MB.</div>
+                                            <input type="file" name="astrologer_pan_document" class="form-control" accept=".pdf,image/*" required>
                                             <div class="invalid-feedback"></div>
                                         </div>
                                     </div>
@@ -298,40 +249,33 @@
                                     <h5 class="mb-3 text-primary"><i class="bi bi-bank2 me-2"></i>Bank Details</h5>
                                     <div class="row g-3">
                                         <div class="col-md-4">
-                                            <label class="form-label">A/c Holder Name * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Name as per bank records."></i></label>
+                                            <label class="form-label">A/c Holder Name <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Name as per bank records."></i></label>
                                             <input type="text" name="astrologer_bank_holder_name" class="form-control">
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label">Bank Name * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Your bank's name."></i></label>
+                                            <label class="form-label">Bank Name <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Your bank's name."></i></label>
                                             <input type="text" name="astrologer_bank_name" class="form-control">
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label">A/c Number * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Your bank account number."></i></label>
+                                            <label class="form-label">A/c Number <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Your bank account number."></i></label>
                                             <input type="text" name="astrologer_bank_account_number" class="form-control">
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label">IFSC Code * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Bank IFSC code."></i></label>
+                                            <label class="form-label">IFSC Code <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Bank IFSC code."></i></label>
                                             <input type="text" name="astrologer_ifsc_code" class="form-control">
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label">Branch Name * <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Bank branch name."></i></label>
+                                            <label class="form-label">Branch Name <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Bank branch name."></i></label>
                                             <input type="text" name="astrologer_branch_name" class="form-control">
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label">UPI ID *
-                                                <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Enter your valid UPI ID (e.g. yourname@bank). This will be used for payments."></i>
-                                            </label>
-                                            <div class="input-group">
-                                                <span class="input-group-text bg-white"><i class="bi bi-upc-scan text-primary" title="UPI"></i></span>
-                                                <input type="text" name="astrologer_upi_id" id="astrologer_upi_id" class="form-control" placeholder="yourname@bank" autocomplete="off">
-                                                <button type="button" class="btn btn-outline-secondary" id="clear-upi" tabindex="-1" title="Clear UPI ID"><i class="bi bi-x"></i></button>
-                                            </div>
-                                            <div class="form-text text-muted small">Example: yourname@okicici, mobile@upi, etc. Must be a valid UPI VPA.</div>
+                                            <label class="form-label">UPI ID <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Your UPI ID for payments."></i></label>
+                                            <input type="text" name="astrologer_upi_id" class="form-control">
                                             <div class="invalid-feedback"></div>
                                         </div>
                                     </div>
@@ -343,7 +287,7 @@
                         <div class="form-section d-none" data-section="8"> <!-- Agreement -->
                             <div class="card mb-4 shadow-sm border-0" style="border-radius: 14px;">
                                 <div class="card-body pb-1">
-                                    <h5 class="mb-3 text-primary"><i class="bi bi-clipboard-check me-2"></i>PLATFORM AGREEMENT</h5>
+                                    <h5 class="mb-3 text-primary"><i class="bi bi-clipboard-check me-2"></i>SECTION 10: PLATFORM AGREEMENT</h5>
                                     <div class="mb-3 ps-2">
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="astrologer_agreement_info_true" id="astrologer_agreement_info_true" required>
@@ -374,7 +318,7 @@
                             </div>
                             <div class="card mb-4 shadow-sm border-0" style="border-radius: 14px;">
                                 <div class="card-body pb-1">
-                                    <h5 class="mb-3 text-primary"><i class="bi bi-file-earmark-text me-2"></i>DECLARATION</h5>
+                                    <h5 class="mb-3 text-primary"><i class="bi bi-file-earmark-text me-2"></i>SECTION 11: DECLARATION</h5>
                                     <div class="row g-3">
                                         <div class="col-md-4">
                                             <label class="form-label">Applicant Name <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Your full name for declaration."></i></label>
@@ -385,7 +329,7 @@
                                             <input type="text" name="astrologer_declaration_signature" class="form-control" placeholder="Sign here or use digital pad">
                                             <canvas id="signature-pad" width="300" height="100" style="border:1px solid #ccc; width:100%;"></canvas>
                                             <input type="hidden" name="astrologer_signature_image" id="astrologer_signature_image">
-                                            <div class="col-lg-6">
+                                            <div class="col-lg-3">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary mt-2 w-100" id="clear-signature">Clear
                                                     Signature</button>
                                             </div>
@@ -410,13 +354,13 @@
                                 <span id="submit-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                             </button>
                         </div>
-                            <div id="form-message" class="mb-3 mt-3"></div>
+
                         <!-- Success Modal -->
                         <div class="modal fade" id="reg-success-modal" tabindex="-1" aria-labelledby="regSuccessLabel" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content">
                                     <div class="modal-body text-center p-4">
-                                        <i class="bi bi-check-circle-fill text-warning" style="font-size:3rem;"></i>
+                                        <i class="bi bi-check-circle-fill text-success" style="font-size:3rem;"></i>
                                         <h4 class="mt-3">Registration Successful!</h4>
                                         <p class="mb-0">Thank you for registering. Our team will review your profile soon.</p>
                                     </div>
@@ -435,144 +379,6 @@
 @push('scripts')
 <script>
 $(document).ready(function () {
-    // ── UPI ID clear button ─────────────────────────────
-    $('#clear-upi').on('click', function() {
-        $('#astrologer_upi_id').val('').focus();
-    });
-    // ── Photo Drag & Drop ─────────────────────────────────────
-    const photoDropzone = $('#photo-dropzone');
-    const photoInput = $('#astrologer_photo');
-    const photoPreview = $('#photo-preview');
-    const dropzoneText = $('#photo-dropzone-text');
-
-    function showPhotoPreview(file) {
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            photoPreview.html(`<img src="${e.target.result}" alt="Photo Preview" class="img-thumbnail" style="max-width:100px;max-height:100px;">`);
-            photoPreview.show();
-            dropzoneText.hide();
-        };
-        reader.readAsDataURL(file);
-    }
-
-    photoDropzone.on('click', function(e) {
-        if (e.target.id === 'photo-dropzone' || $(e.target).hasClass('text-decoration-underline')) {
-            photoInput.trigger('click');
-        }
-    });
-
-    photoInput.on('change', function(e) {
-        const file = this.files && this.files[0];
-        if (file) {
-            showPhotoPreview(file);
-        } else {
-            photoPreview.hide();
-            dropzoneText.show();
-        }
-    });
-
-    photoDropzone.on('dragover', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        photoDropzone.addClass('border-warning bg-white');
-    });
-    photoDropzone.on('dragleave dragend drop', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        photoDropzone.removeClass('border-warning bg-white');
-    });
-    photoDropzone.on('drop', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const files = e.originalEvent.dataTransfer.files;
-        if (files && files.length > 0) {
-            photoInput[0].files = files;
-            photoInput.trigger('change');
-        }
-    });
-    // Reset preview if form is reset
-    $('#astrologer-registration-form').on('reset', function() {
-        setTimeout(function() {
-            photoPreview.hide();
-            dropzoneText.show();
-        }, 100);
-    });
-    // ── Aadhar Drag & Drop ─────────────────────────────────
-    function setupDropzone(dropzoneId, inputId, previewId, textId, label) {
-        const dropzone = $(dropzoneId);
-        const input = $(inputId);
-        const preview = $(previewId);
-        const text = $(textId);
-
-        function showPreview(file) {
-            if (!file) return;
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (['jpg','jpeg','png','gif','bmp','webp'].includes(ext)) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.html(`<img src="${e.target.result}" alt="${label} Preview" class="img-thumbnail" style="max-width:80px;max-height:80px;">`);
-                    preview.show();
-                    text.hide();
-                };
-                reader.readAsDataURL(file);
-            } else if (ext === 'pdf') {
-                preview.html(`<i class="bi bi-file-earmark-pdf" style="font-size:2rem;color:#d32f2f;"></i><br><span class="small">${file.name}</span>`);
-                preview.show();
-                text.hide();
-            } else {
-                preview.hide();
-                text.show();
-            }
-        }
-
-        dropzone.on('click', function(e) {
-            if (e.target.id === dropzone.attr('id') || $(e.target).hasClass('text-decoration-underline')) {
-                input.trigger('click');
-            }
-        });
-
-        input.on('change', function(e) {
-            const file = this.files && this.files[0];
-            if (file) {
-                showPreview(file);
-            } else {
-                preview.hide();
-                text.show();
-            }
-        });
-
-        dropzone.on('dragover', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            dropzone.addClass('border-warning bg-white');
-        });
-        dropzone.on('dragleave dragend drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            dropzone.removeClass('border-warning bg-white');
-        });
-        dropzone.on('drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const files = e.originalEvent.dataTransfer.files;
-            if (files && files.length > 0) {
-                input[0].files = files;
-                input.trigger('change');
-            }
-        });
-        // Reset preview if form is reset
-        $('#astrologer-registration-form').on('reset', function() {
-            setTimeout(function() {
-                preview.hide();
-                text.show();
-            }, 100);
-        });
-    }
-
-    setupDropzone('#aadhar-dropzone', '#astrologer_aadhar_document', '#aadhar-preview', '#aadhar-dropzone-text', 'Aadhar');
-    setupDropzone('#pan-dropzone', '#astrologer_pan_document', '#pan-preview', '#pan-dropzone-text', 'PAN');
-
     // ── State/City dynamic select ───────────────────────────
     function loadStates() {
         $('#astrologer_state').html('<option value="">Loading...</option>');
@@ -720,7 +526,6 @@ function validateStep(step) {
 
     const fields = [
         { name: 'astrologer_first_name',   msg: 'First name is required.' },
-        { name: 'astrologer_last_name',    msg: 'Last name is required.' },
         { name: 'astrologer_email',        msg: 'A valid email is required.' },
         { name: 'astrologer_mobile_no',    msg: 'A 10-digit mobile number is required.' },
         { name: 'astrologer_password',     msg: 'Password must be at least 8 characters.' },
@@ -786,67 +591,6 @@ function validateStep(step) {
             $('#form-message').html('<div class="alert alert-danger">Please fill in the required profile details.</div>');
             valid = false;
         }
-
-        // Address validation
-        const address = $('[name="astrologer_address"]');
-        if (!address.val() || address.val().trim().length < 5) {
-            address.addClass('is-invalid');
-            if (address.siblings('.invalid-feedback').length === 0) {
-                address.after('<div class="invalid-feedback">Address is required (min 5 chars).</div>');
-            } else {
-                address.siblings('.invalid-feedback').text('Address is required (min 5 chars).');
-            }
-            valid = false;
-        } else {
-            address.removeClass('is-invalid');
-            address.siblings('.invalid-feedback').text('');
-        }
-
-        // State validation
-        const state = $('[name="astrologer_state"]');
-        if (!state.val()) {
-            state.addClass('is-invalid');
-            if (state.siblings('.invalid-feedback').length === 0) {
-                state.after('<div class="invalid-feedback">State is required.</div>');
-            } else {
-                state.siblings('.invalid-feedback').text('State is required.');
-            }
-            valid = false;
-        } else {
-            state.removeClass('is-invalid');
-            state.siblings('.invalid-feedback').text('');
-        }
-
-        // City validation
-        const city = $('[name="astrologer_city"]');
-        if (!city.val()) {
-            city.addClass('is-invalid');
-            if (city.siblings('.invalid-feedback').length === 0) {
-                city.after('<div class="invalid-feedback">City is required.</div>');
-            } else {
-                city.siblings('.invalid-feedback').text('City is required.');
-            }
-            valid = false;
-        } else {
-            city.removeClass('is-invalid');
-            city.siblings('.invalid-feedback').text('');
-        }
-
-        // Pin Code validation (required, must be 6 digits)
-        const pin = $('[name="astrologer_pin"]');
-        const pinVal = pin.val() ? pin.val().trim() : '';
-        if (!/^\d{6}$/.test(pinVal)) {
-            pin.addClass('is-invalid');
-            if (pin.siblings('.invalid-feedback').length === 0) {
-                pin.after('<div class="invalid-feedback">Pin Code must be 6 digits.</div>');
-            } else {
-                pin.siblings('.invalid-feedback').text('Pin Code must be 6 digits.');
-            }
-            valid = false;
-        } else {
-            pin.removeClass('is-invalid');
-            pin.siblings('.invalid-feedback').text('');
-        }
     }
 
     // ── Step 3: Education ─────────────────────────────────────
@@ -895,44 +639,12 @@ function validateStep(step) {
 
     // ── Step 4: Professional Details ─────────────────────────
     if (step === 4) {
-        // Experience validation
-        const exp = $('[name="astrologer_experience"]');
-        if (!exp.val() || isNaN(exp.val()) || Number(exp.val()) < 0) {
-            exp.addClass('is-invalid');
-            exp.siblings('.invalid-feedback').text('Experience is required and must be 0 or more.');
-            valid = false;
-        } else {
-            exp.removeClass('is-invalid');
-            exp.siblings('.invalid-feedback').text('');
-        }
-
-        // Rate validation
-        const rate = $('[name="astrologer_rate"]');
-        if (!rate.val() || isNaN(rate.val()) || Number(rate.val()) < 0) {
-            rate.addClass('is-invalid');
-            rate.siblings('.invalid-feedback').text('Rate is required and must be 0 or more.');
-            valid = false;
-        } else {
-            rate.removeClass('is-invalid');
-            rate.siblings('.invalid-feedback').text('');
-        }
-
-        // Languages validation (existing)
         if (!$('#astrologer_languages-hidden').val()) {
             $('#languages-feedback').text('Please select at least one language.');
             $('#form-message').html('<div class="alert alert-danger">Please select at least one language.</div>');
             valid = false;
         } else {
             $('#languages-feedback').text('');
-        }
-
-        // Skills validation
-        if (!$('#astrologer_skills-hidden').val()) {
-            $('#skills-feedback').text('Please select at least one skill.');
-            $('#form-message').html('<div class="alert alert-danger">Please select at least one skill.</div>');
-            valid = false;
-        } else {
-            $('#skills-feedback').text('');
         }
     }
 
@@ -1073,64 +785,12 @@ function validateStep(step) {
         }
     }
 
-
     // ── Step 8: Agreement ─────────────────────────────────────
     if (step === 8) {
         const unchecked = $(`.form-section[data-section="8"] input[type="checkbox"]:not(:checked)`).length;
         if (unchecked > 0) {
             $('#form-message').html('<div class="alert alert-danger">Please accept all agreement terms to continue.</div>');
             valid = false;
-        }
-
-        // Applicant Name validation
-        const applicantName = $('[name="astrologer_declaration_applicant_name"]');
-        if (!applicantName.val() || applicantName.val().trim().length < 2) {
-            applicantName.addClass('is-invalid');
-            if (applicantName.siblings('.invalid-feedback').length === 0) {
-                applicantName.after('<div class="invalid-feedback">Applicant name is required.</div>');
-            } else {
-                applicantName.siblings('.invalid-feedback').text('Applicant name is required.');
-            }
-            valid = false;
-        } else {
-            applicantName.removeClass('is-invalid');
-            applicantName.siblings('.invalid-feedback').text('');
-        }
-
-        // Signature validation (must not be empty)
-        const signature = $('[name="astrologer_declaration_signature"]');
-        const signatureImage = $('#astrologer_signature_image').val();
-        if ((!signature.val() || signature.val().trim().length < 2) && !signatureImage) {
-            signature.addClass('is-invalid');
-            if (signature.siblings('.invalid-feedback').length === 0) {
-                signature.after('<div class="invalid-feedback">Signature is required (type or draw).</div>');
-            } else {
-                signature.siblings('.invalid-feedback').text('Signature is required (type or draw).');
-            }
-            valid = false;
-        } else {
-            signature.removeClass('is-invalid');
-            signature.siblings('.invalid-feedback').text('');
-        }
-
-        // Date validation (must be today, not past/future)
-        const dateInput = $('[name="astrologer_declaration_date"]');
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        const todayStr = `${yyyy}-${mm}-${dd}`;
-        if (!dateInput.val() || dateInput.val() !== todayStr) {
-            dateInput.addClass('is-invalid');
-            if (dateInput.siblings('.invalid-feedback').length === 0) {
-                dateInput.after('<div class="invalid-feedback">Date must be today (' + todayStr + ').</div>');
-            } else {
-                dateInput.siblings('.invalid-feedback').text('Date must be today (' + todayStr + ').');
-            }
-            valid = false;
-        } else {
-            dateInput.removeClass('is-invalid');
-            dateInput.siblings('.invalid-feedback').text('');
         }
     }
 
@@ -1143,17 +803,7 @@ function validateStep(step) {
             <div class="col-md-3"><input type="text" name="astrologer_education[${eduIndex}][degree]" placeholder="Degree" class="form-control" value="${data.degree || ''}"></div>
             <div class="col-md-3"><input type="text" name="astrologer_education[${eduIndex}][institution]" placeholder="Institution" class="form-control" value="${data.institution || ''}"></div>
             <div class="col-md-2"><input type="number" name="astrologer_education[${eduIndex}][year]" placeholder="Year" class="form-control" value="${data.year || ''}"></div>
-            <div class="col-md-3">
-                <div class="edu-dropzone border border-2 border-dashed rounded-3 p-2 text-center bg-light position-relative" style="cursor:pointer; min-height: 60px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-                    <div class="edu-preview mb-1" style="display:none;"></div>
-                    <div class="edu-dropzone-text">
-                        <i class="bi bi-cloud-arrow-up" style="font-size:1.3rem;color:#f57c00;"></i><br>
-                        <span class="text-muted" style="font-size:12px;">Drag & drop file<br>or <span class="text-primary text-decoration-underline" style="cursor:pointer;">browse</span></span>
-                    </div>
-                    <input type="file" name="astrologer_education[${eduIndex}][document]" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 edu-file-input" accept=".pdf,image/*" required style="z-index:2;cursor:pointer;">
-                </div>
-                <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 2MB.</div>
-            </div>
+            <div class="col-md-3"><input type="file" name="astrologer_education[${eduIndex}][document]" class="form-control"></div>
             <div class="col-md-1 text-end"><button type="button" class="btn btn-danger btn-sm remove-education"><i class="bi bi-x"></i></button></div>
         </div>`;
         $('#education-section').append(html);
@@ -1167,90 +817,6 @@ function validateStep(step) {
     $(document).on('click', '.remove-education', function () {
         $(this).closest('.education-entry').remove();
         setTimeout(ensureAtLeastOneEducation, 10);
-    });
-
-    // ── Education Document Drag & Drop ─────────────────────
-    function setupEduDropzone(entry) {
-        const dropzone = entry.find('.edu-dropzone');
-        const input = entry.find('.edu-file-input');
-        const preview = entry.find('.edu-preview');
-        const text = entry.find('.edu-dropzone-text');
-
-        function showPreview(file) {
-            if (!file) return;
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.html(`<img src="${e.target.result}" alt="Doc Preview" class="img-thumbnail" style="max-width:40px;max-height:40px;">`);
-                    preview.show();
-                    text.hide();
-                };
-                reader.readAsDataURL(file);
-            } else if (ext === 'pdf') {
-                preview.html(`<i class="bi bi-file-earmark-pdf" style="font-size:1.3rem;color:#d32f2f;"></i><br><span class="small">${file.name}</span>`);
-                preview.show();
-                text.hide();
-            } else {
-                preview.hide();
-                text.show();
-            }
-        }
-
-        dropzone.on('click', function(e) {
-            if (e.target === dropzone[0] || $(e.target).hasClass('text-decoration-underline')) {
-                input.trigger('click');
-            }
-        });
-
-        input.on('change', function(e) {
-            const file = this.files && this.files[0];
-            if (file) {
-                showPreview(file);
-            } else {
-                preview.hide();
-                text.show();
-            }
-        });
-
-        dropzone.on('dragover', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            dropzone.addClass('border-warning bg-white');
-        });
-        dropzone.on('dragleave dragend drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            dropzone.removeClass('border-warning bg-white');
-        });
-        dropzone.on('drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const files = e.originalEvent.dataTransfer.files;
-            if (files && files.length > 0) {
-                input[0].files = files;
-                input.trigger('change');
-            }
-        });
-        // Reset preview if form is reset
-        $('#astrologer-registration-form').on('reset', function() {
-            setTimeout(function() {
-                preview.hide();
-                text.show();
-            }, 100);
-        });
-    }
-
-    // Setup dropzone for all current and future education entries
-    function setupAllEduDropzones() {
-        $('#education-section .education-entry').each(function() {
-            setupEduDropzone($(this));
-        });
-    }
-    setupAllEduDropzones();
-    // When new education entry is added
-    $('#add-education').on('click', function() {
-        setTimeout(setupAllEduDropzones, 50);
     });
 
     // ── Availability repeater ─────────────────────────────────
@@ -1290,8 +856,8 @@ function validateStep(step) {
         const slotsSection = $(this).closest('.slots-section');
         const slotCount = slotsSection.find('.slot-row').length;
         slotsSection.append(`<div class="row g-2 slot-row mt-1">
-            <div class="col"><input type="time" name="astrologer_availabilities[${ai}][slots][${slotCount}][from]" class="form-select"></div>
-            <div class="col"><input type="time" name="astrologer_availabilities[${ai}][slots][${slotCount}][to]" class="form-select"></div>
+            <div class="col"><input type="time" name="astrologer_availabilities[${ai}][slots][${slotCount}][from]" class="form-control"></div>
+            <div class="col"><input type="time" name="astrologer_availabilities[${ai}][slots][${slotCount}][to]" class="form-control"></div>
             <div class="col-auto"><button type="button" class="btn btn-outline-danger btn-sm remove-slot"><i class="bi bi-x"></i></button></div>
         </div>`);
     });
@@ -1303,7 +869,7 @@ function validateStep(step) {
         function updateHidden() { $(hiddenInput).val(selected.join(',')); }
         $(container).empty();
         (data || []).forEach(function (item) {
-            const badge = $(`<span class="badge bg-secondary selectable-badge" data-id="${item.id}" style="cursor:pointer;user-select:none;border-radius:0px">${item.name}</span>`);
+            const badge = $(`<span class="badge rounded-pill bg-secondary selectable-badge" data-id="${item.id}" style="cursor:pointer;user-select:none;">${item.name}</span>`);
             badge.on('click', function () {
                 const id = String(item.id);
                 if (selected.includes(id)) {
@@ -1326,72 +892,16 @@ function validateStep(step) {
         .then(r => renderBadgeOptions('#skills-badges', '#astrologer_skills-hidden', r.data))
         .catch(() => $('#skills-badges').html('<span class="text-danger">Error loading skills</span>'));
 
-    // ── Improved Signature pad ───────────────────────────────
+    // ── Signature pad ─────────────────────────────────────────
     const canvas = document.getElementById('signature-pad');
     const ctx = canvas.getContext('2d');
     let drawing = false;
-    let lastPoint = { x: 0, y: 0 };
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.lineCap = 'round';
-
-    function getCanvasPos(e) {
-        const rect = canvas.getBoundingClientRect();
-        if (e.touches && e.touches.length > 0) {
-            return {
-                x: (e.touches[0].clientX - rect.left) * (canvas.width / rect.width),
-                y: (e.touches[0].clientY - rect.top) * (canvas.height / rect.height)
-            };
-        } else {
-            return {
-                x: (e.clientX - rect.left) * (canvas.width / rect.width),
-                y: (e.clientY - rect.top) * (canvas.height / rect.height)
-            };
-        }
-    }
-
-    function startDraw(e) {
-        e.preventDefault();
-        drawing = true;
-        lastPoint = getCanvasPos(e);
-        ctx.beginPath();
-        ctx.moveTo(lastPoint.x, lastPoint.y);
-    }
-
-    function draw(e) {
-        if (!drawing) return;
-        e.preventDefault();
-        const pos = getCanvasPos(e);
-        ctx.lineTo(pos.x, pos.y);
-        ctx.stroke();
-        lastPoint = pos;
-    }
-
-    function endDraw(e) {
-        if (!drawing) return;
-        drawing = false;
-        $('#astrologer_signature_image').val(canvas.toDataURL());
-    }
-
-    // Mouse events
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', endDraw);
-    canvas.addEventListener('mouseleave', endDraw);
-
-    // Touch events
-    canvas.addEventListener('touchstart', startDraw, { passive: false });
-    canvas.addEventListener('touchmove', draw, { passive: false });
-    canvas.addEventListener('touchend', endDraw, { passive: false });
-    canvas.addEventListener('touchcancel', endDraw, { passive: false });
-
-    // Prevent scrolling when drawing on touch
-    canvas.addEventListener('touchmove', function(e) { if (drawing) e.preventDefault(); }, { passive: false });
-
-    $('#clear-signature').on('click', function () {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        $('#astrologer_signature_image').val('');
-    });
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+    canvas.addEventListener('mousedown', e => { drawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
+    canvas.addEventListener('mousemove', e => { if (!drawing) return; ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); });
+    canvas.addEventListener('mouseup', () => { drawing = false; $('#signature_image').val(canvas.toDataURL()); });
+    canvas.addEventListener('mouseleave', () => { drawing = false; });
+    $('#clear-signature').on('click', function () { ctx.clearRect(0,0,canvas.width,canvas.height); $('#signature_image').val(''); });
 
     // ── Form submit ───────────────────────────────────────────
     function submitForm() {

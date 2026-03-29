@@ -14,6 +14,105 @@ use Illuminate\Support\Facades\Log;
  */
 class AstrologerApiService extends BaseApiClient
 {
+    /**
+     * Create a new astrologer (register) via external API.
+     *
+     * @param array $data
+     * @return array|null
+     */
+    public function createAstrologer(array $data): ?array
+    {
+        // Use Laravel's Http::attach() for all files and arrays
+        $http = \Illuminate\Support\Facades\Http::baseUrl($this->baseUrl)
+            ->timeout($this->timeoutSeconds)
+            ->retry($this->retryTimes, $this->retrySleepMilliseconds, function ($exception) {
+                return $exception instanceof \Illuminate\Http\Client\ConnectionException;
+            });
+        if ($this->token !== null && $this->token !== '') {
+            $http = $http->withToken($this->token);
+        }
+        // Attach files
+        foreach (['photo', 'aadhar_document', 'pan_document', 'signature'] as $fileField) {
+            if (isset($data[$fileField]) && $data[$fileField] instanceof \Illuminate\Http\UploadedFile) {
+                $http = $http->attach($fileField, fopen($data[$fileField]->getRealPath(), 'r'), $data[$fileField]->getClientOriginalName());
+            }
+        }
+        // Attach education documents
+        if (!empty($data['education'])) {
+            foreach ($data['education'] as $i => $edu) {
+                if (isset($edu['document']) && $edu['document'] instanceof \Illuminate\Http\UploadedFile) {
+                    $http = $http->attach("education[$i][document]", fopen($edu['document']->getRealPath(), 'r'), $edu['document']->getClientOriginalName());
+                }
+            }
+        }
+        // Build form fields
+        $fields = [];
+        foreach ($data as $key => $value) {
+            if (in_array($key, ['photo', 'aadhar_document', 'pan_document', 'signature', 'education', 'availabilities', 'languages', 'skills'])) continue;
+            $fields[$key] = $value ?? '';
+        }
+        // Arrays (languages, skills)
+        if (!empty($data['languages'])) {
+            foreach ($data['languages'] as $lang) {
+                $fields['languages[]'][] = $lang;
+            }
+        }
+        if (!empty($data['skills'])) {
+            foreach ($data['skills'] as $skill) {
+                $fields['skills[]'][] = $skill;
+            }
+        }
+        // Availabilities
+        if (!empty($data['availabilities'])) {
+            foreach ($data['availabilities'] as $i => $avail) {
+                $fields["availabilities[$i][day]"] = $avail['day'] ?? '';
+                if (!empty($avail['slots'])) {
+                    foreach ($avail['slots'] as $j => $slot) {
+                        $fields["availabilities[$i][slots][$j][from]"] = $slot['from'] ?? '';
+                        $fields["availabilities[$i][slots][$j][to]"] = $slot['to'] ?? '';
+                    }
+                }
+            }
+        }
+        // Education (non-file fields)
+        if (!empty($data['education'])) {
+            foreach ($data['education'] as $i => $edu) {
+                $fields["education[$i][degree]"] = $edu['degree'] ?? '';
+                $fields["education[$i][institution]"] = $edu['institution'] ?? '';
+                $fields["education[$i][year]"] = $edu['year'] ?? '';
+            }
+        }
+
+        // Log payload for debugging (sanitized, no file contents)
+        $logPayload = $this->buildLogPayload($data, $fields);
+        Log::info('[API] Astrologer registration payload', ['payload' => $logPayload]);
+
+        $response = $http->asMultipart()->post('astrologers', $fields);
+        $result = $response->json();
+        $success = false;
+        if (is_array($result)) {
+            if ((isset($result['status']) && $result['status']) || (isset($result['success']) && $result['success'])) {
+                $success = true;
+            }
+        }
+        if (!$success) {
+            Log::warning('[API] Astrologer registration failed', ['result' => $result]);
+            return null;
+        }
+        // Prefer 'data', else fallback to 'astrologer' or whole result
+        if (isset($result['data'])) {
+            return $result['data'];
+        } elseif (isset($result['astrologer'])) {
+            return $result['astrologer'];
+        } else {
+            return $result;
+        }
+        if (!is_array($result) || !isset($result['status']) || !$result['status']) {
+            Log::warning('[API] Astrologer registration failed', ['result' => $result]);
+            return null;
+        }
+        return $result['data'] ?? null;
+    }
     protected int $cacheTtl;
     protected string $cacheKey = 'api.astrologers.list';
 
@@ -379,4 +478,34 @@ class AstrologerApiService extends BaseApiClient
             'total' => 0,
         ];
     }
+
+
+
+          /**
+             * Build a log payload for registration (no file contents, only file names and scalar fields)
+             *
+             * @param array $data
+             * @param array $fields
+             * @return array
+             */
+            protected function buildLogPayload(array $data, array $fields): array
+            {
+                $payload = $fields;
+                // Add file names for uploads
+                foreach (['photo', 'aadhar_document', 'pan_document', 'signature'] as $fileField) {
+                    if (isset($data[$fileField]) && $data[$fileField] instanceof \Illuminate\Http\UploadedFile) {
+                        $payload[$fileField] = $data[$fileField]->getClientOriginalName();
+                    }
+                }
+                // Education documents
+                if (!empty($data['education'])) {
+                    foreach ($data['education'] as $i => $edu) {
+                        if (isset($edu['document']) && $edu['document'] instanceof \Illuminate\Http\UploadedFile) {
+                            $payload["education[$i][document]"] = $edu['document']->getClientOriginalName();
+                        }
+                    }
+                }
+                return $payload;
+            }
+
 }

@@ -117,6 +117,7 @@ Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.details'
 
 // Astrologer Registration Form
 Route::get('/astrologer/register', [AstrologerRegistrationController::class, 'showForm'])->name('astrologer.register');
+Route::post('/astrologer/register', [AstrologerRegistrationController::class, 'store'])->name('astrologer.register.store');
 
 // Raju Maharaj Booking
 use App\Http\Controllers\RajuMaharajBookingController;

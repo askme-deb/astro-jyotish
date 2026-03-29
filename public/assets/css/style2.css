@@ -1,5 +1,3 @@
-
-
 /* --- ASTROLOGER DASHBOARD (astrologer-dashboard.php) --- */
 .dashboard-layout {
     background: transparent;
@@ -804,4 +802,177 @@ button.btn.btn-outline-primary {
     box-shadow: 0 8px 18px rgba(17, 24, 39, 0.06) !important;
     margin-bottom: 0px;
     min-height: 160px;
+}
+
+/* --- Custom Registration Form Enhancements --- */
+
+/* 1. Hover/focus effects for form fields and buttons */
+.astrologerReg .form-control:focus, .astrologerReg .form-select:focus {
+  border-color: #ff9800;
+  box-shadow: 0 0 0 0.15rem rgba(255, 152, 0, 0.15);
+}
+.astrologerReg .btn-primary:hover, .astrologerReg .btn-primary:focus {
+  background: linear-gradient(135deg, #f57c00, #ff9800);
+  border-color: #ff9800;
+  box-shadow: 0 2px 12px rgba(255, 152, 0, 0.12);
+}
+
+/* 2. Custom validation feedback with icons */
+.astrologerReg .form-control.is-invalid, .astrologerReg .form-select.is-invalid {
+  border-color: #dc3545;
+  background-image: url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/icons/exclamation-circle.svg');
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.2em 1.2em;
+}
+.astrologerReg .form-control.is-valid, .astrologerReg .form-select.is-valid {
+  border-color: #28a745;
+  background-image: url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/icons/check-circle.svg');
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.2em 1.2em;
+}
+
+/* 3. Tooltips/help icons for fields */
+.astrologerReg .help-icon {
+  color: #ff9800;
+  margin-left: 4px;
+  cursor: pointer;
+  font-size: 1.1em;
+}
+
+/* 4. Avatar/illustration in header */
+.astrologerReg .reg-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 16px rgba(255, 152, 0, 0.18);
+  margin-right: 16px;
+}
+
+/* 5. Responsive tweaks */
+@media (max-width: 767.98px) {
+  .astrologerReg .card { padding: 0.5rem !important; }
+  .astrologerReg .card-header { font-size: 1.1rem; }
+}
+
+/* 6. Progress bar/step indicator */
+.astrologerReg .step-indicator {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  gap: 2px;
+}
+.astrologerReg .step {
+  flex: 1;
+  height: 6px;
+  background: #ffe0b2;
+  border-radius: 4px;
+  margin: 0 2px;
+  position: relative;
+}
+.astrologerReg .step.active, .astrologerReg .step.completed {
+  background: linear-gradient(90deg, #ff9800, #f57c00);
+}
+
+/* 7. Font unification */
+.astrologerReg label, .astrologerReg .form-label, .astrologerReg h5, .astrologerReg .card-header {
+  font-family: 'Lato', 'Segoe UI', Arial, sans-serif;
+  font-weight: 600;
+}
+
+/* 8. Success modal/animation */
+#reg-success-modal .modal-content {
+  border-radius: 18px;
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+#reg-success-modal .modal-body i {
+  font-size: 3rem;
+  color: #28a745;
+  margin-bottom: 1rem;
+}
+
+/* --- Mobile Responsiveness for Registration Form --- */
+@media (max-width: 767.98px) {
+  .astrologerReg .container {
+    padding: 0 0.5rem !important;
+  }
+  .astrologerReg .card {
+    padding: 0.5rem !important;
+    border-radius: 10px !important;
+  }
+  .astrologerReg .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 1.1rem;
+    border-radius: 10px !important;
+    padding: 1rem 0.5rem !important;
+  }
+  .astrologerReg .reg-avatar {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 0.5rem;
+  }
+  .astrologerReg .step-indicator {
+    margin-bottom: 1rem;
+  }
+  .astrologerReg .form-label, .astrologerReg label {
+    font-size: 1rem;
+  }
+  .astrologerReg .btn-lg {
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+  }
+  .astrologerReg .row.g-3 > [class^='col-'] {
+    margin-bottom: 1rem;
+  }
+}
+
+/* --- REGISTRATION FORM FONT UNIFICATION --- */
+.astrologerReg, .astrologerReg .card, .astrologerReg label, .astrologerReg input, .astrologerReg select, .astrologerReg textarea, .astrologerReg .form-control, .astrologerReg .form-select {
+    font-family: 'Lato', 'Segoe UI', Arial, sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    color: #2d334a;
+}
+.astrologerReg h3, .astrologerReg h5, .astrologerReg .card-header h3, .astrologerReg .card-body h5 {
+    font-family: 'Lato', 'Segoe UI', Arial, sans-serif;
+    font-weight: 700;
+    color: #f57c00 !important;
+    letter-spacing: 0.01em;
+}
+.astrologerReg h3 {
+    font-size: 2rem;
+}
+.astrologerReg h5 {
+    font-size: 1.15rem;
+}
+.astrologerReg label.form-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d334a;
+}
+.astrologerReg .form-control, .astrologerReg .form-select {
+    font-size: 1rem;
+    font-weight: 400;
+}
+.astrologerReg .step-indicator {
+    gap: 8px;
+}
+.astrologerReg .step-indicator .step {
+    width: 28px;
+    height: 8px;
+    border-radius: 6px;
+    background: #ffe0b2;
+    transition: background 0.2s;
+    display: inline-block;
+}
+.astrologerReg .step-indicator .step.active {
+    background: #ff9800;
+}
+.astrologerReg .step-indicator .step.completed {
+    background: #f57c00;
 }

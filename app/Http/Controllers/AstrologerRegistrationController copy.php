@@ -89,14 +89,11 @@ class AstrologerRegistrationController extends Controller
 
         // File fields (photo, aadhar, pan, signature)
         $fileMap = [
-            'astrologer_photo' => 'photo',
-            'astrologer_aadhar_document' => 'aadhar_document',
-            'astrologer_pan_document' => 'pan_document',
-            // Add signature if you have a file input for it, e.g. 'astrologer_signature' => 'signature'
+            'photo', 'aadhar_document', 'pan_document', 'signature'
         ];
-        foreach ($fileMap as $formField => $apiField) {
-            if ($request->hasFile($formField)) {
-                $data[$apiField] = $request->file($formField);
+        foreach ($fileMap as $apiField) {
+            if ($request->hasFile($apiField)) {
+                $data[$apiField] = $request->file($apiField);
             }
         }
 
