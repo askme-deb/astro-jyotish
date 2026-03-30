@@ -87,6 +87,7 @@ class AstrologerRegistrationController extends Controller
             $i++;
         }
 
+        
         // File fields (photo, aadhar, pan, signature)
         $fileMap = [
             'astrologer_photo' => 'photo',

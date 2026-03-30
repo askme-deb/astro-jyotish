@@ -1393,141 +1393,138 @@ function validateStep(step) {
         $('#astrologer_signature_image').val('');
     });
 
-    // ── Form submit ───────────────────────────────────────────
-    function submitForm() {
-        $('.form-control, .form-select').removeClass('is-invalid');
-        $('.invalid-feedback').text('');
-        $('#form-message').html('');
-        $('#btn-next').attr('disabled', true);
-        $('#submit-spinner').removeClass('d-none');
-        $('#next-text').text('Registering...');
+function submitForm() {
+    $('.form-control, .form-select').removeClass('is-invalid');
+    $('.invalid-feedback').text('');
+    $('#form-message').html('');
 
-        // Build FormData with correct API field names
-        const form = document.getElementById('astrologer-registration-form');
-        const formData = new FormData();
+    $('#btn-next').attr('disabled', true);
+    $('#submit-spinner').removeClass('d-none');
+    $('#next-text').text('Registering...');
 
-        // Map simple fields
-        const fieldMap = {
-            'astrologer_first_name': 'first_name',
-            'astrologer_last_name': 'last_name',
-            'astrologer_display_name': 'display_name',
-            'astrologer_short_intro': 'short_intro',
-            'astrologer_details_bio': 'details_bio',
-            'astrologer_address': 'address',
-            'astrologer_state': 'state_id',
-            'astrologer_city': 'city_id',
-            'astrologer_pin': 'pin_code',
-            'astrologer_consultation_mode': 'consultation_mode',
-            'astrologer_bank_holder_name': 'ac_holder_name',
-            'astrologer_bank_name': 'bank_name',
-            'astrologer_bank_account_number': 'ac_number',
-            'astrologer_ifsc_code': 'ifsc_code',
-            'astrologer_branch_name': 'branch_name',
-            'astrologer_upi_id': 'upi_id',
-            'astrologer_declaration_applicant_name': 'applicant_name',
-            'astrologer_email': 'email',
-            'astrologer_mobile_no': 'mobile_no',
-            'astrologer_password': 'password',
-            'astrologer_is_active': 'is_active',
-            'astrologer_experience': 'experience',
-            'astrologer_rate': 'rate',
-            'astrologer_duration': 'duration',
-            'astrologer_kyc_status': 'kyc_status',
-            'astrologer_online_status': 'online_status',
-            'astrologer_aadhar_number': 'aadhar_number',
-            'astrologer_pan_number': 'pan_number',
-        };
+    const form = document.getElementById('astrologer-registration-form');
 
-        // Always send required fields, even if empty
-        Object.keys(fieldMap).forEach(function (k) {
-            const el = form.elements[k];
-            // Use empty string if not present, so API gets the key
-            formData.append(fieldMap[k], el && el.value ? el.value : '');
-        });
+    // ✅ IMPORTANT: This includes FILES automatically
+    const formData = new FormData(form);
 
+    // ✅ FIELD MAPPING (overwrite correct API keys)
+    const fieldMap = {
+        'astrologer_first_name': 'first_name',
+        'astrologer_last_name': 'last_name',
+        'astrologer_display_name': 'display_name',
+        'astrologer_short_intro': 'short_intro',
+        'astrologer_details_bio': 'details_bio',
+        'astrologer_address': 'address',
+        'astrologer_state': 'state_id',
+        'astrologer_city': 'city_id',
+        'astrologer_pin': 'pin_code',
+        'astrologer_consultation_mode': 'consultation_mode',
+        'astrologer_bank_holder_name': 'ac_holder_name',
+        'astrologer_bank_name': 'bank_name',
+        'astrologer_bank_account_number': 'ac_number',
+        'astrologer_ifsc_code': 'ifsc_code',
+        'astrologer_branch_name': 'branch_name',
+        'astrologer_upi_id': 'upi_id',
+        'astrologer_declaration_applicant_name': 'applicant_name',
+        'astrologer_email': 'email',
+        'astrologer_mobile_no': 'mobile_no',
+        'astrologer_password': 'password',
+        'astrologer_experience': 'experience',
+        'astrologer_rate': 'rate',
+        'astrologer_duration': 'duration',
+        'astrologer_aadhar_number': 'aadhar_number',
+        'astrologer_pan_number': 'pan_number',
+    };
 
-        // Languages and skills (arrays)
-        const langs = ($('#astrologer_languages-hidden').val() || '').split(',').filter(Boolean);
-        if (langs.length) {
-            langs.forEach(l => formData.append('languages[]', l));
-        } else {
-            // Always send at least one empty value for required array
-            formData.append('languages[]', '');
+    // ✅ Replace values with API keys
+    Object.keys(fieldMap).forEach(function (k) {
+        const el = form.elements[k];
+        if (el) {
+            formData.set(fieldMap[k], el.value || '');
         }
-        const skills = ($('#astrologer_skills-hidden').val() || '').split(',').filter(Boolean);
-        skills.forEach(s => formData.append('skills[]', s));
+    });
 
-        // Education (array of objects with possible file)
-        $('#education-section .education-entry').each(function (i) {
-            const deg = $(this).find('[name^="astrologer_education"][name$="[degree]"]').val() || '';
-            const inst = $(this).find('[name^="astrologer_education"][name$="[institution]"]').val() || '';
-            const year = $(this).find('[name^="astrologer_education"][name$="[year]"]').val() || '';
-            const doc = $(this).find('[name^="astrologer_education"][name$="[document]"]')[0]?.files[0];
-            formData.append(`education[${i}][degree]`, deg);
-            formData.append(`education[${i}][institution]`, inst);
-            formData.append(`education[${i}][year]`, year);
-            if (doc) formData.append(`education[${i}][document]`, doc);
-        });
+    // ✅ Languages
+    const langs = ($('#astrologer_languages-hidden').val() || '').split(',').filter(Boolean);
+    formData.delete('languages[]');
+    langs.forEach(l => formData.append('languages[]', l));
 
-        // Availabilities (array)
-        $('#availability-section .availability-entry').each(function (i) {
-            const day = $(this).find('select[name^="astrologer_availabilities"][name$="[day]"]').val() || '';
-            formData.append(`availabilities[${i}][day]`, day);
-            $(this).find('.slot-row').each(function (j) {
-                const from = $(this).find('input[name$="[from]"]').val() || '';
-                const to = $(this).find('input[name$="[to]"]').val() || '';
-                formData.append(`availabilities[${i}][slots][${j}][from]`, from);
-                formData.append(`availabilities[${i}][slots][${j}][to]`, to);
-            });
-        });
+    // ✅ Skills
+    const skills = ($('#astrologer_skills-hidden').val() || '').split(',').filter(Boolean);
+    formData.delete('skills[]');
+    skills.forEach(s => formData.append('skills[]', s));
 
-        // File fields (aadhar, pan, photo, signature)
-        ['aadhar_document','pan_document','photo','signature'].forEach(function (f) {
-            const el = form.elements[f];
-            if (el && el.files && el.files[0]) formData.append(f, el.files[0]);
-        });
-
-        // Add CSRF token to AJAX FormData if present in meta tag
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        if (csrfToken) {
-            formData.append('_token', csrfToken);
+    // =========================
+    // 4. EDUCATION (WITH FILE)
+    // =========================
+    $('#education-section .education-entry').each(function (i) {
+        formData.append(`education[${i}][degree]`, $(this).find('[name$="[degree]"]').val() || '');
+        formData.append(`education[${i}][institution]`, $(this).find('[name$="[institution]"]').val() || '');
+        formData.append(`education[${i}][year]`, $(this).find('[name$="[year]"]').val() || '');
+        const fileInput = $(this).find('[name$="[document]"]')[0];
+        if (fileInput?.files?.length) {
+            formData.append(`education[${i}][document]`, fileInput.files[0]);
         }
+    });
 
-        $.ajax({
-            url: '/astrologer/register', // <-- Web controller for mapping
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (response) {
-                $('#form-message').html(`<div class="alert alert-success">${response.message}</div>`);
-                $('#astrologer-registration-form')[0].reset();
-                $('#education-section').html('');
-                $('#availability-section').html('');
-                eduIndex = 0; availIndex = 0;
-                addEducationEntry(); addAvailabilityEntry();
-                goToStep(1);
-                new bootstrap.Modal(document.getElementById('reg-success-modal')).show();
-            },
-            error: function (xhr) {
-                const msg = xhr.responseJSON?.message ?? 'Registration failed.';
-                $('#form-message').html(`<div class="alert alert-danger">${msg}</div>`);
-                if (xhr.responseJSON?.errors) {
-                    $.each(xhr.responseJSON.errors, function (field, messages) {
-                        const input = $(`[name='${field}']`);
-                        if (input.length) { input.addClass('is-invalid'); input.next('.invalid-feedback').text(messages[0]); }
-                    });
-                }
-            },
-            complete: function () {
-                $('#btn-next').attr('disabled', false);
-                $('#submit-spinner').addClass('d-none');
-                if (currentStep === TOTAL_STEPS) {
-                    $('#next-text').html('<i class="bi bi-check-circle me-1"></i> Submit Registration');
-                }
-            }
+    // =========================
+    // 5. AVAILABILITY
+    // =========================
+    $('#availability-section .availability-entry').each(function (i) {
+        const day = $(this).find('[name$="[day]"]').val();
+        formData.append(`availabilities[${i}][day]`, day);
+        $(this).find('.slot-row').each(function (j) {
+            formData.append(`availabilities[${i}][slots][${j}][from]`, $(this).find('[name$="[from]"]').val() || '');
+            formData.append(`availabilities[${i}][slots][${j}][to]`, $(this).find('[name$="[to]"]').val() || '');
         });
+    });
+
+    // ✅ DEBUG (optional)
+    console.log("===== FORM DATA =====");
+    for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
     }
+
+    // ✅ AXIOS CALL
+    axios.post('/astrologer/register', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    })
+    .then(function (response) {
+        $('#form-message').html('<div class="alert alert-success">Registration successful!</div>');
+        $('#reg-success-modal').modal('show');
+
+        form.reset();
+        goToStep(1);
+    })
+    .catch(function (error) {
+        $('#btn-next').attr('disabled', false);
+        $('#submit-spinner').addClass('d-none');
+        $('#next-text').html('Submit Registration');
+
+        if (error.response && error.response.data && error.response.data.errors) {
+            let errors = error.response.data.errors;
+
+            Object.keys(errors).forEach(function (key) {
+                const el = $(`[name="${key}"]`);
+                if (el.length) {
+                    el.addClass('is-invalid');
+                    el.parent().find('.invalid-feedback').text(errors[key][0]);
+                }
+            });
+
+            $('#form-message').html('<div class="alert alert-danger">Please fix the errors and try again.</div>');
+        } else {
+            $('#form-message').html('<div class="alert alert-danger">Something went wrong. Try again.</div>');
+        }
+    })
+    .finally(function () {
+        $('#btn-next').attr('disabled', false);
+        $('#submit-spinner').addClass('d-none');
+        $('#next-text').html('<i class="bi bi-check-circle me-1"></i> Submit Registration');
+    });
+}
 
     // ── Init ──────────────────────────────────────────────────
     goToStep(1);
