@@ -87,7 +87,7 @@ class AstrologerRegistrationController extends Controller
             $i++;
         }
 
-        
+
         // File fields (photo, aadhar, pan, signature)
         $fileMap = [
             'astrologer_photo' => 'photo',
@@ -114,9 +114,14 @@ class AstrologerRegistrationController extends Controller
             }, array_filter($data, function($v) { return $v instanceof \Illuminate\Http\UploadedFile; }))
         ]);
 
+
         $result = $astrologerApiService->createAstrologer($data);
 
         if (!$result) {
+            \Log::error('Astrologer registration failed', [
+                'request_data' => $data,
+                'api_service_result' => $result
+            ]);
             return response()->json(['error' => 'Registration failed. Please try again later.'], 500);
         }
 
