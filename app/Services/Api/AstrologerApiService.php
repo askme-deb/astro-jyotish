@@ -96,7 +96,11 @@ class AstrologerApiService extends BaseApiClient
             }
         }
         if (!$success) {
-            Log::warning('[API] Astrologer registration failed', ['result' => $result]);
+            Log::warning('[API] Astrologer registration failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'result' => $result
+            ]);
             return null;
         }
         // Prefer 'data', else fallback to 'astrologer' or whole result
