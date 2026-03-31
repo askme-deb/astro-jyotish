@@ -46,6 +46,7 @@ class AstrologerRegistrationController extends Controller
             'duration'          => $request->input('duration'),
             'aadhar_number'     => $request->input('aadhar_number'),
             'pan_number'        => $request->input('pan_number'),
+            'astrologer_signature_image' => $request->input('astrologer_signature_image'),
         ];
 
         // Arrays (languages, skills)
