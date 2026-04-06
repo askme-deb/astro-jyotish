@@ -15,12 +15,30 @@
             <div class="rm-sidebar-copy">
                 {{-- <div class="rm-stars">★★★★★</div>
                 <div class="rm-reviews">4.9 · 2300+ reviews</div> --}}
-                <h1 class="rm-name">Raju Maharaj</h1>
+                <h1 class="rm-name">Raju Maharaj Ji</h1>
                 <div class="rm-role">Vedic Astrologer &amp; Spiritual Guide</div>
-                <p class="rm-description">Renowned for precise birth-chart readings, Vastu counsel, and life-path guidance. Trusted by thousands across the globe.</p>
+                <p class="rm-description">Raju Maharaj Ji is a respected spiritual guide and Vedic astrologer who provides honest, practical, and solution-oriented guidance for life’s important areas such as career, marriage, business, health, and personal growth. His approach focuses on clarity, positivity, and meaningful remedies to help individuals make better decisions with confidence.</p>
             </div>
-
-            <div class="rm-stats">
+    <div class="rm-trust-list">
+                <div class="rm-trust-title">Why Choose Raju Maharaj Ji</div>
+                <div class="rm-trust-item">
+                    <span class="rm-trust-icon"><i class="fa-solid fa-scale-balanced"></i></span>
+                    <span>Honest &amp; Practical Guidance</span>
+                </div>
+                <div class="rm-trust-item">
+                    <span class="rm-trust-icon"><i class="fa-solid fa-seedling"></i></span>
+                    <span>Simple &amp; Effective Remedies</span>
+                </div>
+                <div class="rm-trust-item">
+                    <span class="rm-trust-icon"><i class="fa-solid fa-shield-heart"></i></span>
+                    <span>No Fear-Based Predictions</span>
+                </div>
+                <div class="rm-trust-item">
+                    <span class="rm-trust-icon"><i class="fa-solid fa-om"></i></span>
+                    <span>Spiritual &amp; Solution-Oriented Approach</span>
+                </div>
+            </div>
+            {{-- <div class="rm-stats">
                 <div class="rm-stat">
                     <span class="rm-stat-value">25+</span>
                     <span class="rm-stat-label">Years Exp.</span>
@@ -33,7 +51,7 @@
                     <span class="rm-stat-value">98%</span>
                     <span class="rm-stat-label">Satisfied</span>
                 </div>
-            </div>
+            </div> --}}
 
             <div class="rm-trust-list">
                 <div class="rm-trust-item">
@@ -102,6 +120,17 @@
                 <div class="rm-section-copy">
                     <h2>Book Your Session</h2>
                     <p>Complete the form to confirm your consultation</p>
+                </div>
+
+                <div class="rm-consultation-note">
+                    <div class="rm-consultation-note-title">Consultation Note</div>
+                    <p>This consultation provides guidance and remedies based on astrology. It is meant to help you make better decisions with clarity and confidence.</p>
+                    <p>Please be ready with your questions to make the most of your consultation.</p>
+                </div>
+
+                <div class="rm-consultation-note rm-privacy-note">
+                    <div class="rm-consultation-note-title">Privacy Statement</div>
+                    <p>All your information will be kept strictly confidential and used only for consultation purposes.</p>
                 </div>
 
                 @if(session('success'))
@@ -678,6 +707,40 @@
         margin: 2px 0 0;
         color: var(--rm-text-muted);
         font-size: 12px;
+    }
+
+    .rm-consultation-note {
+        margin-bottom: 14px;
+        padding: 14px 15px;
+        border: 1px solid #eadcca;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #fffaf3 0%, #fff 100%);
+        box-shadow: 0 8px 20px rgba(240, 106, 0, 0.05);
+    }
+
+    .rm-consultation-note-title {
+        margin-bottom: 6px;
+        color: var(--rm-text-strong);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    .rm-consultation-note p {
+        margin: 0;
+        color: #7a6450;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .rm-consultation-note p + p {
+        margin-top: 8px;
+    }
+
+    .rm-privacy-note {
+        margin-top: -2px;
+        background: linear-gradient(180deg, #fff7ef 0%, #fffdf9 100%);
     }
 
     .rm-alert {
