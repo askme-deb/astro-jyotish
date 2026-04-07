@@ -772,7 +772,7 @@ button.btn.btn-outline-primary {
 
 .astro-menu a.active{
     background:var(--primary);
-    color:white;
+    color: #f98800;
 }
 
 /* Buttons */

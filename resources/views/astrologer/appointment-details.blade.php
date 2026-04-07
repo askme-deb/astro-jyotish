@@ -165,6 +165,89 @@
         'payment_dispute' => 'Payment dispute',
         'other' => 'Other',
     ];
+    $abuseReportSources = array_values(array_filter([
+        is_array(data_get($appointmentRoot, 'abuse_report')) ? data_get($appointmentRoot, 'abuse_report') : null,
+        is_array(data_get($appointmentRoot, 'astrologer_abuse_report')) ? data_get($appointmentRoot, 'astrologer_abuse_report') : null,
+        is_array(data_get($appointmentRoot, 'latest_abuse_report')) ? data_get($appointmentRoot, 'latest_abuse_report') : null,
+        is_array(data_get($appointmentRoot, 'latest_astrologer_abuse_report')) ? data_get($appointmentRoot, 'latest_astrologer_abuse_report') : null,
+        is_array(data_get($appointmentRoot, 'abuseReport')) ? data_get($appointmentRoot, 'abuseReport') : null,
+        $appointmentRoot,
+    ], function ($source) {
+        return is_array($source) && $source !== [];
+    }));
+    $resolveAbuseValue = function (array $paths, $default = null) use ($abuseReportSources) {
+        foreach ($abuseReportSources as $source) {
+            foreach ($paths as $path) {
+                $value = data_get($source, $path);
+
+                if (is_string($value)) {
+                    $value = trim($value);
+                }
+
+                if ($value !== null && $value !== '') {
+                    return $value;
+                }
+            }
+        }
+
+        return $default;
+    };
+    $abuseReportReasonValue = $resolveAbuseValue([
+        'reason',
+        'abuse_reason',
+        'report_reason',
+        'data.reason',
+    ]);
+    $abuseReportDetailsValue = $resolveAbuseValue([
+        'details',
+        'abuse_details',
+        'report_details',
+        'description',
+        'note',
+        'remarks',
+        'data.details',
+    ]);
+    $abuseReportStatusValue = $resolveAbuseValue([
+        'status',
+        'report_status',
+        'abuse_status',
+        'data.status',
+    ]);
+    $abuseReportedAtRaw = $resolveAbuseValue([
+        'reported_at',
+        'abuse_reported_at',
+        'submitted_at',
+        'created_at',
+        'data.reported_at',
+    ]);
+    $abuseReportFlag = $resolveAbuseValue([
+        'is_reported',
+        'reported',
+        'has_report',
+        'abuse_reported',
+        'data.reported',
+    ]);
+    $abuseReportExists = filter_var($abuseReportFlag, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    $abuseReportExists = $abuseReportExists ?? false;
+    $abuseReportExists = $abuseReportExists
+        || $abuseReportReasonValue !== null
+        || $abuseReportDetailsValue !== null
+        || $abuseReportedAtRaw !== null
+        || in_array((string) $abuseReportStatusValue, ['reported', 'submitted', 'under_review', 'pending_review'], true);
+    $abuseReportReasonLabel = $abuseReasonOptions[$abuseReportReasonValue] ?? ($abuseReportReasonValue
+        ? ucwords(str_replace(['_', '-'], ' ', (string) $abuseReportReasonValue))
+        : null);
+    $abuseReportStatusLabel = $abuseReportStatusValue
+        ? ucwords(str_replace(['_', '-'], ' ', (string) $abuseReportStatusValue))
+        : 'Reported';
+    $abuseReportedAtLabel = null;
+    if ($abuseReportedAtRaw) {
+        try {
+            $abuseReportedAtLabel = \Carbon\Carbon::parse($abuseReportedAtRaw)->format('d M Y, h:i A');
+        } catch (\Throwable $exception) {
+            $abuseReportedAtLabel = (string) $abuseReportedAtRaw;
+        }
+    }
     $noteDocumentLogo = asset('assets/images/Logo.png');
     $formatDurationValue = function ($duration) {
         if (!is_numeric($duration)) {
@@ -195,6 +278,19 @@
         ? [
             'bookingId' => $appointment['id'],
             'reportAbuseUrl' => route('astrologer.appointment.reportAbuse', ['id' => $appointment['id']]),
+            'abuseReasonLabels' => $abuseReasonOptions,
+            'abuseReport' => $abuseReportExists
+                ? [
+                    'reported' => true,
+                    'reason' => $abuseReportReasonValue,
+                    'reasonLabel' => $abuseReportReasonLabel,
+                    'details' => $abuseReportDetailsValue,
+                    'status' => $abuseReportStatusValue,
+                    'statusLabel' => $abuseReportStatusLabel,
+                    'reportedAt' => $abuseReportedAtRaw,
+                    'reportedAtLabel' => $abuseReportedAtLabel,
+                ]
+                : null,
             'customerJoinUrl' => route('customer.consultation.video', ['meetingId' => 'astro-' . $appointment['id']]),
             'astrologerId' => (int) ($appointment['astrologer_id'] ?? data_get($appointment, 'astrologer.id') ?? data_get($appointment, 'assigned_astrologer_id') ?? 0),
             'currentDate' => !empty($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('Y-m-d') : null,
@@ -290,6 +386,144 @@
         color: #222;
         margin-bottom: 0.3rem;
         font-size: 1.01rem;
+    }
+
+    .booking-summary-col {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        align-self: stretch;
+    }
+
+    .booking-summary-total-card {
+        padding: 1rem 1.05rem;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #f5fff7 0%, #ffffff 100%);
+        border: 1px solid #d5efe0;
+    }
+
+    .booking-summary-total-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #219150;
+        line-height: 1.1;
+    }
+
+    .booking-summary-total-meta {
+        margin-top: 0.35rem;
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+
+    .abuse-report-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .abuse-report-form-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+
+    .abuse-report-status-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+        padding: 1rem 1.05rem;
+        border: 1px solid #f3d7d7;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #fff7f7 0%, #fff 100%);
+        box-shadow: 0 10px 24px rgba(180, 53, 53, 0.08);
+    }
+
+    .abuse-report-status-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.8rem;
+    }
+
+    .abuse-report-status-title {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        color: #7f1d1d;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .abuse-report-status-title i {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(185, 28, 28, 0.12);
+        color: #b91c1c;
+    }
+
+    .abuse-report-status-copy {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.92rem;
+        line-height: 1.5;
+    }
+
+    .abuse-report-status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.32rem 0.7rem;
+        border-radius: 999px;
+        background: #fee2e2;
+        color: #991b1b;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .abuse-report-status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .abuse-report-status-item {
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid #f5e1e1;
+        border-radius: 12px;
+        padding: 0.7rem 0.8rem;
+    }
+
+    .abuse-report-status-item-label {
+        display: block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.3rem;
+    }
+
+    .abuse-report-status-item-value {
+        color: #1f2937;
+        font-size: 0.95rem;
+        font-weight: 600;
+        line-height: 1.4;
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .abuse-report-status-note {
+        border-top: 1px solid #f3d7d7;
+        padding-top: 0.8rem;
+        color: #7f1d1d;
+        font-size: 0.84rem;
     }
 
     .astrologer-profile-card {
@@ -1089,6 +1323,7 @@ $meetingId = 'astro-' . $appointment['id'];
                 <div class="booking-details-value"><b>Transaction ID :</b> {{ $appointment['razorpay_payment_id'] ?? $appointment['transaction_id'] ?? '-' }}</div>
                 <div class="booking-details-value"><b>Status :</b> <span style="color:#219150;font-weight:600;">Paid</span></div>
             </div>
+
             <div class="booking-details-col">
                 <div class="booking-details-label mb-2"><i class="fa-solid fa-user me-1"></i> Customer Details</div>
                 @if($customer)
@@ -1100,41 +1335,78 @@ $meetingId = 'astro-' . $appointment['id'];
                 @else
                     <div class="booking-details-value">No customer details found.</div>
                 @endif
-
-                <hr class="my-3">
-
-                <div class="booking-details-label mb-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Report Abuse</div>
-                <p class="text-muted small mb-3">Use this if the customer was abusive, threatening, or otherwise inappropriate during the consultation.</p>
-
-                <form id="report-abuse-form" method="POST" action="{{ route('astrologer.appointment.reportAbuse', ['id' => $appointment['id']]) }}">
-                    @csrf
-                    <div class="mb-2">
-                        <label for="abuse-reason" class="form-label small fw-semibold">Reason</label>
-                        <select id="abuse-reason" name="reason" class="form-select form-select-sm @if($errors->reportAbuse->has('reason')) is-invalid @endif">
-                            <option value="">Select a reason</option>
-                            @foreach($abuseReasonOptions as $optionValue => $optionLabel)
-                                <option value="{{ $optionValue }}" @selected(old('reason') === $optionValue)>{{ $optionLabel }}</option>
-                            @endforeach
-                        </select>
-                        <div id="abuse-reason-error" class="invalid-feedback d-block" @if(!$errors->reportAbuse->has('reason')) style="display:none;" @endif>{{ $errors->reportAbuse->first('reason') }}</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="abuse-details" class="form-label small fw-semibold">Details</label>
-                        <textarea id="abuse-details" name="details" rows="4" class="form-control form-control-sm @if($errors->reportAbuse->has('details')) is-invalid @endif" placeholder="Describe what happened and any important context.">{{ old('details') }}</textarea>
-                        <div id="abuse-details-error" class="invalid-feedback d-block" @if(!$errors->reportAbuse->has('details')) style="display:none;" @endif>{{ $errors->reportAbuse->first('details') }}</div>
-                    </div>
-
-                    <button type="submit" id="report-abuse-btn" class="btn btn-outline-danger btn-sm">
-                        <i class="fa-solid fa-flag me-1"></i>Report Abuse
-                    </button>
-                </form>
             </div>
 
-            <div class="flex-grow-1 d-flex flex-column align-items-end justify-content-between">
-                <div class="booking-details-label mb-2">Total Amount</div>
-                <div class="booking-details-value" style="font-size:1.5rem;font-weight:700;color:#219150;">₹{{ $appointment['rate'] ?? '-' }}</div>
+            <div class="booking-details-col booking-summary-col">
+                <div class="booking-summary-total-card">
+                    <div class="booking-details-label mb-2">Total Amount</div>
+                    <div class="booking-summary-total-value">₹{{ $appointment['rate'] ?? '-' }}</div>
+                    <div class="booking-summary-total-meta">Consultation payment has been received and recorded.</div>
+                </div>
+
+                <div class="abuse-report-section">
+                    <div class="booking-details-label mb-0"><i class="fa-solid fa-triangle-exclamation me-1"></i> Report Abuse</div>
+
+                    <div id="abuse-report-status" class="abuse-report-status-card @if(!$abuseReportExists) d-none @endif" aria-live="polite">
+                        <div class="abuse-report-status-head">
+                            <div>
+                                <div class="abuse-report-status-title">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                    <span>Incident report submitted</span>
+                                </div>
+                                <p class="abuse-report-status-copy mt-2">A formal abuse report has already been logged for this consultation. The case details are preserved below for follow-up and review.</p>
+                            </div>
+                            <span id="abuse-report-status-badge" class="abuse-report-status-badge">{{ $abuseReportStatusLabel }}</span>
+                        </div>
+                        <div class="abuse-report-status-grid">
+                            <div class="abuse-report-status-item">
+                                <span class="abuse-report-status-item-label">Reason</span>
+                                <p id="abuse-report-reason-text" class="abuse-report-status-item-value">{{ $abuseReportReasonLabel ?: 'Not specified' }}</p>
+                            </div>
+                            <div class="abuse-report-status-item">
+                                <span class="abuse-report-status-item-label">Reported On</span>
+                                <p id="abuse-report-reported-at-text" class="abuse-report-status-item-value">{{ $abuseReportedAtLabel ?: 'Recently submitted' }}</p>
+                            </div>
+                        </div>
+                        <div class="abuse-report-status-item">
+                            <span class="abuse-report-status-item-label">Summary</span>
+                            <p id="abuse-report-details-text" class="abuse-report-status-item-value">{{ $abuseReportDetailsValue ?: 'No additional details were captured with this report.' }}</p>
+                        </div>
+                        <div class="abuse-report-status-note">
+                            Only one report is needed per consultation. If additional action is required, continue through the normal support or compliance process.
+                        </div>
+                    </div>
+
+                    <div id="abuse-report-form-wrapper" class="abuse-report-form-wrapper @if($abuseReportExists) d-none @endif">
+                        <p class="text-muted small mb-0">Use this if the customer was abusive, threatening, or otherwise inappropriate during the consultation.</p>
+
+                        <form id="report-abuse-form" method="POST" action="{{ route('astrologer.appointment.reportAbuse', ['id' => $appointment['id']]) }}">
+                            @csrf
+                            <div class="mb-2">
+                                <label for="abuse-reason" class="form-label small fw-semibold">Reason</label>
+                                <select id="abuse-reason" name="reason" class="form-select form-select-sm @if($errors->reportAbuse->has('reason')) is-invalid @endif">
+                                    <option value="">Select a reason</option>
+                                    @foreach($abuseReasonOptions as $optionValue => $optionLabel)
+                                        <option value="{{ $optionValue }}" @selected(old('reason') === $optionValue)>{{ $optionLabel }}</option>
+                                    @endforeach
+                                </select>
+                                <div id="abuse-reason-error" class="invalid-feedback d-block" @if(!$errors->reportAbuse->has('reason')) style="display:none;" @endif>{{ $errors->reportAbuse->first('reason') }}</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="abuse-details" class="form-label small fw-semibold">Details</label>
+                                <textarea id="abuse-details" name="details" rows="4" class="form-control form-control-sm @if($errors->reportAbuse->has('details')) is-invalid @endif" placeholder="Describe what happened and any important context.">{{ old('details') }}</textarea>
+                                <div id="abuse-details-error" class="invalid-feedback d-block" @if(!$errors->reportAbuse->has('details')) style="display:none;" @endif>{{ $errors->reportAbuse->first('details') }}</div>
+                            </div>
+
+                            <button type="submit" id="report-abuse-btn" class="btn btn-outline-danger btn-sm">
+                                <i class="fa-solid fa-flag me-1"></i>Report Abuse
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
+
         </div>
 
         <div class="booking-details-col mt-4" style="max-width:none;">
@@ -1462,10 +1734,16 @@ $meetingId = 'astro-' . $appointment['id'];
         const actionFeedback = document.getElementById('appointment-action-feedback');
         const reportAbuseForm = document.getElementById('report-abuse-form');
         const reportAbuseBtn = document.getElementById('report-abuse-btn');
+        const abuseReportStatusCard = document.getElementById('abuse-report-status');
+        const abuseReportFormWrapper = document.getElementById('abuse-report-form-wrapper');
         const abuseReasonField = document.getElementById('abuse-reason');
         const abuseDetailsField = document.getElementById('abuse-details');
         const abuseReasonError = document.getElementById('abuse-reason-error');
         const abuseDetailsError = document.getElementById('abuse-details-error');
+        const abuseReportStatusBadge = document.getElementById('abuse-report-status-badge');
+        const abuseReportReasonText = document.getElementById('abuse-report-reason-text');
+        const abuseReportReportedAtText = document.getElementById('abuse-report-reported-at-text');
+        const abuseReportDetailsText = document.getElementById('abuse-report-details-text');
         const rescheduleBtn = document.getElementById('booking-reschedule-btn');
         const startVideoConsultationBtn = document.getElementById('start-video-consultation-btn');
         const videoConsultationDisabledState = document.getElementById('video-consultation-disabled-state');
@@ -1502,6 +1780,7 @@ $meetingId = 'astro-' . $appointment['id'];
         const bookingId = pageData.bookingId;
         const appointmentLockRoots = Array.from(document.querySelectorAll('[data-appointment-lock-root]'));
     const reportAbuseUrl = pageData.reportAbuseUrl;
+        const abuseReasonLabels = pageData.abuseReasonLabels || {};
         const suggestProductUrl = pageData.suggestProductUrl;
         const addSuggestedProductUrl = pageData.addSuggestedProductUrl;
         const removeSuggestedProductUrl = pageData.removeSuggestedProductUrl;
@@ -1517,6 +1796,9 @@ $meetingId = 'astro-' . $appointment['id'];
         let isNoteFinalized = Boolean(pageData.isNoteFinalized);
         let canCancel = Boolean(pageData.canCancel);
         let isAppointmentCancelled = Boolean(pageData.isAppointmentCancelled);
+        let abuseReportState = pageData.abuseReport && typeof pageData.abuseReport === 'object'
+            ? pageData.abuseReport
+            : null;
 
         if (!bookingId) {
             return;
@@ -1623,6 +1905,135 @@ $meetingId = 'astro-' . $appointment['id'];
             }
 
             return fallback;
+        }
+
+        function formatAbuseReason(reason, providedLabel) {
+            if (providedLabel && String(providedLabel).trim() !== '') {
+                return String(providedLabel).trim();
+            }
+
+            if (reason && abuseReasonLabels[reason]) {
+                return abuseReasonLabels[reason];
+            }
+
+            if (!reason) {
+                return 'Not specified';
+            }
+
+            return String(reason)
+                .replace(/[_-]+/g, ' ')
+                .replace(/\b\w/g, function(character) {
+                    return character.toUpperCase();
+                });
+        }
+
+        function formatAbuseReportedAt(value, providedLabel) {
+            if (providedLabel && String(providedLabel).trim() !== '') {
+                return String(providedLabel).trim();
+            }
+
+            if (!value) {
+                return 'Recently submitted';
+            }
+
+            const parsedDate = new Date(value);
+            if (Number.isNaN(parsedDate.getTime())) {
+                return String(value);
+            }
+
+            return new Intl.DateTimeFormat(undefined, {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(parsedDate);
+        }
+
+        function formatAbuseStatus(status, providedLabel) {
+            if (providedLabel && String(providedLabel).trim() !== '') {
+                return String(providedLabel).trim();
+            }
+
+            if (!status) {
+                return 'Reported';
+            }
+
+            return String(status)
+                .replace(/[_-]+/g, ' ')
+                .replace(/\b\w/g, function(character) {
+                    return character.toUpperCase();
+                });
+        }
+
+        function extractAbuseReportPayload(resultData, fallbackReason, fallbackDetails) {
+            const source = resultData && typeof resultData === 'object' && resultData.data && typeof resultData.data === 'object'
+                ? resultData.data
+                : (resultData && typeof resultData === 'object' ? resultData : {});
+
+            return {
+                reported: true,
+                reason: source.reason || source.abuse_reason || fallbackReason || '',
+                reasonLabel: source.reasonLabel || source.reason_label || source.abuse_reason_label || '',
+                details: source.details || source.abuse_details || source.description || fallbackDetails || '',
+                status: source.status || source.report_status || 'reported',
+                statusLabel: source.statusLabel || source.status_label || '',
+                reportedAt: source.reportedAt || source.reported_at || source.created_at || new Date().toISOString(),
+                reportedAtLabel: source.reportedAtLabel || source.reported_at_label || ''
+            };
+        }
+
+        function applyAbuseReportState(report) {
+            if (!report || !report.reported) {
+                abuseReportState = null;
+
+                if (abuseReportStatusCard) {
+                    abuseReportStatusCard.classList.add('d-none');
+                }
+
+                if (abuseReportFormWrapper) {
+                    abuseReportFormWrapper.classList.remove('d-none');
+                }
+
+                if (reportAbuseBtn) {
+                    reportAbuseBtn.disabled = isAppointmentCancelled;
+                }
+
+                return;
+            }
+
+            abuseReportState = report;
+
+            if (abuseReportStatusBadge) {
+                abuseReportStatusBadge.textContent = formatAbuseStatus(report.status, report.statusLabel);
+            }
+
+            if (abuseReportReasonText) {
+                abuseReportReasonText.textContent = formatAbuseReason(report.reason, report.reasonLabel);
+            }
+
+            if (abuseReportReportedAtText) {
+                abuseReportReportedAtText.textContent = formatAbuseReportedAt(report.reportedAt, report.reportedAtLabel);
+            }
+
+            if (abuseReportDetailsText) {
+                const details = report.details && String(report.details).trim() !== ''
+                    ? String(report.details).trim()
+                    : 'No additional details were captured with this report.';
+                abuseReportDetailsText.textContent = details;
+            }
+
+            if (abuseReportStatusCard) {
+                abuseReportStatusCard.classList.remove('d-none');
+            }
+
+            if (abuseReportFormWrapper) {
+                abuseReportFormWrapper.classList.add('d-none');
+            }
+
+            if (reportAbuseBtn) {
+                reportAbuseBtn.disabled = true;
+            }
         }
 
         function renderNoteDocument(noteValue) {
@@ -1815,10 +2226,18 @@ $meetingId = 'astro-' . $appointment['id'];
                 return Promise.resolve({ success: false });
             }
 
+            if (abuseReportState && abuseReportState.reported) {
+                showToast('An abuse report has already been submitted for this consultation.', true);
+                return Promise.resolve({ success: false, alreadyReported: true });
+            }
+
             if (isAppointmentCancelled) {
                 showToast('This appointment has been cancelled. All actions are disabled.', true);
                 return Promise.resolve({ success: false, cancelled: true });
             }
+
+            const submittedReason = abuseReasonField ? abuseReasonField.value : '';
+            const submittedDetails = abuseDetailsField ? abuseDetailsField.value : '';
 
             clearReportAbuseErrors();
             setButtonLoading(reportAbuseBtn, true, '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Submitting');
@@ -1842,6 +2261,8 @@ $meetingId = 'astro-' . $appointment['id'];
             })
             .then(function(result) {
                 if (result.ok && result.data.success) {
+                    applyAbuseReportState(extractAbuseReportPayload(result.data, submittedReason, submittedDetails));
+
                     if (abuseReasonField) {
                         abuseReasonField.value = '';
                     }
@@ -1872,6 +2293,10 @@ $meetingId = 'astro-' . $appointment['id'];
             })
             .finally(function() {
                 setButtonLoading(reportAbuseBtn, false);
+
+                if (abuseReportState && abuseReportState.reported && reportAbuseBtn) {
+                    reportAbuseBtn.disabled = true;
+                }
             });
         }
 
@@ -2786,6 +3211,7 @@ $meetingId = 'astro-' . $appointment['id'];
         }
 
         applyFinalizedState(isNoteFinalized);
+        applyAbuseReportState(abuseReportState);
 
         if (isAppointmentCancelled) {
             applyAppointmentLockedState(true);

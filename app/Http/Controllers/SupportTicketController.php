@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Api\Clients\AstrologerApiService;
+use App\Services\Api\Clients\UserApiService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 
-class AstrologerSupportTicketController extends Controller
+class SupportTicketController extends Controller
 {
     private const CATEGORY_OPTIONS = [
         'consultation' => 'Consultation',
@@ -32,8 +34,9 @@ class AstrologerSupportTicketController extends Controller
             return redirect()->route('home');
         }
 
+        $panel = $this->resolvePanel($request);
         $filters = [
-            'context' => 'astrologer',
+            'context' => $panel['context'],
             'status' => $request->query('status', 'open'),
             'per_page' => (int) $request->query('per_page', 15),
         ];
@@ -42,13 +45,13 @@ class AstrologerSupportTicketController extends Controller
             unset($filters['status']);
         }
 
-        $result = $this->getApiService()->listSupportTickets($filters, $this->getApiToken());
+        $result = $this->getApiService($panel)->listSupportTickets($filters, $this->getApiToken());
         $ticketsPayload = $this->extractTicketCollectionPayload($result);
-        $tickets = array_map(function ($ticket) {
-            return $this->normalizeTicket($ticket);
+        $tickets = array_map(function ($ticket) use ($panel) {
+            return $this->normalizeTicket($ticket, $panel['context']);
         }, $ticketsPayload['items']);
 
-        return view('astrologer.support-tickets', [
+        $viewData = [
             'tickets' => $tickets,
             'meta' => $ticketsPayload['meta'],
             'filters' => [
@@ -58,7 +61,20 @@ class AstrologerSupportTicketController extends Controller
             'categoryOptions' => self::CATEGORY_OPTIONS,
             'statusOptions' => self::STATUS_OPTIONS,
             'pageError' => isset($result['error']) && $result['error'] ? ($result['message'] ?? 'Unable to load support tickets right now.') : null,
-        ]);
+            'supportTicketPanel' => $panel,
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => !($viewData['pageError']),
+                'message' => $viewData['pageError'],
+                'tickets' => $viewData['tickets'],
+                'meta' => $viewData['meta'],
+                'filters' => $viewData['filters'],
+            ]);
+        }
+
+        return view('support-tickets.index', $viewData);
     }
 
     public function store(Request $request)
@@ -67,6 +83,7 @@ class AstrologerSupportTicketController extends Controller
             return $this->jsonOrRedirectError($request, 'Unauthenticated.', 401);
         }
 
+        $panel = $this->resolvePanel($request);
         $validator = Validator::make($request->all(), [
             'category' => ['required', 'string', 'max:100'],
             'subject' => ['required', 'string', 'max:255'],
@@ -93,8 +110,8 @@ class AstrologerSupportTicketController extends Controller
             return $file instanceof UploadedFile;
         }));
 
-        $result = $this->getApiService()->createSupportTicket([
-            'context' => 'astrologer',
+        $result = $this->getApiService($panel)->createSupportTicket([
+            'context' => $panel['context'],
             'category' => $validated['category'],
             'subject' => trim($validated['subject']),
             'description' => trim($validated['description']),
@@ -118,7 +135,7 @@ class AstrologerSupportTicketController extends Controller
                 ->with('error', $this->firstExternalValidationMessage($errors, $result['message'] ?? 'Failed to create support ticket.'));
         }
 
-        $ticket = $this->normalizeTicket($this->extractTicketItem($result));
+        $ticket = $this->normalizeTicket($this->extractTicketItem($result), $panel['context']);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -128,7 +145,7 @@ class AstrologerSupportTicketController extends Controller
             ]);
         }
 
-        return Redirect::route('astrologer.supportTickets.index')->with('success', $result['message'] ?? 'Support ticket created successfully.');
+        return Redirect::route($panel['routeIndex'])->with('success', $result['message'] ?? 'Support ticket created successfully.');
     }
 
     public function show($ticketId, Request $request)
@@ -137,13 +154,14 @@ class AstrologerSupportTicketController extends Controller
             return $this->jsonOrRedirectError($request, 'Unauthenticated.', 401);
         }
 
-        $result = $this->getApiService()->getSupportTicketDetails($ticketId, $this->getApiToken());
+        $panel = $this->resolvePanel($request);
+        $result = $this->getApiService($panel)->getSupportTicketDetails($ticketId, $this->getApiToken());
 
         if (isset($result['error']) && $result['error']) {
             return $this->jsonOrRedirectError($request, $result['message'] ?? 'Unable to load support ticket details.', (int) ($result['status_code'] ?? 404));
         }
 
-        $ticket = $this->normalizeTicket($this->extractTicketItem($result));
+        $ticket = $this->normalizeTicket($this->extractTicketItem($result), $panel['context']);
 
         return response()->json([
             'success' => true,
@@ -151,9 +169,46 @@ class AstrologerSupportTicketController extends Controller
         ]);
     }
 
-    private function getApiService(): \App\Services\Api\Clients\AstrologerApiService
+    private function resolvePanel(Request $request): array
     {
-        return app(\App\Services\Api\Clients\AstrologerApiService::class);
+        if ($request->routeIs('astrologer.supportTickets.*')) {
+            return [
+                'panel' => 'astrologer',
+                'context' => 'astrologer',
+                'routeIndex' => 'astrologer.supportTickets.index',
+                'routeStore' => 'astrologer.supportTickets.store',
+                'routeShow' => 'astrologer.supportTickets.show',
+                'backRoute' => 'astrologer.dashboard',
+                'backLabel' => 'Back to Dashboard',
+                'headerSubtitle' => 'Create and track help requests for consultation, payout, and technical issues.',
+                'createSubtitle' => 'Support will receive this request under the astrologer context automatically.',
+                'emptySubtitle' => 'Create a ticket to contact support about consultation workflow, payouts, or technical issues.',
+                'descriptionPlaceholder' => 'Describe the issue in detail, including booking IDs or steps to reproduce when relevant.',
+            ];
+        }
+
+        return [
+            'panel' => 'customer',
+            'context' => 'user',
+            'routeIndex' => 'customer.supportTickets.index',
+            'routeStore' => 'customer.supportTickets.store',
+            'routeShow' => 'customer.supportTickets.show',
+            'backRoute' => 'dashboard',
+            'backLabel' => 'Back to Dashboard',
+            'headerSubtitle' => 'Create and track help requests for booking, payment, and technical issues.',
+            'createSubtitle' => 'Support will receive this request under the customer context automatically.',
+            'emptySubtitle' => 'Create a ticket to contact support about consultation workflow, wallet issues, or technical problems.',
+            'descriptionPlaceholder' => 'Describe the issue in detail, including booking IDs, payment IDs, or exact steps to reproduce.',
+        ];
+    }
+
+    private function getApiService(array $panel): AstrologerApiService|UserApiService
+    {
+        if ($panel['panel'] === 'astrologer') {
+            return app(AstrologerApiService::class);
+        }
+
+        return new UserApiService(config('auth_api'));
     }
 
     private function getApiToken(): ?string
@@ -206,7 +261,7 @@ class AstrologerSupportTicketController extends Controller
         return is_array($payload) ? $payload : [];
     }
 
-    private function normalizeTicket(array $ticket): array
+    private function normalizeTicket(array $ticket, string $defaultContext): array
     {
         $attachments = $ticket['attachments'] ?? data_get($ticket, 'media') ?? [];
 
@@ -218,7 +273,7 @@ class AstrologerSupportTicketController extends Controller
             'reason' => (string) ($ticket['reason'] ?? ''),
             'description' => (string) ($ticket['description'] ?? ''),
             'status' => strtolower((string) ($ticket['status'] ?? 'open')),
-            'context' => (string) ($ticket['context'] ?? 'astrologer'),
+            'context' => (string) ($ticket['context'] ?? $defaultContext),
             'created_at' => $ticket['created_at'] ?? null,
             'updated_at' => $ticket['updated_at'] ?? null,
             'attachments' => $this->normalizeAttachments(is_array($attachments) ? $attachments : []),
@@ -287,6 +342,8 @@ class AstrologerSupportTicketController extends Controller
             ], $statusCode);
         }
 
-        return Redirect::route('astrologer.supportTickets.index')->with('error', $message);
+        $panel = $this->resolvePanel($request);
+
+        return Redirect::route($panel['routeIndex'])->with('error', $message);
     }
 }

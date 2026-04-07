@@ -89,6 +89,9 @@
                                 <a class="" href="/profile">
                                     <i class="fas fa-user"></i> My Profile
                                 </a>
+                                <a class="" href="{{ route('customer.supportTickets.index') }}">
+                                    <i class="fas fa-life-ring"></i> Support Tickets
+                                </a>
                             </nav>
                         </div>
                         <!-- Quick Actions -->

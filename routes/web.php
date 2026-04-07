@@ -16,13 +16,13 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BookingDetailsController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\CustomerConsultationController;
+use App\Http\Controllers\SupportTicketController;
 
 use App\Http\Controllers\AstrologerAppointmentsController;
 
 use App\Http\Controllers\AstrologerRegistrationController;
 // Astrologer Earnings Breakdown
 use App\Http\Controllers\AstrologerEarningsController;
-use App\Http\Controllers\AstrologerSupportTicketController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/consultants', [ConsultantController::class, 'show'])->name('consultant');
@@ -65,6 +65,9 @@ Route::get('/my-bookings/completed', [MyBookingsController::class, 'completed'])
 Route::get('/my-bookings/cancelled', [MyBookingsController::class, 'cancelled'])->name('my-bookings.cancelled');
 Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
 Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+Route::get('/support-tickets', [SupportTicketController::class, 'index'])->name('customer.supportTickets.index');
+Route::post('/support-tickets', [SupportTicketController::class, 'store'])->name('customer.supportTickets.store');
+Route::get('/support-tickets/{ticket}', [SupportTicketController::class, 'show'])->name('customer.supportTickets.show');
 
 Route::get('/booking/{id}', [MyBookingsController::class, 'show'])->name('booking.details');
 Route::get('/booking/{id}/notes-pdf', [MyBookingsController::class, 'downloadNotesPdf'])->middleware('api.user.auth')->name('booking.notesPdf');
@@ -96,9 +99,9 @@ use App\Http\Controllers\AstrologerAppointmentDetailsController;
 // });
     Route::get('/astrologer/earnings', [AstrologerEarningsController::class, 'index'])->name('astrologer.earnings');
     Route::get('/astrologer/earnings/export', [AstrologerEarningsController::class, 'export'])->name('astrologer.earnings.export');
-    Route::get('/astrologer/support-tickets', [AstrologerSupportTicketController::class, 'index'])->name('astrologer.supportTickets.index');
-    Route::post('/astrologer/support-tickets', [AstrologerSupportTicketController::class, 'store'])->name('astrologer.supportTickets.store');
-    Route::get('/astrologer/support-tickets/{ticket}', [AstrologerSupportTicketController::class, 'show'])->name('astrologer.supportTickets.show');
+    Route::get('/astrologer/support-tickets', [SupportTicketController::class, 'index'])->name('astrologer.supportTickets.index');
+    Route::post('/astrologer/support-tickets', [SupportTicketController::class, 'store'])->name('astrologer.supportTickets.store');
+    Route::get('/astrologer/support-tickets/{ticket}', [SupportTicketController::class, 'show'])->name('astrologer.supportTickets.show');
 
 
 
