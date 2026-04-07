@@ -73,6 +73,112 @@ class AstrologerAppointmentDetailsController extends Controller
         }
     }
 
+    public function reportAbuse($id, Request $request)
+    {
+        if (!$this->currentUserIsAstrologer()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only astrologers can submit abuse reports.',
+                ], 403);
+            }
+
+            return Redirect::back()->with('error', 'Only astrologers can submit abuse reports.');
+        }
+
+        $appointment = $this->getAppointmentById($id);
+        if (!$appointment) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Appointment not found.',
+                ], 404);
+            }
+
+            return Redirect::route('astrologer.appointments')->with('error', 'Appointment not found.');
+        }
+
+        $validator = Validator::make($request->all(), [
+            'reason' => ['required', 'string', 'max:100'],
+            'details' => ['required', 'string', 'min:10', 'max:5000'],
+        ]);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->errors()->first() ?: 'Please correct the highlighted fields.',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            return Redirect::back()->withErrors($validator, 'reportAbuse')->withInput();
+        }
+
+        $validated = $validator->validated();
+        $result = $this->getApiService()->submitAstrologerAbuseReport([
+            'appointment_id' => (int) $appointment['id'],
+            'reason' => $validated['reason'],
+            'details' => trim($validated['details']),
+        ], $this->getApiToken());
+
+        if (isset($result['error']) && $result['error']) {
+            $normalizedErrors = $this->normalizeExternalValidationErrors($result['errors'] ?? null);
+
+            if ($normalizedErrors !== []) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $this->firstExternalValidationMessage($normalizedErrors, $result['message'] ?? 'Failed to submit abuse report.'),
+                        'errors' => $normalizedErrors,
+                    ], (int) ($result['status_code'] ?? 422));
+                }
+
+                return Redirect::back()
+                    ->withErrors($normalizedErrors, 'reportAbuse')
+                    ->withInput()
+                    ->with('error', $this->firstExternalValidationMessage($normalizedErrors, $result['message'] ?? 'Failed to submit abuse report.'));
+            }
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'] ?? 'Failed to submit abuse report.',
+                ], (int) ($result['status_code'] ?? 422));
+            }
+
+            return Redirect::back()
+                ->withInput()
+                ->with('error', $result['message'] ?? 'Failed to submit abuse report.');
+        }
+
+        $succeeded = (bool) ($result['success'] ?? $result['status'] ?? true);
+
+        if (!$succeeded) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $result['message'] ?? 'Failed to submit abuse report.',
+                    'errors' => $this->normalizeExternalValidationErrors($result['errors'] ?? null),
+                ], (int) ($result['status_code'] ?? 422));
+            }
+
+            return Redirect::back()
+                ->withInput()
+                ->with('error', $result['message'] ?? 'Failed to submit abuse report.');
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $result['message'] ?? 'Abuse report submitted successfully.',
+                'data' => $result['data'] ?? $result,
+            ]);
+        }
+
+        return Redirect::back()->with('success', $result['message'] ?? 'Abuse report submitted successfully.');
+    }
+
     public function suggestProduct($id, Request $request)
     {
         if (!$this->currentUserIsAstrologer()) {
@@ -817,6 +923,23 @@ class AstrologerAppointmentDetailsController extends Controller
         return filter_var($finalConfirmation, FILTER_VALIDATE_BOOLEAN) || $noteStatus === 'finalized';
     }
 
+    private function displayNameFromArray(array $person, array $directKeys = [], string $fallback = ''): string
+    {
+        foreach ($directKeys as $key) {
+            $value = trim((string) ($person[$key] ?? ''));
+
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        $firstName = trim((string) ($person['first_name'] ?? ''));
+        $lastName = trim((string) ($person['last_name'] ?? ''));
+        $fullName = trim($firstName . ' ' . $lastName);
+
+        return $fullName !== '' ? $fullName : trim($fallback);
+    }
+
     private function jsonError(string $message, int $statusCode, array $extra = [])
     {
         return response()->json(array_merge([
@@ -909,6 +1032,45 @@ class AstrologerAppointmentDetailsController extends Controller
         }
 
         return Redirect::back()->with('error', $message);
+    }
+
+    private function normalizeExternalValidationErrors(mixed $errors): array
+    {
+        if (!is_array($errors)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($errors as $field => $messages) {
+            $key = is_string($field) && $field !== '' ? $field : 'general';
+
+            if (is_array($messages)) {
+                $normalized[$key] = array_values(array_filter(array_map(function ($message) {
+                    return is_scalar($message) ? trim((string) $message) : null;
+                }, $messages)));
+                continue;
+            }
+
+            if (is_scalar($messages)) {
+                $normalized[$key] = [trim((string) $messages)];
+            }
+        }
+
+        return array_filter($normalized, function ($messages) {
+            return is_array($messages) && $messages !== [];
+        });
+    }
+
+    private function firstExternalValidationMessage(array $errors, string $default): string
+    {
+        foreach ($errors as $messages) {
+            if (is_array($messages) && isset($messages[0]) && is_string($messages[0]) && trim($messages[0]) !== '') {
+                return trim($messages[0]);
+            }
+        }
+
+        return $default;
     }
 
     private function buildProductSearchQuery(array $validated): array

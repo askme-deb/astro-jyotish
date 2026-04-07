@@ -22,6 +22,7 @@ use App\Http\Controllers\AstrologerAppointmentsController;
 use App\Http\Controllers\AstrologerRegistrationController;
 // Astrologer Earnings Breakdown
 use App\Http\Controllers\AstrologerEarningsController;
+use App\Http\Controllers\AstrologerSupportTicketController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/consultants', [ConsultantController::class, 'show'])->name('consultant');
@@ -80,6 +81,7 @@ Route::get('/astrologer/appointments/{id}', [AstrologerAppointmentsController::c
 use App\Http\Controllers\AstrologerAppointmentDetailsController;
 // Route::middleware(['auth'])->group(function () {
     Route::post('/astrologer/appointments/{id}/start', [AstrologerAppointmentDetailsController::class, 'start'])->name('astrologer.appointment.start');
+    Route::post('/astrologer/appointments/{id}/report-abuse', [AstrologerAppointmentDetailsController::class, 'reportAbuse'])->name('astrologer.appointment.reportAbuse');
     Route::get('/astrologer/appointments/{id}/video', [AstrologerAppointmentDetailsController::class, 'video'])->name('astrologer.appointment.video');
     Route::post('/astrologer/appointments/{id}/start-video', [AstrologerAppointmentDetailsController::class, 'startVideo'])->name('astrologer.appointment.startVideo');
     Route::post('/astrologer/appointments/{id}/suggest-product', [AstrologerAppointmentDetailsController::class, 'suggestProduct'])->name('astrologer.appointment.suggestProduct');
@@ -94,6 +96,9 @@ use App\Http\Controllers\AstrologerAppointmentDetailsController;
 // });
     Route::get('/astrologer/earnings', [AstrologerEarningsController::class, 'index'])->name('astrologer.earnings');
     Route::get('/astrologer/earnings/export', [AstrologerEarningsController::class, 'export'])->name('astrologer.earnings.export');
+    Route::get('/astrologer/support-tickets', [AstrologerSupportTicketController::class, 'index'])->name('astrologer.supportTickets.index');
+    Route::post('/astrologer/support-tickets', [AstrologerSupportTicketController::class, 'store'])->name('astrologer.supportTickets.store');
+    Route::get('/astrologer/support-tickets/{ticket}', [AstrologerSupportTicketController::class, 'show'])->name('astrologer.supportTickets.show');
 
 
 

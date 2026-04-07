@@ -5,7 +5,7 @@
     <div class="rm-shell">
         <aside class="rm-sidebar">
             <div class="rm-portrait-wrap">
-                <img src="https://astrorajumaharaj.com/assets/images/about-3.png" alt="Raju Maharaj">
+                <img src="{{ asset('assets/images/rajumaharaj.webp')}}" alt="Raju Maharaj">
                 <div class="rm-live-pill">
                     <span class="rm-live-dot"></span>
                     Accepting Bookings
@@ -93,7 +93,7 @@
                         <div class="rm-price-meta">
                             <div class="rm-price-line">Within 15 Days <span class="rm-badge rm-badge-pop">Popular</span></div>
                         </div>
-                        <div class="rm-price-value rm-pop-text">₹11,000</div>
+                        <div class="rm-price-value rm-pop-text">₹15,000</div>
                     </div>
 
                     <div class="rm-price-card" data-tier="value">
@@ -101,7 +101,7 @@
                         <div class="rm-price-meta">
                             <div class="rm-price-line">Within 45 Days <span class="rm-badge rm-badge-best">Best Value</span></div>
                         </div>
-                        <div class="rm-price-value rm-best-text">₹5,000</div>
+                        <div class="rm-price-value rm-best-text">₹11,000</div>
                     </div>
 
                     <div class="rm-price-card rm-disabled" data-tier="unavailable">
@@ -442,8 +442,8 @@
 
     .rm-live-pill {
         position: absolute;
-        top: 12px;
-        left: 12px;
+        top: 189px;
+        left: 45px;
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -497,12 +497,13 @@
         text-transform: uppercase;
     }
 
-    .rm-description {
-        margin: 0;
-        font-size: 13px;
-        line-height: 1.62;
-        max-width: 220px;
-    }
+.rm-description {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.62;
+    /* max-width: 220px; */
+    text-align: justify;
+}
 
     .rm-stats {
         display: grid;
@@ -1353,9 +1354,9 @@ document.addEventListener('DOMContentLoaded', function () {
             return { amount: 21000, tier: 'urgent', label: 'Within 2 Days' };
         }
         if (diffDays <= 15) {
-            return { amount: 11000, tier: 'popular', label: 'Within 15 Days' };
+            return { amount: 15000, tier: 'popular', label: 'Within 15 Days' };
         }
-        return { amount: 5000, tier: 'value', label: 'Within 45 Days' };
+        return { amount: 11000, tier: 'value', label: 'Within 45 Days' };
     }
 
     function updatePricing() {

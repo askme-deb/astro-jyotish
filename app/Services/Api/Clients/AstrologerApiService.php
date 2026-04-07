@@ -2,6 +2,9 @@
 
 namespace App\Services\Api\Clients;
 
+use Illuminate\Http\UploadedFile;
+use Illuminate\Http\Client\RequestException;
+
 class AstrologerApiService extends BaseApiClient
 {
     public function __construct()
@@ -277,6 +280,181 @@ class AstrologerApiService extends BaseApiClient
         } catch (\Throwable $e) {
             return ['error' => true, 'message' => $e->getMessage()];
         }
+    }
+
+    public function submitAstrologerAbuseReport(array $payload, $token = null)
+    {
+        $request = $this->buildRequest();
+
+        if ($token) {
+            $request = $request->withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+            ]);
+        }
+
+        try {
+            $response = $request->post('astrologer-abuse-reports', $payload);
+            $result = $response->json();
+
+            if (!is_array($result)) {
+                $result = [];
+            }
+
+            if (!$response->successful()) {
+                $errors = $this->extractValidationErrors($result);
+
+                return [
+                    'error' => true,
+                    'message' => $this->extractFirstErrorMessage($result, $errors, 'Failed to submit abuse report.'),
+                    'errors' => $errors,
+                    'status_code' => $response->status(),
+                    'data' => $result,
+                ];
+            }
+
+            return $result;
+        } catch (RequestException $e) {
+            $result = $e->response ? $e->response->json() : [];
+            if (!is_array($result)) {
+                $result = [];
+            }
+
+            $errors = $this->extractValidationErrors($result);
+
+            return [
+                'error' => true,
+                'message' => $this->extractFirstErrorMessage($result, $errors, 'Failed to submit abuse report.'),
+                'errors' => $errors,
+                'status_code' => $e->response?->status() ?? 422,
+                'data' => $result,
+            ];
+        } catch (\Throwable $e) {
+            return ['error' => true, 'message' => $e->getMessage()];
+        }
+    }
+
+    private function extractValidationErrors(array $result): array
+    {
+        $errors = $result['errors'] ?? data_get($result, 'data.errors') ?? data_get($result, 'error.errors');
+
+        return is_array($errors) ? $errors : [];
+    }
+
+    private function extractFirstErrorMessage(array $result, array $errors, string $default): string
+    {
+        foreach ($errors as $fieldErrors) {
+            if (is_array($fieldErrors) && count($fieldErrors) > 0) {
+                return (string) $fieldErrors[0];
+            }
+
+            if (is_string($fieldErrors) && trim($fieldErrors) !== '') {
+                return trim($fieldErrors);
+            }
+        }
+
+        $message = $result['message'] ?? data_get($result, 'error.message') ?? data_get($result, 'data.message');
+
+        return is_string($message) && trim($message) !== '' ? trim($message) : $default;
+    }
+
+    public function listSupportTickets(array $filters = [], $token = null)
+    {
+        $options = [
+            'query' => array_filter($filters, function ($value) {
+                return $value !== null && $value !== '';
+            }),
+        ];
+
+        if ($token) {
+            $options['headers'] = [
+                'Authorization' => 'Bearer ' . $token,
+            ];
+        }
+
+        try {
+            return $this->request('GET', 'support-tickets', $options);
+        } catch (RequestException $e) {
+            $result = $e->response ? $e->response->json() : [];
+            return $this->formatSupportTicketApiError(is_array($result) ? $result : [], $e->response?->status() ?? 422, 'Failed to load support tickets.');
+        } catch (\Throwable $e) {
+            return ['error' => true, 'message' => $e->getMessage()];
+        }
+    }
+
+    public function getSupportTicketDetails($ticketId, $token = null)
+    {
+        $options = [];
+
+        if ($token) {
+            $options['headers'] = [
+                'Authorization' => 'Bearer ' . $token,
+            ];
+        }
+
+        try {
+            return $this->request('GET', 'support-tickets/' . $ticketId, $options);
+        } catch (RequestException $e) {
+            $result = $e->response ? $e->response->json() : [];
+            return $this->formatSupportTicketApiError(is_array($result) ? $result : [], $e->response?->status() ?? 422, 'Failed to load support ticket details.');
+        } catch (\Throwable $e) {
+            return ['error' => true, 'message' => $e->getMessage()];
+        }
+    }
+
+    public function createSupportTicket(array $payload, array $attachments = [], $token = null)
+    {
+        $request = $this->buildRequest();
+
+        if ($token) {
+            $request = $request->withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+            ]);
+        }
+
+        foreach ($attachments as $attachment) {
+            if (!$attachment instanceof UploadedFile) {
+                continue;
+            }
+
+            $request = $request->attach(
+                'attachments[]',
+                fopen($attachment->getRealPath(), 'r'),
+                $attachment->getClientOriginalName()
+            );
+        }
+
+        try {
+            $response = $request->post('support-tickets', $payload);
+            $result = $response->json();
+
+            if (!is_array($result)) {
+                $result = [];
+            }
+
+            if (!$response->successful()) {
+                return $this->formatSupportTicketApiError($result, $response->status(), 'Failed to create support ticket.');
+            }
+
+            return $result;
+        } catch (RequestException $e) {
+            $result = $e->response ? $e->response->json() : [];
+            return $this->formatSupportTicketApiError(is_array($result) ? $result : [], $e->response?->status() ?? 422, 'Failed to create support ticket.');
+        } catch (\Throwable $e) {
+            return ['error' => true, 'message' => $e->getMessage()];
+        }
+    }
+
+    private function formatSupportTicketApiError(array $result, int $statusCode, string $default): array
+    {
+        $errors = $this->extractValidationErrors($result);
+
+        return [
+            'error' => true,
+            'message' => $this->extractFirstErrorMessage($result, $errors, $default),
+            'errors' => $errors,
+            'status_code' => $statusCode,
+            'data' => $result,
+        ];
     }
 
     /**

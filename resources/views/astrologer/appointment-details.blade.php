@@ -148,6 +148,23 @@
     ]) ?? $resolveAstrologerValue([
         'duration',
     ]);
+    $customer = isset($appointment['user']) && is_array($appointment['user']) ? $appointment['user'] : [];
+    $customerName = trim((string) ($customer['first_name'] ?? '') . ' ' . (string) ($customer['last_name'] ?? ''));
+    if ($customerName === '') {
+        $customerName = trim((string) ($appointment['name'] ?? ''));
+    }
+    $customerEmail = trim((string) ($customer['email'] ?? ($appointment['customer_email'] ?? '')));
+    $customerPhone = trim((string) ($customer['mobile_no'] ?? ($customer['phone'] ?? '')));
+    $customerCity = trim((string) ($customer['city'] ?? ''));
+    $customerUserCode = trim((string) ($customer['user_code'] ?? ''));
+    $abuseReasonOptions = [
+        'verbal_abuse' => 'Verbal abuse',
+        'harassment' => 'Harassment',
+        'threatening_behavior' => 'Threatening behavior',
+        'inappropriate_language' => 'Inappropriate language',
+        'payment_dispute' => 'Payment dispute',
+        'other' => 'Other',
+    ];
     $noteDocumentLogo = asset('assets/images/Logo.png');
     $formatDurationValue = function ($duration) {
         if (!is_numeric($duration)) {
@@ -177,6 +194,7 @@
     $bookingDetailsPageData = isset($appointment)
         ? [
             'bookingId' => $appointment['id'],
+            'reportAbuseUrl' => route('astrologer.appointment.reportAbuse', ['id' => $appointment['id']]),
             'customerJoinUrl' => route('customer.consultation.video', ['meetingId' => 'astro-' . $appointment['id']]),
             'astrologerId' => (int) ($appointment['astrologer_id'] ?? data_get($appointment, 'astrologer.id') ?? data_get($appointment, 'assigned_astrologer_id') ?? 0),
             'currentDate' => !empty($appointment['scheduled_at']) ? \Carbon\Carbon::parse($appointment['scheduled_at'])->format('Y-m-d') : null,
@@ -1073,15 +1091,44 @@ $meetingId = 'astro-' . $appointment['id'];
             </div>
             <div class="booking-details-col">
                 <div class="booking-details-label mb-2"><i class="fa-solid fa-user me-1"></i> Customer Details</div>
-                @if(isset($appointment['user']) && is_array($appointment['user']))
-                    <div class="booking-details-value"><b>Name:</b> {{ trim(($appointment['user']['first_name'] ?? '') . ' ' . ($appointment['user']['last_name'] ?? '')) }}</div>
-                    <div class="booking-details-value"><b>Email:</b> {{ $appointment['user']['email'] ?? '-' }}</div>
-                    <div class="booking-details-value"><b>Mobile:</b> {{ $appointment['user']['mobile_no'] ?? '-' }}</div>
-                    <div class="booking-details-value"><b>City:</b> {{ $appointment['user']['city'] ?? '-' }}</div>
-                    <div class="booking-details-value"><b>User Code:</b> {{ $appointment['user']['user_code'] ?? '-' }}</div>
+                @if($customer)
+                    <div class="booking-details-value"><b>Name:</b> {{ $customerName !== '' ? $customerName : '-' }}</div>
+                    <div class="booking-details-value"><b>Email:</b> {{ $customerEmail !== '' ? $customerEmail : '-' }}</div>
+                    <div class="booking-details-value"><b>Mobile:</b> {{ $customerPhone !== '' ? $customerPhone : '-' }}</div>
+                    <div class="booking-details-value"><b>City:</b> {{ $customerCity !== '' ? $customerCity : '-' }}</div>
+                    <div class="booking-details-value"><b>User Code:</b> {{ $customerUserCode !== '' ? $customerUserCode : '-' }}</div>
                 @else
                     <div class="booking-details-value">No customer details found.</div>
                 @endif
+
+                <hr class="my-3">
+
+                <div class="booking-details-label mb-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Report Abuse</div>
+                <p class="text-muted small mb-3">Use this if the customer was abusive, threatening, or otherwise inappropriate during the consultation.</p>
+
+                <form id="report-abuse-form" method="POST" action="{{ route('astrologer.appointment.reportAbuse', ['id' => $appointment['id']]) }}">
+                    @csrf
+                    <div class="mb-2">
+                        <label for="abuse-reason" class="form-label small fw-semibold">Reason</label>
+                        <select id="abuse-reason" name="reason" class="form-select form-select-sm @if($errors->reportAbuse->has('reason')) is-invalid @endif">
+                            <option value="">Select a reason</option>
+                            @foreach($abuseReasonOptions as $optionValue => $optionLabel)
+                                <option value="{{ $optionValue }}" @selected(old('reason') === $optionValue)>{{ $optionLabel }}</option>
+                            @endforeach
+                        </select>
+                        <div id="abuse-reason-error" class="invalid-feedback d-block" @if(!$errors->reportAbuse->has('reason')) style="display:none;" @endif>{{ $errors->reportAbuse->first('reason') }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="abuse-details" class="form-label small fw-semibold">Details</label>
+                        <textarea id="abuse-details" name="details" rows="4" class="form-control form-control-sm @if($errors->reportAbuse->has('details')) is-invalid @endif" placeholder="Describe what happened and any important context.">{{ old('details') }}</textarea>
+                        <div id="abuse-details-error" class="invalid-feedback d-block" @if(!$errors->reportAbuse->has('details')) style="display:none;" @endif>{{ $errors->reportAbuse->first('details') }}</div>
+                    </div>
+
+                    <button type="submit" id="report-abuse-btn" class="btn btn-outline-danger btn-sm">
+                        <i class="fa-solid fa-flag me-1"></i>Report Abuse
+                    </button>
+                </form>
             </div>
 
             <div class="flex-grow-1 d-flex flex-column align-items-end justify-content-between">
@@ -1388,17 +1435,6 @@ $meetingId = 'astro-' . $appointment['id'];
     @endif
 </div>
 
-@if(session('success'))
-<div class="alert alert-success mt-3">
-    {!! session('success') !!}
-</div>
-@endif
-@if(session('error'))
-<div class="alert alert-danger mt-3">
-    {{ session('error') }}
-</div>
-@endif
-
 @if($bookingDetailsPageData)
     @php
         $bookingRescheduleConfig = array_merge($bookingDetailsPageData, [
@@ -1424,6 +1460,12 @@ $meetingId = 'astro-' . $appointment['id'];
         const scheduledSlotCell = document.getElementById('booking-scheduled-slot-cell');
         const cancelAppointmentBtn = document.getElementById('cancel-appointment-btn');
         const actionFeedback = document.getElementById('appointment-action-feedback');
+        const reportAbuseForm = document.getElementById('report-abuse-form');
+        const reportAbuseBtn = document.getElementById('report-abuse-btn');
+        const abuseReasonField = document.getElementById('abuse-reason');
+        const abuseDetailsField = document.getElementById('abuse-details');
+        const abuseReasonError = document.getElementById('abuse-reason-error');
+        const abuseDetailsError = document.getElementById('abuse-details-error');
         const rescheduleBtn = document.getElementById('booking-reschedule-btn');
         const startVideoConsultationBtn = document.getElementById('start-video-consultation-btn');
         const videoConsultationDisabledState = document.getElementById('video-consultation-disabled-state');
@@ -1459,6 +1501,7 @@ $meetingId = 'astro-' . $appointment['id'];
         const pageData = JSON.parse(pageDataElement.textContent || '{}');
         const bookingId = pageData.bookingId;
         const appointmentLockRoots = Array.from(document.querySelectorAll('[data-appointment-lock-root]'));
+    const reportAbuseUrl = pageData.reportAbuseUrl;
         const suggestProductUrl = pageData.suggestProductUrl;
         const addSuggestedProductUrl = pageData.addSuggestedProductUrl;
         const removeSuggestedProductUrl = pageData.removeSuggestedProductUrl;
@@ -1486,6 +1529,100 @@ $meetingId = 'astro-' . $appointment['id'];
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        function showToast(message, isError) {
+            if (!message) {
+                return;
+            }
+
+            let toast = document.getElementById('booking-details-toast');
+
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'booking-details-toast';
+                toast.style.position = 'fixed';
+                toast.style.top = '24px';
+                toast.style.right = '24px';
+                toast.style.zIndex = '9999';
+                toast.style.padding = '12px 16px';
+                toast.style.borderRadius = '10px';
+                toast.style.color = '#fff';
+                toast.style.fontSize = '14px';
+                toast.style.fontWeight = '600';
+                toast.style.boxShadow = '0 14px 30px rgba(0,0,0,0.16)';
+                toast.style.maxWidth = '360px';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-12px)';
+                toast.style.transition = 'all 0.25s ease';
+                document.body.appendChild(toast);
+            }
+
+            toast.textContent = message;
+            toast.style.background = isError ? '#cf5a5a' : '#2f8f5b';
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+
+            clearTimeout(toast._hideTimer);
+            toast._hideTimer = setTimeout(function() {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-12px)';
+            }, 2800);
+        }
+
+        function clearReportAbuseErrors() {
+            [
+                [abuseReasonField, abuseReasonError],
+                [abuseDetailsField, abuseDetailsError]
+            ].forEach(function(entry) {
+                const field = entry[0];
+                const errorNode = entry[1];
+
+                if (field) {
+                    field.classList.remove('is-invalid');
+                }
+
+                if (errorNode) {
+                    errorNode.textContent = '';
+                    errorNode.style.display = 'none';
+                }
+            });
+        }
+
+        function setReportAbuseError(fieldName, message) {
+            const field = fieldName === 'reason' ? abuseReasonField : abuseDetailsField;
+            const errorNode = fieldName === 'reason' ? abuseReasonError : abuseDetailsError;
+
+            if (field) {
+                field.classList.add('is-invalid');
+            }
+
+            if (errorNode) {
+                errorNode.textContent = message;
+                errorNode.style.display = 'block';
+            }
+        }
+
+        function firstErrorMessage(errors, fallback) {
+            if (!errors || typeof errors !== 'object') {
+                return fallback;
+            }
+
+            const firstKey = Object.keys(errors)[0];
+            if (!firstKey) {
+                return fallback;
+            }
+
+            const firstValue = errors[firstKey];
+            if (Array.isArray(firstValue) && firstValue.length > 0) {
+                return firstValue[0];
+            }
+
+            if (typeof firstValue === 'string' && firstValue.trim() !== '') {
+                return firstValue.trim();
+            }
+
+            return fallback;
         }
 
         function renderNoteDocument(noteValue) {
@@ -1671,6 +1808,71 @@ $meetingId = 'astro-' . $appointment['id'];
             }
 
             actionFeedback.innerHTML = '<div class="alert alert-' + type + ' py-2 px-3 mb-0 small">' + escapeHtml(message) + '</div>';
+        }
+
+        function submitAbuseReport() {
+            if (!reportAbuseForm || !reportAbuseBtn || !reportAbuseUrl) {
+                return Promise.resolve({ success: false });
+            }
+
+            if (isAppointmentCancelled) {
+                showToast('This appointment has been cancelled. All actions are disabled.', true);
+                return Promise.resolve({ success: false, cancelled: true });
+            }
+
+            clearReportAbuseErrors();
+            setButtonLoading(reportAbuseBtn, true, '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Submitting');
+
+            return fetch(reportAbuseUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    reason: abuseReasonField ? abuseReasonField.value : '',
+                    details: abuseDetailsField ? abuseDetailsField.value : ''
+                })
+            })
+            .then(function(response) {
+                return response.json().then(function(data) {
+                    return { ok: response.ok, status: response.status, data: data };
+                });
+            })
+            .then(function(result) {
+                if (result.ok && result.data.success) {
+                    if (abuseReasonField) {
+                        abuseReasonField.value = '';
+                    }
+                    if (abuseDetailsField) {
+                        abuseDetailsField.value = '';
+                    }
+                    clearReportAbuseErrors();
+                    showToast(result.data.message || 'Abuse report submitted successfully.', false);
+                    return { success: true, data: result.data };
+                }
+
+                const errors = result.data && result.data.errors ? result.data.errors : null;
+                if (errors && typeof errors === 'object') {
+                    if (errors.reason) {
+                        setReportAbuseError('reason', Array.isArray(errors.reason) ? errors.reason[0] : errors.reason);
+                    }
+                    if (errors.details) {
+                        setReportAbuseError('details', Array.isArray(errors.details) ? errors.details[0] : errors.details);
+                    }
+                }
+
+                showToast(firstErrorMessage(errors, (result.data && result.data.message) ? result.data.message : 'Failed to submit abuse report.'), true);
+                return { success: false, data: result.data };
+            })
+            .catch(function(error) {
+                showToast(error.message || 'Failed to submit abuse report.', true);
+                return { success: false, error: error };
+            })
+            .finally(function() {
+                setButtonLoading(reportAbuseBtn, false);
+            });
         }
 
         function statusIconClass(status) {
@@ -2417,6 +2619,33 @@ $meetingId = 'astro-' . $appointment['id'];
             });
         }
 
+        if (reportAbuseForm) {
+            reportAbuseForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                submitAbuseReport();
+            });
+
+            if (abuseReasonField) {
+                abuseReasonField.addEventListener('change', function() {
+                    abuseReasonField.classList.remove('is-invalid');
+                    if (abuseReasonError) {
+                        abuseReasonError.textContent = '';
+                        abuseReasonError.style.display = 'none';
+                    }
+                });
+            }
+
+            if (abuseDetailsField) {
+                abuseDetailsField.addEventListener('input', function() {
+                    abuseDetailsField.classList.remove('is-invalid');
+                    if (abuseDetailsError) {
+                        abuseDetailsError.textContent = '';
+                        abuseDetailsError.style.display = 'none';
+                    }
+                });
+            }
+        }
+
         if (finalizeNotesBtn) {
             finalizeNotesBtn.addEventListener('click', function() {
                 if (isNoteFinalized || noteFinalizeInFlight) {
@@ -2562,6 +2791,14 @@ $meetingId = 'astro-' . $appointment['id'];
             applyAppointmentLockedState(true);
             showAppointmentActionFeedback('This appointment has been cancelled. All actions are disabled.', 'warning');
         }
+
+        @if(session('success'))
+            showToast(@json(strip_tags(session('success'))), false);
+        @endif
+
+        @if(session('error'))
+            showToast(@json(session('error')), true);
+        @endif
     });
     </script>
 @endif
