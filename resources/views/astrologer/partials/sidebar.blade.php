@@ -1,5 +1,17 @@
      <div class="astro-sidebar-inner">
 
+                        @php
+                            $currentRouteName = request()->route()?->getName();
+                            $currentPath = trim(request()->path(), '/');
+                            $isDashboardActive = in_array($currentRouteName, ['dashboard', 'astrologer.dashboard'], true) || $currentPath === 'dashboard' || $currentPath === 'astrologer/dashboard';
+                            $isAppointmentsActive = $currentRouteName === 'astrologer.appointments' || $currentPath === 'appointments';
+                            $isCompletedActive = $currentRouteName === 'astrologer.appointments.completed';
+                            $isCancelledActive = $currentRouteName === 'astrologer.appointments.cancelled';
+                            $isEarningsActive = str_starts_with((string) $currentRouteName, 'astrologer.earnings');
+                            $isSupportActive = str_starts_with((string) $currentRouteName, 'astrologer.supportTickets');
+                            $isProfileActive = $currentRouteName === 'profile' || $currentRouteName === 'profile.update' || $currentPath === 'profile';
+                        @endphp
+
                         <!-- Profile Card -->
                         <div class="astro-profile-card">
 
@@ -65,22 +77,22 @@
 
                             <nav class="astro-menu">
 
-                                <a class="" href="/dashboard">
+                                <a class="{{ $isDashboardActive ? 'active' : '' }}" href="/dashboard">
                                     <i class="fas fa-gauge"></i> Dashboard
                                 </a>
-                                <a class="" href="/appointments">
+                                <a class="{{ $isAppointmentsActive ? 'active' : '' }}" href="/appointments">
                                     <i class="fas fa-calendar-check"></i> Appointments
                                 </a>
-                                <a class="" href="{{ route('astrologer.appointments.completed') }}">
+                                <a class="{{ $isCompletedActive ? 'active' : '' }}" href="{{ route('astrologer.appointments.completed') }}">
                                     <i class="fas fa-circle-check"></i> Completed
                                 </a>
-                                <a class="" href="{{ route('astrologer.appointments.cancelled') }}">
+                                <a class="{{ $isCancelledActive ? 'active' : '' }}" href="{{ route('astrologer.appointments.cancelled') }}">
                                     <i class="fas fa-ban"></i> Cancelled
                                 </a>
-                                 <a class="" href="{{ route('astrologer.earnings') }}">
+                                 <a class="{{ $isEarningsActive ? 'active' : '' }}" href="{{ route('astrologer.earnings') }}">
                                         <i class="fas fa-wallet"></i> Earnings
                                     </a>
-                                <a class="" href="{{ route('astrologer.supportTickets.index') }}">
+                                <a class="{{ $isSupportActive ? 'active' : '' }}" href="{{ route('astrologer.supportTickets.index') }}">
                                     <i class="fas fa-life-ring"></i> Support
                                 </a>
                                 {{-- <a class="" href="/my-bookings">
@@ -90,7 +102,7 @@
                                     {{-- <a class="" href="/my-bookings">
                                         <i class="fas fa-calendar-check"></i> Availability
                                     </a> --}}
-                                <a class="" href="/profile">
+                                <a class="{{ $isProfileActive ? 'active' : '' }}" href="/profile">
                                     <i class="fas fa-user"></i> My Profile
                                 </a>
 
