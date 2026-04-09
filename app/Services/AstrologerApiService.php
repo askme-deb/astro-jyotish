@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Services\Api\BaseApiClient;
-
 use App\Services\Api\AstrologerApiService as ApiAstrologerApiService;
 
 class AstrologerApiService
@@ -18,19 +16,22 @@ class AstrologerApiService
     {
         return $this->apiService->createAstrologer($data);
     }
-    protected $apiService;
+
+    protected ApiAstrologerApiService $apiService;
 
     public function __construct(ApiAstrologerApiService $apiService)
     {
         $this->apiService = $apiService;
     }
 
-    /**
-     * Fetch appointments for astrologer by user ID
-     */
-    public function getAppointments($userId)
+    public function getProfile(?string $token = null): array
     {
-        return $this->apiService->getAppointments($userId);
+        return $this->apiService->getAuthenticatedProfile($token);
+    }
+
+    public function updateProfile(array $payload, ?string $token = null, string $method = 'PATCH'): array
+    {
+        return $this->apiService->updateAuthenticatedProfile($payload, $token, $method);
     }
 
     /**

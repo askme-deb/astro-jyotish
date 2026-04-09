@@ -34,7 +34,7 @@
                     <div class="dashboard-header-right">
                         <span class="dashboard-status"><span class="dot"></span> Online</span>
                         <a class="btn btn-primary btn-sm" style="margin-top:0px;" href="/my-bookings"><i class="fas fa-calendar-check me-1"></i> My Bookings</a>
-                        <a class="btn btn-outline-secondary btn-sm" href="/profile"><i class="fas fa-user me-1"></i> My Profile</a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{{ route('astrologer.profile.show') }}"><i class="fas fa-user me-1"></i> My Profile</a>
                     </div>
                 </div>
 

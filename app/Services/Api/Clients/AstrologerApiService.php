@@ -17,6 +17,82 @@ class AstrologerApiService extends BaseApiClient
         return $this->request('GET', 'astrologers');
     }
 
+    public function getAuthenticatedProfile($token = null): array
+    {
+        $request = $this->buildRequest();
+
+        if ($token) {
+            $request = $request->withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+            ]);
+        }
+
+        try {
+            $response = $request->get('astrologer/profile');
+            $result = $response->json();
+
+            if (!is_array($result)) {
+                $result = [];
+            }
+
+            if (!$response->successful()) {
+                return $this->formatAstrologerProfileApiError($result, $response->status(), 'Failed to load astrologer profile.');
+            }
+
+            return [
+                'success' => true,
+                'message' => is_string($result['message'] ?? null) ? trim((string) $result['message']) : 'Profile loaded successfully.',
+                'data' => $result['data'] ?? $result['profile'] ?? $result,
+            ];
+        } catch (RequestException $e) {
+            $result = $e->response ? $e->response->json() : [];
+
+            return $this->formatAstrologerProfileApiError(is_array($result) ? $result : [], $e->response?->status() ?? 422, 'Failed to load astrologer profile.');
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage(), 'errors' => [], 'status_code' => 500];
+        }
+    }
+
+    public function updateAuthenticatedProfile(array $payload, $token = null, string $method = 'PATCH'): array
+    {
+        $request = $this->buildRequest();
+
+        if ($token) {
+            $request = $request->withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+            ]);
+        }
+
+        $method = strtoupper($method) === 'PUT' ? 'PUT' : 'PATCH';
+
+        try {
+            $response = $request->send($method, 'astrologer/profile', [
+                'json' => $payload,
+            ]);
+            $result = $response->json();
+
+            if (!is_array($result)) {
+                $result = [];
+            }
+
+            if (!$response->successful()) {
+                return $this->formatAstrologerProfileApiError($result, $response->status(), 'Failed to update astrologer profile.');
+            }
+
+            return [
+                'success' => true,
+                'message' => is_string($result['message'] ?? null) ? trim((string) $result['message']) : 'Profile updated successfully.',
+                'data' => $result['data'] ?? $result['profile'] ?? $payload,
+            ];
+        } catch (RequestException $e) {
+            $result = $e->response ? $e->response->json() : [];
+
+            return $this->formatAstrologerProfileApiError(is_array($result) ? $result : [], $e->response?->status() ?? 422, 'Failed to update astrologer profile.');
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage(), 'errors' => [], 'status_code' => 500];
+        }
+    }
+
     public function getAvailableSlots($astrologerId, $date)
     {
         return $this->request('GET', 'available-slots', [
@@ -450,6 +526,19 @@ class AstrologerApiService extends BaseApiClient
 
         return [
             'error' => true,
+            'message' => $this->extractFirstErrorMessage($result, $errors, $default),
+            'errors' => $errors,
+            'status_code' => $statusCode,
+            'data' => $result,
+        ];
+    }
+
+    private function formatAstrologerProfileApiError(array $result, int $statusCode, string $default): array
+    {
+        $errors = $this->extractValidationErrors($result);
+
+        return [
+            'success' => false,
             'message' => $this->extractFirstErrorMessage($result, $errors, $default),
             'errors' => $errors,
             'status_code' => $statusCode,

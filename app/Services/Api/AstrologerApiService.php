@@ -142,6 +142,151 @@ class AstrologerApiService extends BaseApiClient
         ];
     }
 
+    public function getAuthenticatedProfile(?string $token = null): array
+    {
+        $request = \Illuminate\Support\Facades\Http::baseUrl($this->baseUrl)
+            ->timeout($this->timeoutSeconds)
+            ->retry($this->retryTimes, $this->retrySleepMilliseconds, function ($exception) {
+                return $exception instanceof \Illuminate\Http\Client\ConnectionException;
+            })
+            ->acceptJson();
+
+        if ($token !== null && $token !== '') {
+            $request = $request->withToken($token);
+        } elseif ($this->token !== null && $this->token !== '') {
+            $request = $request->withToken($this->token);
+        }
+
+        $response = $request->get('astrologer/profile');
+        $result = $response->json();
+
+        if (!is_array($result)) {
+            $result = [];
+        }
+
+        if (!$response->successful()) {
+            $errors = $this->extractValidationErrors($result);
+
+            return [
+                'success' => false,
+                'message' => $this->extractFirstErrorMessage($result, $errors, 'Failed to load astrologer profile.'),
+                'errors' => $errors,
+                'status_code' => $response->status(),
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => is_string($result['message'] ?? null) ? trim((string) $result['message']) : 'Profile loaded successfully.',
+            'data' => $result['data'] ?? $result['profile'] ?? $result,
+        ];
+    }
+
+    public function updateAuthenticatedProfile(array $payload, ?string $token = null, string $method = 'PATCH'): array
+    {
+        $http = \Illuminate\Support\Facades\Http::baseUrl($this->baseUrl)
+            ->timeout($this->timeoutSeconds)
+            ->retry($this->retryTimes, $this->retrySleepMilliseconds, function ($exception) {
+                return $exception instanceof \Illuminate\Http\Client\ConnectionException;
+            })
+            ->acceptJson();
+
+        if ($token !== null && $token !== '') {
+            $http = $http->withToken($token);
+        } elseif ($this->token !== null && $this->token !== '') {
+            $http = $http->withToken($this->token);
+        }
+
+        foreach (['photo', 'aadhar_document', 'pan_document', 'signature'] as $fileField) {
+            if (isset($payload[$fileField]) && $payload[$fileField] instanceof \Illuminate\Http\UploadedFile) {
+                $http = $http->attach($fileField, fopen($payload[$fileField]->getRealPath(), 'r'), $payload[$fileField]->getClientOriginalName());
+            }
+        }
+
+        if (!empty($payload['education'])) {
+            foreach ($payload['education'] as $index => $education) {
+                if (isset($education['document']) && $education['document'] instanceof \Illuminate\Http\UploadedFile) {
+                    $http = $http->attach("education[$index][document]", fopen($education['document']->getRealPath(), 'r'), $education['document']->getClientOriginalName());
+                }
+            }
+        }
+
+        $fields = [];
+        foreach ($payload as $key => $value) {
+            if (in_array($key, ['photo', 'aadhar_document', 'pan_document', 'signature', 'education', 'availabilities', 'languages', 'skills'], true)) {
+                continue;
+            }
+
+            if (is_bool($value)) {
+                $fields[$key] = $value ? '1' : '0';
+                continue;
+            }
+
+            $fields[$key] = $value ?? '';
+        }
+
+        if (!empty($payload['languages'])) {
+            foreach ($payload['languages'] as $language) {
+                $fields['languages[]'][] = $language;
+            }
+        }
+
+        if (!empty($payload['skills'])) {
+            foreach ($payload['skills'] as $skill) {
+                $fields['skills[]'][] = $skill;
+            }
+        }
+
+        if (!empty($payload['education'])) {
+            foreach ($payload['education'] as $index => $education) {
+                $fields["education[$index][degree]"] = $education['degree'] ?? '';
+                $fields["education[$index][institution]"] = $education['institution'] ?? '';
+                $fields["education[$index][year]"] = $education['year'] ?? '';
+            }
+        }
+
+        if (!empty($payload['availabilities'])) {
+            foreach ($payload['availabilities'] as $index => $availability) {
+                $fields["availabilities[$index][day]"] = $availability['day'] ?? '';
+
+                if (!empty($availability['slots'])) {
+                    foreach ($availability['slots'] as $slotIndex => $slot) {
+                        $fields["availabilities[$index][slots][$slotIndex][from]"] = $slot['from'] ?? '';
+                        $fields["availabilities[$index][slots][$slotIndex][to]"] = $slot['to'] ?? '';
+                    }
+                }
+            }
+        }
+
+        $method = strtoupper($method) === 'PUT' ? 'PUT' : 'PATCH';
+        $http = $http->asMultipart();
+        $response = $method === 'PUT'
+            ? $http->put('astrologer/profile', $fields)
+            : $http->patch('astrologer/profile', $fields);
+        $result = $response->json();
+
+        if (!is_array($result)) {
+            $result = [];
+        }
+
+        if (!$response->successful()) {
+            $errors = $this->extractValidationErrors($result);
+
+            return [
+                'success' => false,
+                'message' => $this->extractFirstErrorMessage($result, $errors, 'Failed to update astrologer profile.'),
+                'errors' => $errors,
+                'status_code' => $response->status(),
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => is_string($result['message'] ?? null) ? trim((string) $result['message']) : 'Profile updated successfully.',
+            'data' => $result['data'] ?? $result['profile'] ?? $payload,
+        ];
+    }
+
     private function extractValidationErrors(array $result): array
     {
         $errors = $result['errors'] ?? data_get($result, 'data.errors') ?? data_get($result, 'error.errors');

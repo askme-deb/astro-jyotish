@@ -17,6 +17,7 @@ use App\Http\Controllers\BookingDetailsController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\CustomerConsultationController;
 use App\Http\Controllers\SupportTicketController;
+use App\Http\Controllers\AstrologerProfileController;
 
 use App\Http\Controllers\AstrologerAppointmentsController;
 
@@ -79,6 +80,8 @@ Route::get('/appointments', [AstrologerAppointmentsController::class, 'index'])-
 Route::get('/appointments/completed', [AstrologerAppointmentsController::class, 'completed'])->name('astrologer.appointments.completed');
 Route::get('/appointments/cancelled', [AstrologerAppointmentsController::class, 'cancelled'])->name('astrologer.appointments.cancelled');
 Route::get('/astrologer/appointments/{id}', [AstrologerAppointmentsController::class, 'show'])->name('astrologer.appointment.details');
+Route::get('/astrologer/profile', [AstrologerProfileController::class, 'show'])->name('astrologer.profile.show');
+Route::match(['PATCH', 'PUT'], '/astrologer/profile', [AstrologerProfileController::class, 'update'])->name('astrologer.profile.update');
 
 // Astrologer Appointment Actions
 use App\Http\Controllers\AstrologerAppointmentDetailsController;

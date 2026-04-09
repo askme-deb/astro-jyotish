@@ -9,7 +9,7 @@
                             $isCancelledActive = $currentRouteName === 'astrologer.appointments.cancelled';
                             $isEarningsActive = str_starts_with((string) $currentRouteName, 'astrologer.earnings');
                             $isSupportActive = str_starts_with((string) $currentRouteName, 'astrologer.supportTickets');
-                            $isProfileActive = $currentRouteName === 'profile' || $currentRouteName === 'profile.update' || $currentPath === 'profile';
+                            $isProfileActive = str_starts_with((string) $currentRouteName, 'astrologer.profile') || $currentPath === 'astrologer/profile';
                         @endphp
 
                         <!-- Profile Card -->
@@ -102,7 +102,7 @@
                                     {{-- <a class="" href="/my-bookings">
                                         <i class="fas fa-calendar-check"></i> Availability
                                     </a> --}}
-                                <a class="{{ $isProfileActive ? 'active' : '' }}" href="/profile">
+                                <a class="{{ $isProfileActive ? 'active' : '' }}" href="{{ route('astrologer.profile.show') }}">
                                     <i class="fas fa-user"></i> My Profile
                                 </a>
 
