@@ -1141,7 +1141,7 @@
 
     @media (max-width: 920px) {
         .rm-shell {
-            max-width: 880px;
+            max-width: 1200px;
         }
     }
 
