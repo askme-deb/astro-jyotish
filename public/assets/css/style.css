@@ -1939,7 +1939,7 @@ span.skill-badge {
 .live-show {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 25px;
+	gap: 14px;
 	justify-content: center;
 }
 
