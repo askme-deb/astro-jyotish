@@ -660,4 +660,5 @@ to enhance<br> balance, growth, and positivity in life.</p>
             </div>
         </section>
     </div>
+    </div>
 @endsection
