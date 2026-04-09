@@ -12,6 +12,9 @@
                 <div class="account_warp">
                     <i class="bi bi-bell fs-5"></i>
                     @if(session()->has('auth.api_token'))
+                    @php
+                        $isAstrologer = in_array('Astrologer', (array) session('auth.roles', []), true);
+                    @endphp
                     <div class="dropdown d-inline-block">
                         <button class="btn btn-light rounded-pill px-3 py-2 dropdown-toggle d-flex align-items-center gap-2" style="background: no-repeat;border: none;box-shadow: none;color: #ffffff;" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="box-shadow:0 2px 8px rgba(0,0,0,0.08);">
                             <i class="bi bi-person-circle fs-5 text-warning"></i>
@@ -19,7 +22,7 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end mt-2 shadow-sm" aria-labelledby="userDropdown">
                             <li><a class="dropdown-item" href="{{ route('dashboard') }}"><i class="bi bi-speedometer2 me-2"></i>My Dashboard</a></li>
-                            <li><a class="dropdown-item" href="{{ route('profile') }}"><i class="bi bi-person-lines-fill me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ $isAstrologer ? route('astrologer.profile.show') : route('profile') }}"><i class="bi bi-person-lines-fill me-2"></i>Profile</a></li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>

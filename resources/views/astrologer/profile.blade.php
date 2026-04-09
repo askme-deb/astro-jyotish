@@ -32,6 +32,7 @@
                             <p class="profile-page-subtitle mb-0">Manage public profile information, credentials, availability, and verification documents in one place.</p>
                         </div>
                         <div class="profile-page-meta">
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-edit-profile-trigger>Edit Profile</button>
                             <span class="profile-mode-badge" id="profile-mode-badge">View Mode</span>
                         </div>
                     </div>
@@ -382,8 +383,11 @@
                             <div id="astrologer-profile-message" class="profile-message"></div>
 
                             <div class="profile-actions">
-                                <button type="button" class="btn btn-outline-primary" id="edit-profile-btn">Edit Profile</button>
-                                <button type="submit" class="btn btn-primary d-none" id="astrologer-profile-submit">Save Changes</button>
+                                <button type="button" class="btn btn-outline-primary" id="edit-profile-btn" data-edit-profile-trigger>Edit Profile</button>
+                                <button type="submit" class="btn btn-primary d-none" id="astrologer-profile-submit">
+                                    <span id="astrologer-profile-submit-text">Save Changes</span>
+                                    <span id="astrologer-profile-submit-spinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -392,6 +396,12 @@
         </div>
     </div>
 </section>
+
+<div id="astrologer-profile-toast" class="profile-toast" role="status" aria-live="polite" aria-atomic="true">
+    <div class="profile-toast-body">
+        <span id="astrologer-profile-toast-text"></span>
+    </div>
+</div>
 
 <style>
     .profile-shell {
@@ -449,6 +459,8 @@
     .profile-page-meta {
         display: flex;
         align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
     }
 
     .profile-mode-badge {
@@ -635,6 +647,66 @@
         padding: 0.75rem;
         text-align: center;
         pointer-events: none;
+    }
+
+    .profile-file-dropzone-copy.has-preview {
+        gap: 0.45rem;
+    }
+
+    .profile-file-dropzone-preview {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .profile-file-dropzone-preview.is-visible {
+        display: flex;
+    }
+
+    .profile-file-dropzone-preview img {
+        max-width: 84px;
+        max-height: 84px;
+        border-radius: 8px;
+        border: 1px solid #d8e5f1;
+        object-fit: cover;
+        background: #ffffff;
+    }
+
+    .profile-file-dropzone-doc {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.45rem 0.6rem;
+        border: 1px solid #e5d2cd;
+        border-radius: 8px;
+        background: #fff7f4;
+        max-width: 100%;
+    }
+
+    .profile-file-dropzone-doc-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 52px;
+        min-height: 28px;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        background: #c2410c;
+        color: #ffffff;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .profile-file-dropzone-doc-name {
+        color: #7c2d12;
+        font-size: 0.74rem;
+        font-weight: 600;
+        line-height: 1.35;
+        word-break: break-word;
     }
 
     .profile-file-dropzone-title {
@@ -1006,6 +1078,12 @@
         font-size: 0.88rem;
     }
 
+    #astrologer-profile-submit {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     .profile-form .btn-primary {
         border-color: #1d4f7a;
         background: #1f5f95;
@@ -1042,6 +1120,36 @@
         padding: 0.65rem 0.8rem;
         border-radius: 8px;
         font-size: 0.88rem;
+    }
+
+    .profile-toast {
+        position: fixed;
+        left: 50%;
+        bottom: 1.5rem;
+        z-index: 1080;
+        min-width: 280px;
+        max-width: 360px;
+        opacity: 0;
+        pointer-events: none;
+        transform: translate3d(-50%, 12px, 0);
+        transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .profile-toast.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate3d(-50%, 0, 0);
+    }
+
+    .profile-toast-body {
+        padding: 0.85rem 1rem;
+        border-radius: 10px;
+        background: #1f8f5f;
+        color: #ffffff;
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
+        font-size: 0.88rem;
+        font-weight: 600;
+        line-height: 1.4;
     }
 
     @media (max-width: 767.98px) {
@@ -1109,6 +1217,19 @@
             min-height: 34px;
             padding-inline: 0.85rem;
         }
+
+        .profile-toast {
+            left: 1rem;
+            right: 1rem;
+            bottom: 1rem;
+            min-width: 0;
+            max-width: none;
+            transform: translate3d(0, 12px, 0);
+        }
+
+        .profile-toast.is-visible {
+            transform: translate3d(0, 0, 0);
+        }
     }
 
     #astrologer-profile-form button#clear-profile-signature {
@@ -1122,6 +1243,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     let isEditMode = false;
     const editBtn = document.getElementById('edit-profile-btn');
+    const editTriggers = document.querySelectorAll('[data-edit-profile-trigger]');
     const modeBadge = document.getElementById('profile-mode-badge');
     const locationStateUrl = '/api/v1/get-state-list';
     const locationCityUrl = '/api/v1/get-city-list';
@@ -1161,20 +1283,20 @@ document.addEventListener('DOMContentLoaded', function () {
             saveBtn.classList.toggle('d-none', !editable);
         }
 
-        if (editBtn) {
-            editBtn.classList.toggle('d-none', editable);
-        }
+        editTriggers.forEach(function (trigger) {
+            trigger.classList.toggle('d-none', editable);
+        });
 
         if (modeBadge) {
             modeBadge.textContent = editable ? 'Edit Mode' : 'View Mode';
         }
     }
 
-    if (editBtn) {
-        editBtn.addEventListener('click', function () {
+    editTriggers.forEach(function (trigger) {
+        trigger.addEventListener('click', function () {
             setFormEditable(true);
         });
-    }
+    });
 
     const initialProfile = @json($profile);
     const updateUrl = @json(route('astrologer.profile.update'));
@@ -1183,6 +1305,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const educationRows = document.getElementById('education-rows');
     const availabilityRows = document.getElementById('availability-rows');
     const submitButton = document.getElementById('astrologer-profile-submit');
+    const submitButtonText = document.getElementById('astrologer-profile-submit-text');
+    const submitButtonSpinner = document.getElementById('astrologer-profile-submit-spinner');
+    const toast = document.getElementById('astrologer-profile-toast');
+    const toastText = document.getElementById('astrologer-profile-toast-text');
     const form = document.getElementById('astrologer-profile-form');
     const stateSelect = document.getElementById('profile-state-select');
     const citySelect = document.getElementById('profile-city-select');
@@ -1193,6 +1319,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const aadharInput = form.querySelector('[name="aadhar_document"]');
     const panInput = form.querySelector('[name="pan_document"]');
     const maxUploadBytes = 1024 * 1024;
+    let toastTimeoutId = null;
 
     function populateSelect(select, items, placeholder, selectedValue) {
         if (!select) {
@@ -1428,17 +1555,120 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('#astrologer-profile-form .invalid-feedback').forEach(function (element) {
             element.textContent = '';
         });
+        if (signatureCanvas) {
+            signatureCanvas.classList.remove('border', 'border-danger');
+        }
         messageBox.innerHTML = '';
     }
 
     function showMessage(type, text) {
+        if (type === 'success') {
+            showToast(text);
+            return;
+        }
+
         messageBox.innerHTML = `<div class="alert alert-${type}">${text}</div>`;
+    }
+
+    function showToast(text) {
+        if (!toast || !toastText) {
+            return;
+        }
+
+        toastText.textContent = text;
+        toast.classList.add('is-visible');
+
+        if (toastTimeoutId) {
+            window.clearTimeout(toastTimeoutId);
+        }
+
+        toastTimeoutId = window.setTimeout(function () {
+            toast.classList.remove('is-visible');
+        }, 2800);
+    }
+
+    function setSubmitLoading(isLoading) {
+        submitButton.disabled = isLoading;
+
+        if (submitButtonText) {
+            submitButtonText.textContent = isLoading ? 'Saving...' : 'Save Changes';
+        }
+
+        if (submitButtonSpinner) {
+            submitButtonSpinner.classList.toggle('d-none', !isLoading);
+        }
+    }
+
+    function getFieldFeedbackElement(field) {
+        if (!field) {
+            return null;
+        }
+
+        let feedback = field.parentElement ? field.parentElement.querySelector('.invalid-feedback') : null;
+
+        if (!feedback && field.nextElementSibling && field.nextElementSibling.classList.contains('invalid-feedback')) {
+            feedback = field.nextElementSibling;
+        }
+
+        if (!feedback) {
+            const dropzone = field.closest('[data-file-dropzone]');
+            if (dropzone && dropzone.parentElement) {
+                feedback = dropzone.parentElement.querySelector('.invalid-feedback');
+            }
+        }
+
+        if (!feedback && field.parentElement) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback d-block';
+            field.insertAdjacentElement('afterend', feedback);
+        }
+
+        return feedback;
+    }
+
+    function setInputError(field, message) {
+        if (!field) {
+            return;
+        }
+
+        field.classList.add('is-invalid');
+
+        if (field.matches('canvas')) {
+            field.classList.add('border', 'border-danger');
+        }
+
+        const feedback = getFieldFeedbackElement(field);
+        if (feedback) {
+            feedback.classList.add('d-block');
+            feedback.textContent = message;
+        }
+    }
+
+    function clearInputError(field) {
+        if (!field) {
+            return;
+        }
+
+        field.classList.remove('is-invalid');
+
+        if (field.matches('canvas')) {
+            field.classList.remove('border-danger');
+        }
+
+        const feedback = getFieldFeedbackElement(field);
+        if (feedback) {
+            feedback.textContent = '';
+            if (!feedback.hasAttribute('data-feedback')) {
+                feedback.classList.remove('d-block');
+            }
+        }
     }
 
     function setFieldError(fieldName, message) {
         if (fieldName.startsWith('education.')) {
             const groupFeedback = document.querySelector('#astrologer-profile-form [data-feedback="education"]');
             if (groupFeedback) {
+                groupFeedback.classList.add('d-block');
                 groupFeedback.textContent = message;
             }
             return;
@@ -1447,6 +1677,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (fieldName.startsWith('availabilities.')) {
             const groupFeedback = document.querySelector('#astrologer-profile-form [data-feedback="availabilities"]');
             if (groupFeedback) {
+                groupFeedback.classList.add('d-block');
                 groupFeedback.textContent = message;
             }
             return;
@@ -1456,6 +1687,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!field) {
             const groupFeedback = document.querySelector(`#astrologer-profile-form [data-feedback="${fieldName}"]`);
             if (groupFeedback) {
+                groupFeedback.classList.add('d-block');
                 groupFeedback.textContent = message;
             }
             return;
@@ -1464,6 +1696,7 @@ document.addEventListener('DOMContentLoaded', function () {
         field.classList.add('is-invalid');
         const feedback = field.parentElement.querySelector('.invalid-feedback') || field.nextElementSibling;
         if (feedback) {
+            feedback.classList.add('d-block');
             feedback.textContent = message;
         }
     }
@@ -1575,6 +1808,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        ensureDropzonePreview(dropzone);
+
         const title = dropzone.querySelector('.profile-file-dropzone-title');
         const subtitle = dropzone.querySelector('.profile-file-dropzone-subtitle');
         const file = input.files && input.files[0] ? input.files[0] : null;
@@ -1582,6 +1817,7 @@ document.addEventListener('DOMContentLoaded', function () {
         dropzone.classList.toggle('is-disabled', input.disabled);
 
         if (file) {
+            renderDropzonePreview(dropzone, file);
             if (title) {
                 title.textContent = file.name;
             }
@@ -1590,6 +1826,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             return;
         }
+
+        clearDropzonePreview(dropzone);
 
         if (title && title.dataset.defaultText) {
             title.textContent = title.dataset.defaultText;
@@ -1623,10 +1861,10 @@ document.addEventListener('DOMContentLoaded', function () {
             subtitle.dataset.defaultText = subtitle.textContent;
         }
 
-        dropzone.addEventListener('click', function () {
-            if (!input.disabled) {
-                input.click();
-            }
+        ensureDropzonePreview(dropzone);
+
+        input.addEventListener('click', function (event) {
+            event.stopPropagation();
         });
 
         ['dragenter', 'dragover'].forEach(function (eventName) {
@@ -1670,6 +1908,67 @@ document.addEventListener('DOMContentLoaded', function () {
         updateDropzoneState(dropzone);
     }
 
+    function ensureDropzonePreview(dropzone) {
+        const copy = dropzone.querySelector('.profile-file-dropzone-copy');
+        if (!copy) {
+            return null;
+        }
+
+        let preview = copy.querySelector('.profile-file-dropzone-preview');
+        if (!preview) {
+            preview = document.createElement('div');
+            preview.className = 'profile-file-dropzone-preview';
+            copy.insertAdjacentElement('afterbegin', preview);
+        }
+
+        return preview;
+    }
+
+    function clearDropzonePreview(dropzone) {
+        const copy = dropzone.querySelector('.profile-file-dropzone-copy');
+        const preview = ensureDropzonePreview(dropzone);
+
+        if (preview) {
+            preview.innerHTML = '';
+            preview.classList.remove('is-visible');
+        }
+
+        if (copy) {
+            copy.classList.remove('has-preview');
+        }
+    }
+
+    function renderDropzonePreview(dropzone, file) {
+        const copy = dropzone.querySelector('.profile-file-dropzone-copy');
+        const preview = ensureDropzonePreview(dropzone);
+        if (!copy || !preview || !(file instanceof File)) {
+            return;
+        }
+
+        const extension = (file.name.split('.').pop() || '').toLowerCase();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension);
+
+        copy.classList.add('has-preview');
+        preview.classList.add('is-visible');
+
+        if (isImage) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                preview.innerHTML = `<img src="${event.target.result}" alt="Selected file preview">`;
+            };
+            reader.readAsDataURL(file);
+            return;
+        }
+
+        const badgeText = extension ? extension.slice(0, 4) : 'FILE';
+        preview.innerHTML = `
+            <div class="profile-file-dropzone-doc">
+                <span class="profile-file-dropzone-doc-badge">${badgeText}</span>
+                <span class="profile-file-dropzone-doc-name">${file.name}</span>
+            </div>
+        `;
+    }
+
     function bindAllDropzones(scope) {
         (scope || document).querySelectorAll('[data-file-dropzone]').forEach(function (dropzone) {
             bindDropzone(dropzone);
@@ -1683,11 +1982,343 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (file.size <= maxUploadBytes) {
+            clearInputError(input);
             return true;
         }
 
-        setFieldError(input.name, `${label} must not be greater than 1MB.`);
+        setInputError(input, `${label} must not be greater than 1MB.`);
         return false;
+    }
+
+    function hasExistingLink(containerSelector) {
+        const container = document.querySelector(containerSelector);
+        if (!container) {
+            return false;
+        }
+
+        return Boolean(container.querySelector('a[href]:not(.d-none)'));
+    }
+
+    function validateProfileForm() {
+        let valid = true;
+        const initialBioValue = String(initialProfile.details_bio || '').trim();
+
+        [
+            { name: 'first_name', message: 'First name is required.' },
+            { name: 'last_name', message: 'Last name is required.' },
+            { name: 'display_name', message: 'Display name is required.' },
+        ].forEach(function (rule) {
+            const field = form.querySelector(`[name="${rule.name}"]`);
+            const value = field ? field.value.trim() : '';
+
+            if (!value) {
+                setInputError(field, rule.message);
+                valid = false;
+                return;
+            }
+
+            clearInputError(field);
+        });
+
+        const emailField = form.querySelector('[name="email"]');
+        const emailValue = emailField.value.trim();
+        if (!emailValue) {
+            setInputError(emailField, 'A valid email is required.');
+            valid = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
+            setInputError(emailField, 'Please enter a valid email address.');
+            valid = false;
+        } else {
+            clearInputError(emailField);
+        }
+
+        const mobileField = form.querySelector('[name="mobile_no"]');
+        const mobileValue = mobileField.value.trim();
+        if (!/^\d{10}$/.test(mobileValue)) {
+            setInputError(mobileField, 'Enter a valid 10-digit mobile number.');
+            valid = false;
+        } else {
+            clearInputError(mobileField);
+        }
+
+        const passwordField = form.querySelector('[name="password"]');
+        const passwordValue = passwordField.value.trim();
+        if (passwordValue !== '' && passwordValue.length < 8) {
+            setInputError(passwordField, 'Password must be at least 8 characters.');
+            valid = false;
+        } else {
+            clearInputError(passwordField);
+        }
+
+        const bioField = form.querySelector('[name="details_bio"]');
+        const bioValue = bioField.value.trim();
+        const bioWords = bioValue.split(/\s+/).filter(Boolean).length;
+        if (bioValue && bioValue !== initialBioValue && bioWords < 150) {
+            setInputError(bioField, 'Details bio must be at least 150 words.');
+            valid = false;
+        } else if (bioValue && bioValue !== initialBioValue && bioWords > 200) {
+            setInputError(bioField, 'Details bio must not exceed 200 words.');
+            valid = false;
+        } else {
+            clearInputError(bioField);
+        }
+
+        const addressField = form.querySelector('[name="address"]');
+        if (addressField.value.trim() && addressField.value.trim().length < 5) {
+            setInputError(addressField, 'Address is required (min 5 chars).');
+            valid = false;
+        } else {
+            clearInputError(addressField);
+        }
+
+        const stateField = form.querySelector('[name="state_id"]');
+        const cityField = form.querySelector('[name="city_id"]');
+        if (stateField.value === '' && cityField.value !== '') {
+            setInputError(stateField, 'State is required.');
+            valid = false;
+        } else {
+            clearInputError(stateField);
+        }
+
+        if (cityField.value === '' && stateField.value !== '') {
+            setInputError(cityField, 'City is required.');
+            valid = false;
+        } else {
+            clearInputError(cityField);
+        }
+
+        const pinField = form.querySelector('[name="pin_code"]');
+        if (pinField.value.trim() && !/^\d{6}$/.test(pinField.value.trim())) {
+            setInputError(pinField, 'Pin Code must be 6 digits.');
+            valid = false;
+        } else {
+            clearInputError(pinField);
+        }
+
+        const experienceField = form.querySelector('[name="experience"]');
+        if (experienceField.value !== '' && (Number.isNaN(Number(experienceField.value)) || Number(experienceField.value) < 0)) {
+            setInputError(experienceField, 'Experience is required and must be 0 or more.');
+            valid = false;
+        } else {
+            clearInputError(experienceField);
+        }
+
+        const rateField = form.querySelector('[name="rate"]');
+        if (rateField.value !== '' && (Number.isNaN(Number(rateField.value)) || Number(rateField.value) < 0)) {
+            setInputError(rateField, 'Rate is required and must be 0 or more.');
+            valid = false;
+        } else {
+            clearInputError(rateField);
+        }
+
+        if (!collectSelection('languages[]').length) {
+            setFieldError('languages', 'Please select at least one language.');
+            valid = false;
+        } else {
+            setFieldError('languages', '');
+        }
+
+        if (!collectSelection('skills[]').length) {
+            setFieldError('skills', 'Please select at least one skill.');
+            valid = false;
+        } else {
+            setFieldError('skills', '');
+        }
+
+        const educationEntries = Array.from(educationRows.querySelectorAll('.education-row'));
+        let educationValid = true;
+        let educationCount = 0;
+        educationEntries.forEach(function (row) {
+            const degreeField = row.querySelector('[data-field="degree"]');
+            const institutionField = row.querySelector('[data-field="institution"]');
+            const yearField = row.querySelector('[data-field="year"]');
+            const documentField = row.querySelector('[data-field="document"]');
+            const hasExistingDocument = Boolean(row.querySelector('[data-role="education-document-link"] a'));
+            const rowTouched = Boolean(
+                degreeField.value.trim()
+                || institutionField.value.trim()
+                || yearField.value.trim()
+                || hasExistingDocument
+                || (documentField.files && documentField.files[0])
+            );
+
+            if (!rowTouched) {
+                clearInputError(degreeField);
+                clearInputError(institutionField);
+                clearInputError(yearField);
+                clearInputError(documentField);
+                return;
+            }
+
+            educationCount += 1;
+
+            if (!degreeField.value.trim()) {
+                setInputError(degreeField, 'Degree is required.');
+                educationValid = false;
+            } else {
+                clearInputError(degreeField);
+            }
+
+            if (!institutionField.value.trim()) {
+                setInputError(institutionField, 'Institution is required.');
+                educationValid = false;
+            } else {
+                clearInputError(institutionField);
+            }
+
+            if (!yearField.value.trim()) {
+                setInputError(yearField, 'Year is required.');
+                educationValid = false;
+            } else {
+                clearInputError(yearField);
+            }
+
+            if (!hasExistingDocument && !(documentField.files && documentField.files[0])) {
+                setInputError(documentField, 'Document is required.');
+                educationValid = false;
+            } else if (documentField.files && documentField.files[0] && documentField.files[0].size > maxUploadBytes) {
+                setInputError(documentField, 'File size must not be greater than 1MB.');
+                educationValid = false;
+            } else {
+                clearInputError(documentField);
+            }
+        });
+
+        if (!educationCount) {
+            setFieldError('education', 'Please add at least one education entry.');
+            valid = false;
+        } else if (!educationValid) {
+            setFieldError('education', 'Please fill in all required education fields.');
+            valid = false;
+        } else {
+            setFieldError('education', '');
+        }
+
+        const availabilityEntries = Array.from(availabilityRows.querySelectorAll('.availability-row'));
+        let availabilityValid = true;
+        let availabilityCount = 0;
+        availabilityEntries.forEach(function (row) {
+            const dayField = row.querySelector('[data-field="day"]');
+            const slotRows = Array.from(row.querySelectorAll('.slot-row'));
+            const hasAnySlotValue = slotRows.some(function (slotRow) {
+                const fromField = slotRow.querySelector('[data-field="from"]');
+                const toField = slotRow.querySelector('[data-field="to"]');
+                return Boolean(fromField.value || toField.value);
+            });
+
+            if (!hasAnySlotValue) {
+                clearInputError(dayField);
+                slotRows.forEach(function (slotRow) {
+                    clearInputError(slotRow.querySelector('[data-field="from"]'));
+                    clearInputError(slotRow.querySelector('[data-field="to"]'));
+                });
+                return;
+            }
+
+            availabilityCount += 1;
+
+            if (!dayField.value) {
+                setInputError(dayField, 'Day is required.');
+                availabilityValid = false;
+            } else {
+                clearInputError(dayField);
+            }
+
+            slotRows.forEach(function (slotRow) {
+                const fromField = slotRow.querySelector('[data-field="from"]');
+                const toField = slotRow.querySelector('[data-field="to"]');
+
+                if (!fromField.value) {
+                    setInputError(fromField, 'Start time is required.');
+                    availabilityValid = false;
+                } else {
+                    clearInputError(fromField);
+                }
+
+                if (!toField.value) {
+                    setInputError(toField, 'End time is required.');
+                    availabilityValid = false;
+                } else if (fromField.value && toField.value <= fromField.value) {
+                    setInputError(toField, 'End time must be after start time.');
+                    availabilityValid = false;
+                } else {
+                    clearInputError(toField);
+                }
+            });
+        });
+
+        if (!availabilityCount) {
+            setFieldError('availabilities', 'Please add at least one availability entry.');
+            valid = false;
+        } else if (!availabilityValid) {
+            setFieldError('availabilities', 'Please fill in all required availability fields.');
+            valid = false;
+        } else {
+            setFieldError('availabilities', '');
+        }
+
+        const aadharNumberField = form.querySelector('[name="aadhar_number"]');
+        if (aadharNumberField.value.trim() && !/^\d{12}$/.test(aadharNumberField.value.trim())) {
+            setInputError(aadharNumberField, 'Valid 12-digit Aadhar number required.');
+            valid = false;
+        } else {
+            clearInputError(aadharNumberField);
+        }
+
+        const panNumberField = form.querySelector('[name="pan_number"]');
+        if (panNumberField.value.trim() && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panNumberField.value.trim().toUpperCase())) {
+            setInputError(panNumberField, 'Valid PAN number required (e.g., ABCDE1234F).');
+            valid = false;
+        } else {
+            clearInputError(panNumberField);
+        }
+
+        clearInputError(photoInput);
+        clearInputError(aadharInput);
+        clearInputError(panInput);
+
+        const bankingFields = [
+            { field: form.querySelector('[name="ac_holder_name"]'), message: 'Account holder name is required.' },
+            { field: form.querySelector('[name="bank_name"]'), message: 'Bank name is required.' },
+            { field: form.querySelector('[name="ac_number"]'), message: 'Account number is required.' },
+            { field: form.querySelector('[name="ifsc_code"]'), message: 'IFSC code is required.' },
+            { field: form.querySelector('[name="branch_name"]'), message: 'Branch name is required.' },
+            { field: form.querySelector('[name="upi_id"]'), message: 'UPI ID is required.' },
+        ];
+        const hasAnyBankingValue = bankingFields.some(function (rule) {
+            return rule.field.value.trim() !== '';
+        });
+
+        bankingFields.forEach(function (rule) {
+            if (hasAnyBankingValue && !rule.field.value.trim()) {
+                setInputError(rule.field, rule.message);
+                valid = false;
+                return;
+            }
+
+            clearInputError(rule.field);
+        });
+
+        const applicantNameField = form.querySelector('[name="applicant_name"]');
+        if (applicantNameField.value.trim() && applicantNameField.value.trim().length < 2) {
+            setInputError(applicantNameField, 'Applicant name is required.');
+            valid = false;
+        } else {
+            clearInputError(applicantNameField);
+        }
+
+        if (!signatureInput.value.trim() && !signatureHasContent) {
+            setInputError(signatureCanvas, 'Digital signature is required.');
+            valid = false;
+        } else {
+            clearInputError(signatureCanvas);
+        }
+
+        if (!valid) {
+            showMessage('danger', 'Please fix the errors above before continuing.');
+        }
+
+        return valid;
     }
 
     function resizeCanvas() {
@@ -1997,6 +2628,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         clearErrors();
 
+        if (!validateProfileForm()) {
+            return;
+        }
+
         const filesAreValid = [
             validateFileSize(photoInput, 'Photo'),
             validateFileSize(aadharInput, 'Aadhaar document'),
@@ -2009,7 +2644,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        submitButton.disabled = true;
+        setSubmitLoading(true);
 
         const education = collectEducation();
         const availabilities = collectAvailabilities();
@@ -2104,7 +2739,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             })
             .then(function (result) {
-                submitButton.disabled = false;
+                setSubmitLoading(false);
 
                 if (result.ok && result.data.success) {
                     showMessage('success', result.data.message || 'Profile updated successfully.');
@@ -2122,7 +2757,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 showMessage('danger', result.data.message || 'Unable to update profile.');
             })
             .catch(function () {
-                submitButton.disabled = false;
+                setSubmitLoading(false);
                 showMessage('danger', 'Network error. Please try again.');
             });
     });
