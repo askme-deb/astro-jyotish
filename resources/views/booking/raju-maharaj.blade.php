@@ -376,7 +376,7 @@
 
     .rm-shell {
         width: 100%;
-        max-width: 808px;
+        max-width: 1200px;
         margin: 0 auto;
         display: grid;
         grid-template-columns: 304px minmax(0, 1fr);
@@ -1141,7 +1141,7 @@
 
     @media (max-width: 920px) {
         .rm-shell {
-            max-width: 1200px;
+            max-width: 880px;
         }
     }
 
