@@ -21,7 +21,7 @@
         border-color: #f57c00 !important;
     }
 </style>
-<div class="astrologerReg" style="background: linear-gradient(120deg, #fff7e6 60%, #ffe0b2 100%); min-height:100vh;">
+<div class="astrologerReg" style="min-height:100vh;">
  <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-10 col-xl-10">
