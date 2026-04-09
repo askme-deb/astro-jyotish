@@ -4,11 +4,28 @@ namespace App\Http\Controllers;
 
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use App\Services\AstrologerApiService;
+use Illuminate\Support\Facades\Log;
 
 class AstrologerRegistrationController extends Controller
 {
+    private function humanizeValidationMessages(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            foreach ($value as $key => $item) {
+                $value[$key] = $this->humanizeValidationMessages($item);
+            }
+
+            return $value;
+        }
+
+        if (is_string($value)) {
+            return str_ireplace('1024 kilobytes', '1MB', $value);
+        }
+
+        return $value;
+    }
+
     public function showForm()
     {
         return view('astrologers.register');
@@ -101,11 +118,7 @@ class AstrologerRegistrationController extends Controller
                 $data[$apiField] = $request->file($formField);
             }
         }
-
-
-
-
-        \Log::info('Astrologer registration payload', [
+        Log::info('Astrologer registration payload', [
             'payload' => $data,
             'files' => array_map(function($f) {
                 if ($f instanceof \Illuminate\Http\UploadedFile) {
@@ -118,14 +131,34 @@ class AstrologerRegistrationController extends Controller
 
         $result = $astrologerApiService->createAstrologer($data);
 
-        if (!$result) {
-            \Log::error('Astrologer registration failed', [
+        if (!(bool) ($result['success'] ?? false)) {
+            $message = $this->humanizeValidationMessages($result['message'] ?? 'Registration failed. Please try again later.');
+            $errors = $this->humanizeValidationMessages($result['errors'] ?? []);
+            $allErrors = $this->humanizeValidationMessages($result['all_errors'] ?? []);
+
+            Log::error('Astrologer registration failed', [
                 'request_data' => $data,
-                'api_service_result' => $result
+                'api_service_result' => [
+                    'success' => false,
+                    'message' => $message,
+                    'errors' => $errors,
+                    'all_errors' => $allErrors,
+                    'status_code' => $result['status_code'] ?? 422,
+                ]
             ]);
-            return response()->json(['error' => 'Registration failed. Please try again later.'], 500);
+
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+                'errors' => $errors,
+                'all_errors' => $allErrors,
+            ], (int) ($result['status_code'] ?? 422));
         }
 
-        return response()->json(['message' => 'Registration successful!', 'data' => $result], 201);
+        return response()->json([
+            'success' => true,
+            'message' => $result['message'] ?? 'Registration successful!',
+            'data' => $result['data'] ?? [],
+        ], 201);
     }
 }

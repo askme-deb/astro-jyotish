@@ -179,7 +179,15 @@ $(document).ready(function () {
                 addAvailabilityEntry();
             },
             error: function (xhr) {
-                let msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Registration failed.';
+                let msg = 'Registration failed.';
+                if (xhr.responseJSON) {
+                    if (xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    } else if (Array.isArray(xhr.responseJSON.all_errors) && xhr.responseJSON.all_errors.length) {
+                        msg = xhr.responseJSON.all_errors[0];
+                    }
+                }
+
                 $('#form-message').html(`<div class="alert alert-danger">${msg}</div>`);
                 if (xhr.responseJSON && xhr.responseJSON.errors) {
                     // Laravel validation errors

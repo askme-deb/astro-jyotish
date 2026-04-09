@@ -247,7 +247,7 @@
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label">Photo *
-                                                <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Upload a recent, clear passport-size photo. JPG, PNG, or JPEG format. Max size: 2MB. Face should be clearly visible, no sunglasses or hats."></i>
+                                                <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Upload a recent, clear passport-size photo. JPG, PNG, or JPEG format. Max size: 1MB. Face should be clearly visible, no sunglasses or hats."></i>
                                             </label>
                                             <div id="photo-dropzone" class="border border-2 border-dashed rounded-3 p-3 text-center bg-light position-relative" style="cursor:pointer; min-height: 140px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
                                                 <div id="photo-preview" class="mb-2" style="display:none;"></div>
@@ -257,7 +257,7 @@
                                                 </div>
                                                 <input type="file" name="astrologer_photo" id="astrologer_photo" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0" accept="image/*" required style="z-index:2;cursor:pointer;">
                                             </div>
-                                            <div class="form-text text-muted small">Accepted: JPG, PNG, JPEG. Max 2MB. Face must be clearly visible.</div>
+                                            <div class="form-text text-muted small">Accepted: JPG, PNG, JPEG. Max 1MB. Face must be clearly visible.</div>
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-4">
@@ -270,7 +270,7 @@
                                                 </div>
                                                 <input type="file" name="astrologer_aadhar_document" id="astrologer_aadhar_document" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,image/*" required style="z-index:2;cursor:pointer;">
                                             </div>
-                                            <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 2MB.</div>
+                                            <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 1MB.</div>
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-4">
@@ -283,7 +283,7 @@
                                                 </div>
                                                 <input type="file" name="astrologer_pan_document" id="astrologer_pan_document" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,image/*" required style="z-index:2;cursor:pointer;">
                                             </div>
-                                            <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 2MB.</div>
+                                            <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 1MB.</div>
                                             <div class="invalid-feedback"></div>
                                         </div>
                                     </div>
@@ -381,10 +381,10 @@
                                             <input type="text" name="astrologer_declaration_applicant_name" class="form-control">
                                         </div>
                                         <div class="col-md-4">
-                                            <label class="form-label">Signature <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Sign or use the digital pad."></i></label>
-                                            <input type="text" name="astrologer_declaration_signature" class="form-control" placeholder="Sign here or use digital pad">
+                                            <label class="form-label">Signature <i class="bi bi-info-circle help-icon" data-bs-toggle="tooltip" title="Use the digital pad to sign."></i></label>
                                             <canvas id="signature-pad" width="300" height="100" style="border:1px solid #ccc; width:100%;"></canvas>
                                             <input type="hidden" name="astrologer_signature_image" id="astrologer_signature_image">
+                                            <div class="invalid-feedback d-block"></div>
                                             <div class="col-lg-6">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary mt-2 w-100" id="clear-signature">Clear
                                                     Signature</button>
@@ -444,6 +444,19 @@ $(document).ready(function () {
     const photoInput = $('#astrologer_photo');
     const photoPreview = $('#photo-preview');
     const dropzoneText = $('#photo-dropzone-text');
+    const photoMaxSize = 1024 * 1024;
+
+    function setPhotoError(message) {
+        const feedback = photoInput.closest('.col-md-4').find('.invalid-feedback').last();
+        photoInput.addClass('is-invalid');
+        feedback.addClass('d-block').text(message);
+    }
+
+    function clearPhotoError() {
+        const feedback = photoInput.closest('.col-md-4').find('.invalid-feedback').last();
+        photoInput.removeClass('is-invalid');
+        feedback.removeClass('d-block').text('');
+    }
 
     function showPhotoPreview(file) {
         if (!file) return;
@@ -470,6 +483,18 @@ $(document).ready(function () {
             photoPreview.hide();
             dropzoneText.show();
         }
+
+        if (!file) {
+            setPhotoError('Photo is required.');
+            return;
+        }
+
+        if (file.size > photoMaxSize) {
+            setPhotoError('Photo must not be greater than 1MB.');
+            return;
+        }
+
+        clearPhotoError();
     });
 
     photoDropzone.on('dragover', function(e) {
@@ -701,6 +726,64 @@ $(document).ready(function () {
 function validateStep(step) {
     let valid = true;
 
+    const documentMaxSize = 1024 * 1024;
+    const documentMaxSizeMessage = 'File size must not be greater than 1MB.';
+
+    function setDocumentError(input, message) {
+        const field = $(input);
+        field.addClass('is-invalid');
+
+        let feedback = field.siblings('.invalid-feedback');
+        if (!feedback.length) {
+            feedback = field.parent().siblings('.invalid-feedback').first();
+        }
+        if (!feedback.length) {
+            feedback = field.closest('.edu-dropzone').parent().find('.invalid-feedback').first();
+        }
+        if (!feedback.length) {
+            field.parent().find('.invalid-feedback').remove();
+                field.after('<div class="invalid-feedback d-block"></div>');
+            feedback = field.siblings('.invalid-feedback');
+        }
+
+            feedback.addClass('d-block');
+        feedback.text(message);
+    }
+
+    function clearDocumentError(input) {
+        const field = $(input);
+        field.removeClass('is-invalid');
+
+        let feedback = field.siblings('.invalid-feedback');
+        if (!feedback.length) {
+            feedback = field.parent().siblings('.invalid-feedback').first();
+        }
+        if (!feedback.length) {
+            feedback = field.closest('.edu-dropzone').parent().find('.invalid-feedback').first();
+        }
+
+        feedback.removeClass('d-block');
+        feedback.text('');
+    }
+
+    function validateRequiredDocument(input, requiredMessage) {
+        const field = $(input);
+        const file = input && input.files && input.files[0] ? input.files[0] : null;
+
+        if (!file) {
+            setDocumentError(field, requiredMessage);
+            return false;
+        }
+
+        if (file.size > documentMaxSize) {
+            setDocumentError(field, documentMaxSizeMessage);
+            return false;
+        }
+
+        clearDocumentError(field);
+        return true;
+    }
+
     // Clear all previous errors in this step
     $(`.form-section[data-section="${step}"] .form-control`).removeClass('is-invalid');
     $(`.form-section[data-section="${step}"] .form-select`).removeClass('is-invalid');
@@ -880,10 +963,13 @@ function validateStep(step) {
                 eduValid = false;
             }
             if (!document[0].files || document[0].files.length === 0) {
-                document.addClass('is-invalid');
-                document.parent().find('.invalid-feedback').remove();
-                document.after('<div class="invalid-feedback d-block">Document is required.</div>');
+                setDocumentError(document, 'Document is required.');
                 eduValid = false;
+            } else if (document[0].files[0].size > documentMaxSize) {
+                setDocumentError(document, documentMaxSizeMessage);
+                eduValid = false;
+            } else {
+                clearDocumentError(document);
             }
         });
 
@@ -996,11 +1082,15 @@ function validateStep(step) {
         // Photo
         if (!photo[0].files || photo[0].files.length === 0) {
             photo.addClass('is-invalid');
-            photo.parent().find('.invalid-feedback').text('Photo is required.');
+            photo.closest('.col-md-4').find('.invalid-feedback').last().addClass('d-block').text('Photo is required.');
+            kycValid = false;
+        } else if (photo[0].files[0].size > photoMaxSize) {
+            photo.addClass('is-invalid');
+            photo.closest('.col-md-4').find('.invalid-feedback').last().addClass('d-block').text('Photo must not be greater than 1MB.');
             kycValid = false;
         } else {
             photo.removeClass('is-invalid');
-            photo.parent().find('.invalid-feedback').text('');
+            photo.closest('.col-md-4').find('.invalid-feedback').last().removeClass('d-block').text('');
         }
         // Aadhar Number
         if (!aadharNumber.val() || !/^\d{12}$/.test(aadharNumber.val().trim())) {
@@ -1022,21 +1112,23 @@ function validateStep(step) {
         }
         // Aadhar Document
         if (!aadharDoc[0].files || aadharDoc[0].files.length === 0) {
-            aadharDoc.addClass('is-invalid');
-            aadharDoc.parent().find('.invalid-feedback').text('Aadhar document is required.');
+            setDocumentError(aadharDoc, 'Aadhar document is required.');
+            kycValid = false;
+        } else if (aadharDoc[0].files[0].size > documentMaxSize) {
+            setDocumentError(aadharDoc, 'Aadhar document must not be greater than 1MB.');
             kycValid = false;
         } else {
-            aadharDoc.removeClass('is-invalid');
-            aadharDoc.parent().find('.invalid-feedback').text('');
+            clearDocumentError(aadharDoc);
         }
         // PAN Document
         if (!panDoc[0].files || panDoc[0].files.length === 0) {
-            panDoc.addClass('is-invalid');
-            panDoc.parent().find('.invalid-feedback').text('PAN document is required.');
+            setDocumentError(panDoc, 'PAN document is required.');
+            kycValid = false;
+        } else if (panDoc[0].files[0].size > documentMaxSize) {
+            setDocumentError(panDoc, 'PAN document must not be greater than 1MB.');
             kycValid = false;
         } else {
-            panDoc.removeClass('is-invalid');
-            panDoc.parent().find('.invalid-feedback').text('');
+            clearDocumentError(panDoc);
         }
 
         if (!kycValid) {
@@ -1097,20 +1189,17 @@ function validateStep(step) {
             applicantName.siblings('.invalid-feedback').text('');
         }
 
-        // Signature validation (must not be empty)
-        const signature = $('[name="astrologer_declaration_signature"]');
+        // Signature validation (must be drawn on the digital pad)
+        const signaturePad = $('#signature-pad');
+        const signatureFeedback = $('#astrologer_signature_image').siblings('.invalid-feedback').first();
         const signatureImage = $('#astrologer_signature_image').val();
-        if ((!signature.val() || signature.val().trim().length < 2) && !signatureImage) {
-            signature.addClass('is-invalid');
-            if (signature.siblings('.invalid-feedback').length === 0) {
-                signature.after('<div class="invalid-feedback">Signature is required (type or draw).</div>');
-            } else {
-                signature.siblings('.invalid-feedback').text('Signature is required (type or draw).');
-            }
+        if (!signatureImage) {
+            signaturePad.addClass('border border-danger');
+            signatureFeedback.text('Digital signature is required.');
             valid = false;
         } else {
-            signature.removeClass('is-invalid');
-            signature.siblings('.invalid-feedback').text('');
+            signaturePad.removeClass('border-danger');
+            signatureFeedback.text('');
         }
 
         // Date validation (must be today, not past/future)
@@ -1152,7 +1241,7 @@ function validateStep(step) {
                     </div>
                     <input type="file" name="astrologer_education[${eduIndex}][document]" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 edu-file-input" accept=".pdf,image/*" required style="z-index:2;cursor:pointer;">
                 </div>
-                <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 2MB.</div>
+                <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 1MB.</div>
             </div>
             <div class="col-md-1 text-end"><button type="button" class="btn btn-danger btn-sm remove-education"><i class="bi bi-x"></i></button></div>
         </div>`;
@@ -1175,6 +1264,34 @@ function validateStep(step) {
         const input = entry.find('.edu-file-input');
         const preview = entry.find('.edu-preview');
         const text = entry.find('.edu-dropzone-text');
+        const maxDocumentSize = 1024 * 1024;
+
+        function applyDocumentValidation(fileInput, requiredMessage, sizeMessage) {
+            const field = $(fileInput);
+            const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+            let feedback = field.closest('.edu-dropzone').parent().find('.invalid-feedback').first();
+
+            if (!feedback.length) {
+                field.after('<div class="invalid-feedback d-block"></div>');
+                feedback = field.siblings('.invalid-feedback');
+            }
+
+            if (!file) {
+                field.addClass('is-invalid');
+                feedback.text(requiredMessage);
+                return false;
+            }
+
+            if (file.size > maxDocumentSize) {
+                field.addClass('is-invalid');
+                feedback.text(sizeMessage);
+                return false;
+            }
+
+            field.removeClass('is-invalid');
+            feedback.text('');
+            return true;
+        }
 
         function showPreview(file) {
             if (!file) return;
@@ -1211,6 +1328,8 @@ function validateStep(step) {
                 preview.hide();
                 text.show();
             }
+
+            applyDocumentValidation(this, 'Document is required.', 'Document must not be greater than 1MB.');
         });
 
         dropzone.on('dragover', function(e) {
@@ -1240,6 +1359,52 @@ function validateStep(step) {
             }, 100);
         });
     }
+
+    $('#astrologer_aadhar_document').on('change', function () {
+        const file = this.files && this.files[0] ? this.files[0] : null;
+        const feedback = $(this).closest('.col-md-4').find('.invalid-feedback').last();
+
+        if (!file) {
+            $(this).addClass('is-invalid');
+            feedback.addClass('d-block');
+            feedback.text('Aadhar document is required.');
+            return;
+        }
+
+        if (file.size > 1024 * 1024) {
+            $(this).addClass('is-invalid');
+            feedback.addClass('d-block');
+            feedback.text('Aadhar document must not be greater than 1MB.');
+            return;
+        }
+
+        $(this).removeClass('is-invalid');
+        feedback.removeClass('d-block');
+        feedback.text('');
+    });
+
+    $('#astrologer_pan_document').on('change', function () {
+        const file = this.files && this.files[0] ? this.files[0] : null;
+        const feedback = $(this).closest('.col-md-4').find('.invalid-feedback').last();
+
+        if (!file) {
+            $(this).addClass('is-invalid');
+            feedback.addClass('d-block');
+            feedback.text('PAN document is required.');
+            return;
+        }
+
+        if (file.size > 1024 * 1024) {
+            $(this).addClass('is-invalid');
+            feedback.addClass('d-block');
+            feedback.text('PAN document must not be greater than 1MB.');
+            return;
+        }
+
+        $(this).removeClass('is-invalid');
+        feedback.removeClass('d-block');
+        feedback.text('');
+    });
 
     // Setup dropzone for all current and future education entries
     function setupAllEduDropzones() {
@@ -1371,6 +1536,8 @@ function validateStep(step) {
         if (!drawing) return;
         drawing = false;
         $('#astrologer_signature_image').val(canvas.toDataURL());
+        $('#signature-pad').removeClass('border-danger');
+        $('#astrologer_signature_image').siblings('.invalid-feedback').first().text('');
     }
 
     // Mouse events
@@ -1391,6 +1558,8 @@ function validateStep(step) {
     $('#clear-signature').on('click', function () {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         $('#astrologer_signature_image').val('');
+        $('#signature-pad').removeClass('border-danger');
+        $('#astrologer_signature_image').siblings('.invalid-feedback').first().text('');
     });
 
 function submitForm() {
@@ -1503,20 +1672,60 @@ function submitForm() {
         $('#submit-spinner').addClass('d-none');
         $('#next-text').html('Submit Registration');
 
-        if (error.response && error.response.data && error.response.data.errors) {
-            let errors = error.response.data.errors;
+        const humanizeMessage = function (value) {
+            return String(value || '').replace(/1024 kilobytes/gi, '1MB').trim();
+        };
 
+        const responseData = error.response && error.response.data ? error.response.data : null;
+        const errors = responseData && responseData.errors ? responseData.errors : null;
+        let message = 'Something went wrong. Try again.';
+
+        if (responseData && responseData.message) {
+            message = String(responseData.message).trim();
+
+            const jsonStart = message.indexOf('{');
+            if (jsonStart !== -1) {
+                try {
+                    const parsed = JSON.parse(message.slice(jsonStart));
+                    if (parsed && parsed.message) {
+                        message = humanizeMessage(parsed.message);
+                    } else if (parsed && Array.isArray(parsed.all_errors) && parsed.all_errors.length) {
+                        message = humanizeMessage(parsed.all_errors[0]);
+                    }
+                } catch (parseError) {
+                    const embeddedMessage = message.match(/"message"\s*:\s*"((?:\\.|[^"\\])+)"/);
+                    if (embeddedMessage && embeddedMessage[1]) {
+                        message = humanizeMessage(embeddedMessage[1]
+                            .replace(/\\"/g, '"')
+                            .replace(/\\\\/g, '\\'));
+                    }
+                }
+            } else {
+                const embeddedMessage = message.match(/"message"\s*:\s*"((?:\\.|[^"\\])+)"/);
+                if (embeddedMessage && embeddedMessage[1]) {
+                    message = humanizeMessage(embeddedMessage[1]
+                        .replace(/\\"/g, '"')
+                        .replace(/\\\\/g, '\\'));
+                }
+            }
+        } else if (responseData && Array.isArray(responseData.all_errors) && responseData.all_errors.length) {
+            message = humanizeMessage(responseData.all_errors[0]);
+        }
+
+        message = humanizeMessage(message);
+
+        if (errors) {
             Object.keys(errors).forEach(function (key) {
                 const el = $(`[name="${key}"]`);
                 if (el.length) {
                     el.addClass('is-invalid');
-                    el.parent().find('.invalid-feedback').text(errors[key][0]);
+                    el.parent().find('.invalid-feedback').text(humanizeMessage(errors[key][0]));
                 }
             });
 
-            $('#form-message').html('<div class="alert alert-danger">Please fix the errors and try again.</div>');
+            $('#form-message').html(`<div class="alert alert-danger">${message}</div>`);
         } else {
-            $('#form-message').html('<div class="alert alert-danger">Something went wrong. Try again.</div>');
+            $('#form-message').html(`<div class="alert alert-danger">${message}</div>`);
         }
     })
     .finally(function () {

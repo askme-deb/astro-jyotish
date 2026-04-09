@@ -18,9 +18,9 @@ class AstrologerApiService extends BaseApiClient
      * Create a new astrologer (register) via external API.
      *
      * @param array $data
-     * @return array|null
+    * @return array<string, mixed>
      */
-    public function createAstrologer(array $data): ?array
+    public function createAstrologer(array $data): array
     {
         // Use Laravel's Http::attach() for all files and arrays
         $http = \Illuminate\Support\Facades\Http::baseUrl($this->baseUrl)
@@ -89,33 +89,217 @@ class AstrologerApiService extends BaseApiClient
 
         $response = $http->asMultipart()->post('astrologers', $fields);
         $result = $response->json();
-        $success = false;
-        if (is_array($result)) {
-            if ((isset($result['status']) && $result['status']) || (isset($result['success']) && $result['success'])) {
-                $success = true;
-            }
+
+        if (!is_array($result)) {
+            $result = [];
         }
+
+        $success = $response->successful();
+
+        if (array_key_exists('status', $result)) {
+            $success = $success && (bool) $result['status'];
+        }
+
+        if (array_key_exists('success', $result)) {
+            $success = $success && (bool) $result['success'];
+        }
+
         if (!$success) {
+            $errors = $this->extractValidationErrors($result);
+            $message = $this->extractFirstErrorMessage($result, $errors, 'Registration failed. Please try again later.');
+            $allErrors = $this->flattenValidationErrors($errors);
+
+            if ($allErrors === [] && $message !== '') {
+                $allErrors[] = $message;
+            }
+
             Log::warning('[API] Astrologer registration failed', [
                 'status' => $response->status(),
                 'body' => $response->body(),
                 'result' => $result
             ]);
+
+            return [
+                'success' => false,
+                'message' => $message,
+                'errors' => $errors,
+                'all_errors' => $allErrors,
+                'status_code' => $response->status(),
+            ];
+        }
+
+        $payload = $result['data'] ?? $result['astrologer'] ?? $result;
+        $message = $result['message'] ?? 'Registration successful!';
+
+        if (!is_string($message) || trim($message) === '') {
+            $message = 'Registration successful!';
+        }
+
+        return [
+            'success' => true,
+            'message' => $message,
+            'data' => $payload,
+        ];
+    }
+
+    private function extractValidationErrors(array $result): array
+    {
+        $errors = $result['errors'] ?? data_get($result, 'data.errors') ?? data_get($result, 'error.errors');
+
+        if (!is_array($errors)) {
+            return [];
+        }
+
+        foreach ($errors as $field => $fieldErrors) {
+            if (is_array($fieldErrors)) {
+                foreach ($fieldErrors as $index => $fieldError) {
+                    if (is_string($fieldError)) {
+                        $errors[$field][$index] = $this->humanizeValidationMessage($fieldError);
+                    }
+                }
+
+                continue;
+            }
+
+            if (is_string($fieldErrors)) {
+                $errors[$field] = $this->humanizeValidationMessage($fieldErrors);
+            }
+        }
+
+        return $errors;
+    }
+
+    private function extractFirstErrorMessage(array $result, array $errors, string $default): string
+    {
+        foreach ($errors as $fieldErrors) {
+            if (is_array($fieldErrors)) {
+                foreach ($fieldErrors as $fieldError) {
+                    if (is_string($fieldError) && trim($fieldError) !== '') {
+                        return $this->humanizeValidationMessage(trim($fieldError));
+                    }
+                }
+
+                continue;
+            }
+
+            if (is_string($fieldErrors) && trim($fieldErrors) !== '') {
+                return $this->humanizeValidationMessage(trim($fieldErrors));
+            }
+        }
+
+        $message = $result['message'] ?? data_get($result, 'error.message') ?? data_get($result, 'data.message');
+
+        if (is_string($message)) {
+            $normalizedMessage = $this->extractMessageFromWrappedPayload($message);
+
+            if ($normalizedMessage !== null) {
+                return $this->humanizeValidationMessage($normalizedMessage);
+            }
+        }
+
+        return is_string($message) && trim($message) !== ''
+            ? $this->humanizeValidationMessage(trim($message))
+            : $default;
+    }
+
+    private function flattenValidationErrors(array $errors): array
+    {
+        $allErrors = [];
+
+        foreach ($errors as $fieldErrors) {
+            if (is_array($fieldErrors)) {
+                foreach ($fieldErrors as $fieldError) {
+                    if (is_string($fieldError) && trim($fieldError) !== '') {
+                        $allErrors[] = $this->humanizeValidationMessage(trim($fieldError));
+                    }
+                }
+
+                continue;
+            }
+
+            if (is_string($fieldErrors) && trim($fieldErrors) !== '') {
+                $allErrors[] = $this->humanizeValidationMessage(trim($fieldErrors));
+            }
+        }
+
+        return array_values(array_unique($allErrors));
+    }
+
+    private function extractMessageFromWrappedPayload(string $message): ?string
+    {
+        $message = trim($message);
+
+        if ($message === '') {
             return null;
         }
-        // Prefer 'data', else fallback to 'astrologer' or whole result
-        if (isset($result['data'])) {
-            return $result['data'];
-        } elseif (isset($result['astrologer'])) {
-            return $result['astrologer'];
-        } else {
-            return $result;
+
+        $jsonStart = strpos($message, '{');
+        if ($jsonStart === false) {
+            return $this->extractMessageFromTruncatedPayload($message);
         }
-        if (!is_array($result) || !isset($result['status']) || !$result['status']) {
-            Log::warning('[API] Astrologer registration failed', ['result' => $result]);
+
+        $decoded = json_decode(substr($message, $jsonStart), true);
+        if (!is_array($decoded)) {
+            return $this->extractMessageFromTruncatedPayload($message);
+        }
+
+        $errors = $this->extractValidationErrors($decoded);
+        foreach ($errors as $fieldErrors) {
+            if (is_array($fieldErrors) && isset($fieldErrors[0]) && is_string($fieldErrors[0]) && trim($fieldErrors[0]) !== '') {
+                return $this->humanizeValidationMessage(trim($fieldErrors[0]));
+            }
+
+            if (is_string($fieldErrors) && trim($fieldErrors) !== '') {
+                return $this->humanizeValidationMessage(trim($fieldErrors));
+            }
+        }
+
+        $decodedMessage = $decoded['message'] ?? data_get($decoded, 'error.message') ?? data_get($decoded, 'data.message');
+
+        return is_string($decodedMessage) && trim($decodedMessage) !== ''
+            ? $this->humanizeValidationMessage(trim($decodedMessage))
+            : null;
+    }
+
+    private function extractMessageFromTruncatedPayload(string $message): ?string
+    {
+        $messageKeyPosition = strpos($message, '"message"');
+        if ($messageKeyPosition === false) {
             return null;
         }
-        return $result['data'] ?? null;
+
+        $valueStart = strpos($message, ':', $messageKeyPosition);
+        if ($valueStart === false) {
+            return null;
+        }
+
+        $openingQuote = strpos($message, '"', $valueStart);
+        if ($openingQuote === false) {
+            return null;
+        }
+
+        $openingQuote++;
+        $length = strlen($message);
+        $buffer = '';
+
+        for ($index = $openingQuote; $index < $length; $index++) {
+            $character = $message[$index];
+
+            if ($character === '"' && $message[$index - 1] !== '\\') {
+                break;
+            }
+
+            $buffer .= $character;
+        }
+
+        $decoded = stripcslashes($buffer);
+
+        return trim($decoded) !== '' ? $this->humanizeValidationMessage(trim($decoded)) : null;
+    }
+
+    private function humanizeValidationMessage(string $message): string
+    {
+        return str_ireplace('1024 kilobytes', '1MB', $message);
     }
     protected int $cacheTtl;
     protected string $cacheKey = 'api.astrologers.list';

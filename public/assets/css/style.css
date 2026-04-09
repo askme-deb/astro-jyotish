@@ -2406,9 +2406,9 @@ span.skill-badge {
 	}
 
 	.hero-banner button.btn.btn-danger {
-		font-size: 11px;
-		padding: 5px 10px !important;
-		margin: 0px !important;
+	 font-size: 10px;
+        padding: 0px 10px 2px !important;
+        margin: 0px !important;
 	}
 
 	#heroSlider .carousel-item {
@@ -3769,8 +3769,8 @@ section.sear_pat {
 
 @media(max-width:768px) {
 	.account_warp {
-		text-align: left;
-		padding: 0px 0 10px;
+		text-align: center;
+        padding: 0px 0 10px;
 	}
 
 	.hero-slider {
@@ -3837,7 +3837,8 @@ section.sear_pat {
 	}
 
 	.top-bar {
-		padding-bottom: 0;
+		 padding-bottom: 0;
+        text-align: center;
 	}
 
 	.container-box .contact-info {
@@ -3956,12 +3957,14 @@ section.sear_pat {
     font-size: 9px;
     }
         .hero-banner h1 {
-        font-size: 12px !important;
+          font-size: 11px !important;
+        margin-bottom: 0px;
       }
-.hero-banner p{
-	font-size:10px;
-	line-height: 12px;
-}
+    .hero-banner p {
+        font-size: 10px;
+        line-height: 12px;
+        margin-bottom: 4px;
+    }
 }
 
 
