@@ -35,6 +35,7 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
+
         $validator = \Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',

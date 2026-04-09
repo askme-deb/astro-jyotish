@@ -22,15 +22,8 @@ class AstrologerApiService extends BaseApiClient
      */
     public function createAstrologer(array $data): array
     {
-        // Use Laravel's Http::attach() for all files and arrays
-        $http = \Illuminate\Support\Facades\Http::baseUrl($this->baseUrl)
-            ->timeout($this->timeoutSeconds)
-            ->retry($this->retryTimes, $this->retrySleepMilliseconds, function ($exception) {
-                return $exception instanceof \Illuminate\Http\Client\ConnectionException;
-            });
-        if ($this->token !== null && $this->token !== '') {
-            $http = $http->withToken($this->token);
-        }
+        $http = $this->buildApiRequest();
+
         // Attach files
         foreach (['photo', 'aadhar_document', 'pan_document', 'signature'] as $fileField) {
             if (isset($data[$fileField]) && $data[$fileField] instanceof \Illuminate\Http\UploadedFile) {
@@ -48,8 +41,11 @@ class AstrologerApiService extends BaseApiClient
         // Build form fields
         $fields = [];
         foreach ($data as $key => $value) {
-            if (in_array($key, ['photo', 'aadhar_document', 'pan_document', 'signature', 'education', 'availabilities', 'languages', 'skills'])) continue;
+            if (in_array($key, ['photo', 'aadhar_document', 'pan_document', 'education', 'availabilities', 'languages', 'skills'], true)) continue;
             $fields[$key] = $value ?? '';
+        }
+        if (isset($data['signature']) && is_string($data['signature']) && trim($data['signature']) !== '') {
+            $fields['signature'] = trim($data['signature']);
         }
         // Arrays (languages, skills)
         if (!empty($data['languages'])) {
@@ -144,18 +140,7 @@ class AstrologerApiService extends BaseApiClient
 
     public function getAuthenticatedProfile(?string $token = null): array
     {
-        $request = \Illuminate\Support\Facades\Http::baseUrl($this->baseUrl)
-            ->timeout($this->timeoutSeconds)
-            ->retry($this->retryTimes, $this->retrySleepMilliseconds, function ($exception) {
-                return $exception instanceof \Illuminate\Http\Client\ConnectionException;
-            })
-            ->acceptJson();
-
-        if ($token !== null && $token !== '') {
-            $request = $request->withToken($token);
-        } elseif ($this->token !== null && $this->token !== '') {
-            $request = $request->withToken($this->token);
-        }
+        $request = $this->buildApiRequest($token);
 
         $response = $request->get('astrologer/profile');
         $result = $response->json();
@@ -164,7 +149,17 @@ class AstrologerApiService extends BaseApiClient
             $result = [];
         }
 
-        if (!$response->successful()) {
+        $success = $response->successful();
+
+        if (array_key_exists('status', $result)) {
+            $success = $success && (bool) $result['status'];
+        }
+
+        if (array_key_exists('success', $result)) {
+            $success = $success && (bool) $result['success'];
+        }
+
+        if (!$success) {
             $errors = $this->extractValidationErrors($result);
 
             return [
@@ -178,24 +173,13 @@ class AstrologerApiService extends BaseApiClient
         return [
             'success' => true,
             'message' => is_string($result['message'] ?? null) ? trim((string) $result['message']) : 'Profile loaded successfully.',
-            'data' => $result['data'] ?? $result['profile'] ?? $result,
+            'data' => $result['data'] ?? $result['profile'] ?? $result['astrologer'] ?? $result,
         ];
     }
 
     public function updateAuthenticatedProfile(array $payload, ?string $token = null, string $method = 'PATCH'): array
     {
-        $http = \Illuminate\Support\Facades\Http::baseUrl($this->baseUrl)
-            ->timeout($this->timeoutSeconds)
-            ->retry($this->retryTimes, $this->retrySleepMilliseconds, function ($exception) {
-                return $exception instanceof \Illuminate\Http\Client\ConnectionException;
-            })
-            ->acceptJson();
-
-        if ($token !== null && $token !== '') {
-            $http = $http->withToken($token);
-        } elseif ($this->token !== null && $this->token !== '') {
-            $http = $http->withToken($this->token);
-        }
+        $http = $this->buildApiRequest($token);
 
         foreach (['photo', 'aadhar_document', 'pan_document', 'signature'] as $fileField) {
             if (isset($payload[$fileField]) && $payload[$fileField] instanceof \Illuminate\Http\UploadedFile) {
@@ -213,7 +197,7 @@ class AstrologerApiService extends BaseApiClient
 
         $fields = [];
         foreach ($payload as $key => $value) {
-            if (in_array($key, ['photo', 'aadhar_document', 'pan_document', 'signature', 'education', 'availabilities', 'languages', 'skills'], true)) {
+            if (in_array($key, ['photo', 'aadhar_document', 'pan_document', 'education', 'availabilities', 'languages', 'skills'], true)) {
                 continue;
             }
 
@@ -223,6 +207,10 @@ class AstrologerApiService extends BaseApiClient
             }
 
             $fields[$key] = $value ?? '';
+        }
+
+        if (isset($payload['signature']) && is_string($payload['signature']) && trim($payload['signature']) !== '') {
+            $fields['signature'] = trim($payload['signature']);
         }
 
         if (!empty($payload['languages'])) {
@@ -259,17 +247,28 @@ class AstrologerApiService extends BaseApiClient
         }
 
         $method = strtoupper($method) === 'PUT' ? 'PUT' : 'PATCH';
-        $http = $http->asMultipart();
-        $response = $method === 'PUT'
-            ? $http->put('astrologer/profile', $fields)
-            : $http->patch('astrologer/profile', $fields);
+        $fields['_method'] = $method;
+
+        // Send multipart updates as POST with method override because PHP does not
+        // reliably populate form fields and uploaded files for multipart PATCH/PUT.
+        $response = $http->asMultipart()->post('astrologer/profile', $fields);
         $result = $response->json();
 
         if (!is_array($result)) {
             $result = [];
         }
 
-        if (!$response->successful()) {
+        $success = $response->successful();
+
+        if (array_key_exists('status', $result)) {
+            $success = $success && (bool) $result['status'];
+        }
+
+        if (array_key_exists('success', $result)) {
+            $success = $success && (bool) $result['success'];
+        }
+
+        if (!$success) {
             $errors = $this->extractValidationErrors($result);
 
             return [
@@ -283,8 +282,44 @@ class AstrologerApiService extends BaseApiClient
         return [
             'success' => true,
             'message' => is_string($result['message'] ?? null) ? trim((string) $result['message']) : 'Profile updated successfully.',
-            'data' => $result['data'] ?? $result['profile'] ?? $payload,
+            'data' => $result['data'] ?? $result['profile'] ?? $result['astrologer'] ?? $this->stripUploadedFilesFromPayload($payload),
         ];
+    }
+
+    private function buildApiRequest(?string $token = null): \Illuminate\Http\Client\PendingRequest
+    {
+        $request = $this->buildRequest();
+
+        if ($token !== null && $token !== '') {
+            return $request->withToken($token);
+        }
+
+        return $request;
+    }
+
+    private function stripUploadedFilesFromPayload(mixed $value): mixed
+    {
+        if ($value instanceof \Illuminate\Http\UploadedFile) {
+            return null;
+        }
+
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        $sanitized = [];
+
+        foreach ($value as $key => $item) {
+            $cleanItem = $this->stripUploadedFilesFromPayload($item);
+
+            if ($cleanItem === null) {
+                continue;
+            }
+
+            $sanitized[$key] = $cleanItem;
+        }
+
+        return $sanitized;
     }
 
     private function extractValidationErrors(array $result): array

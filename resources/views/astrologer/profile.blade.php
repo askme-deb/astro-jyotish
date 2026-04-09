@@ -24,17 +24,34 @@
                     </div>
                 </div>
 
-                <div class="sidebar-card dashboard-card mt-4">
-                    <div class="dashboard-section-head">
-                        <h3>Profile Details</h3>
+                <div class="sidebar-card dashboard-card profile-shell mt-4">
+                    <div class="profile-page-head">
+                        <div class="profile-page-head-content">
+                            <div class="profile-eyebrow">Profile Workspace</div>
+                            <h3 class="profile-page-title">Profile Settings</h3>
+                            <p class="profile-page-subtitle mb-0">Manage public profile information, credentials, availability, and verification documents in one place.</p>
+                        </div>
+                        <div class="profile-page-meta">
+                            <span class="profile-mode-badge" id="profile-mode-badge">View Mode</span>
+                        </div>
                     </div>
 
                     @if($loadError)
                         <div class="alert alert-warning">{{ $loadError }}</div>
                     @endif
 
-                    <form id="astrologer-profile-form" autocomplete="off" enctype="multipart/form-data">
+                    <form id="astrologer-profile-form" class="profile-form" autocomplete="off" enctype="multipart/form-data">
                         @csrf
+
+                        <div class="profile-settings-grid">
+                            <div class="profile-settings-main">
+                                <div class="profile-section">
+                            <div class="profile-section-head">
+                                <div>
+                                    <h4 class="profile-section-title">Core Information</h4>
+                                    <p class="profile-section-subtitle mb-0">These details appear across your astrologer profile and booking experience.</p>
+                                </div>
+                            </div>
 
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -63,13 +80,54 @@
                                 <div class="invalid-feedback"></div>
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label">Password</label>
+                                <input type="password" class="form-control" name="password" value="" placeholder="Leave blank to keep the current password">
+                                <div class="form-text">Only enter a password if you want to update it.</div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-12">
                                 <label class="form-label">Short Intro</label>
-                                <input type="text" class="form-control" name="short_intro" value="{{ $profile['short_intro'] }}">
+                                <textarea class="form-control" name="short_intro" rows="3">{{ $profile['short_intro'] }}</textarea>
                                 <div class="invalid-feedback"></div>
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Detailed Bio</label>
                                 <textarea class="form-control" name="details_bio" rows="5">{{ $profile['details_bio'] }}</textarea>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Address</label>
+                                <textarea class="form-control" name="address" rows="3">{{ $profile['address'] }}</textarea>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">State</label>
+                                <select class="form-select" name="state_id" id="profile-state-select" data-selected="{{ $profile['state_id'] }}">
+                                    <option value="">Select State</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">City</label>
+                                <select class="form-select" name="city_id" id="profile-city-select" data-selected="{{ $profile['city_id'] }}">
+                                    <option value="">Select City</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Pin Code</label>
+                                <input type="text" class="form-control" name="pin_code" maxlength="10" value="{{ $profile['pin_code'] }}">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Consultation Mode</label>
+                                <select class="form-select" name="consultation_mode">
+                                    <option value="">Select Mode</option>
+                                    <option value="online" @selected($profile['consultation_mode'] === 'online')>Online</option>
+                                    <option value="video" @selected($profile['consultation_mode'] === 'video')>Video</option>
+                                    <option value="audio" @selected($profile['consultation_mode'] === 'audio')>Audio</option>
+                                    <option value="chat" @selected($profile['consultation_mode'] === 'chat')>Chat</option>
+                                </select>
                                 <div class="invalid-feedback"></div>
                             </div>
                             <div class="col-md-4">
@@ -88,11 +146,23 @@
                                 <div class="invalid-feedback"></div>
                             </div>
                         </div>
+                                </div>
+
+                                <div class="profile-section mt-4">
+                            <div class="profile-section-head">
+                                <div>
+                                    <h4 class="profile-section-title">Expertise</h4>
+                                    <p class="profile-section-subtitle mb-0">Showcase the languages you support and the services you specialize in.</p>
+                                </div>
+                            </div>
 
                         <div class="row g-4 mt-1">
-                            <div class="col-md-6">
-                                <div class="border rounded-3 p-3 h-100">
-                                    <h5 class="mb-3">Languages</h5>
+                            <div class="col-md-12">
+                                <div class="profile-subcard h-100">
+                                    <div class="profile-subcard-head">
+                                        <h5 class="mb-0">Languages</h5>
+
+                                    </div>
                                     <div class="profile-checkbox-grid" id="language-options">
                                         @foreach($languageOptions as $option)
                                             <label class="profile-choice">
@@ -104,9 +174,12 @@
                                     <div class="invalid-feedback d-block" data-feedback="languages"></div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="border rounded-3 p-3 h-100">
-                                    <h5 class="mb-3">Skills</h5>
+                            <div class="col-md-12">
+                                <div class="profile-subcard h-100">
+                                    <div class="profile-subcard-head">
+                                        <h5 class="mb-0">Skills</h5>
+
+                                    </div>
                                     <div class="profile-checkbox-grid" id="skill-options">
                                         @foreach($skillOptions as $option)
                                             <label class="profile-choice">
@@ -119,22 +192,95 @@
                                 </div>
                             </div>
                         </div>
-
-                        <div class="border rounded-3 p-3 mt-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="mb-0">Education</h5>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" id="add-education-row">Add Education</button>
-                            </div>
-                            <div id="education-rows"></div>
-                            <div class="invalid-feedback d-block" data-feedback="education"></div>
                         </div>
 
-                        <div class="border rounded-3 p-3 mt-4">
-                            <h5 class="mb-3">Documents</h5>
+                                <div class="profile-section mt-4">
+                            <div class="profile-section-head">
+                                <div>
+                                    <h4 class="profile-section-title">Banking Details</h4>
+                                    <p class="profile-section-subtitle mb-0">Maintain payout and account information used for settlements and verification.</p>
+                                </div>
+                            </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Account Holder Name</label>
+                                <input type="text" class="form-control" name="ac_holder_name" value="{{ $profile['ac_holder_name'] }}">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Bank Name</label>
+                                <input type="text" class="form-control" name="bank_name" value="{{ $profile['bank_name'] }}">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Account Number</label>
+                                <input type="text" class="form-control" name="ac_number" value="{{ $profile['ac_number'] }}">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">IFSC Code</label>
+                                <input type="text" class="form-control" name="ifsc_code" value="{{ $profile['ifsc_code'] }}">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Branch Name</label>
+                                <input type="text" class="form-control" name="branch_name" value="{{ $profile['branch_name'] }}">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">UPI ID</label>
+                                <input type="text" class="form-control" name="upi_id" value="{{ $profile['upi_id'] }}" placeholder="yourname@bank">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        </div>
+                            </div>
+
+                            <div class="profile-settings-side">
+                                <div class="profile-section">
+                            <div class="profile-section-head">
+                                <div>
+                                    <h4 class="profile-section-title mb-1">Verification Details</h4>
+                                    <p class="profile-section-subtitle mb-0">Keep KYC identifiers and declaration details aligned with your profile records.</p>
+                                </div>
+                            </div>
                             <div class="row g-3">
-                                <div class="col-md-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">Aadhaar Number</label>
+                                    <input type="text" class="form-control" name="aadhar_number" maxlength="20" value="{{ $profile['aadhar_number'] }}">
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">PAN Number</label>
+                                    <input type="text" class="form-control" name="pan_number" maxlength="20" value="{{ $profile['pan_number'] }}">
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Applicant Name</label>
+                                    <input type="text" class="form-control" name="applicant_name" value="{{ $profile['applicant_name'] }}">
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                                </div>
+
+                                <div class="profile-section">
+                            <div class="profile-section-head">
+                                <div>
+                                    <h4 class="profile-section-title mb-1">Documents</h4>
+                                    <p class="profile-section-subtitle mb-0">Keep identity and profile documents current for trust and compliance.</p>
+                                </div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12">
                                     <label class="form-label">Photo</label>
-                                    <input type="file" class="form-control" name="photo" accept="image/jpeg,image/png,image/jpg">
+                                    <div class="profile-file-dropzone" data-file-dropzone>
+                                        <input type="file" class="form-control profile-file-input" name="photo" accept="image/jpeg,image/png,image/jpg">
+                                        <div class="profile-file-dropzone-copy">
+                                            <span class="profile-file-dropzone-title">Drop photo here</span>
+                                            <span class="profile-file-dropzone-subtitle">or click to browse</span>
+                                        </div>
+                                    </div>
                                     <div class="form-text">Accepted: JPG, PNG, JPEG. Max 1MB.</div>
                                     <div class="mt-2" id="photo-current-wrapper">
                                         @if($profile['photo_url'])
@@ -148,9 +294,15 @@
                                     </div>
                                     <div class="invalid-feedback"></div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-12">
                                     <label class="form-label">Aadhaar Document</label>
-                                    <input type="file" class="form-control" name="aadhar_document" accept=".pdf,image/jpeg,image/png,image/jpg">
+                                    <div class="profile-file-dropzone" data-file-dropzone>
+                                        <input type="file" class="form-control profile-file-input" name="aadhar_document" accept=".pdf,image/jpeg,image/png,image/jpg">
+                                        <div class="profile-file-dropzone-copy">
+                                            <span class="profile-file-dropzone-title">Drop Aadhaar file here</span>
+                                            <span class="profile-file-dropzone-subtitle">or click to browse</span>
+                                        </div>
+                                    </div>
                                     <div class="form-text">Accepted: PDF, JPG, PNG. Max 1MB.</div>
                                     <div class="mt-2 small" id="aadhar-current-wrapper">
                                         @if($profile['aadhar_document_url'])
@@ -162,9 +314,15 @@
                                     </div>
                                     <div class="invalid-feedback"></div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-12">
                                     <label class="form-label">PAN Document</label>
-                                    <input type="file" class="form-control" name="pan_document" accept=".pdf,image/jpeg,image/png,image/jpg">
+                                    <div class="profile-file-dropzone" data-file-dropzone>
+                                        <input type="file" class="form-control profile-file-input" name="pan_document" accept=".pdf,image/jpeg,image/png,image/jpg">
+                                        <div class="profile-file-dropzone-copy">
+                                            <span class="profile-file-dropzone-title">Drop PAN file here</span>
+                                            <span class="profile-file-dropzone-subtitle">or click to browse</span>
+                                        </div>
+                                    </div>
                                     <div class="form-text">Accepted: PDF, JPG, PNG. Max 1MB.</div>
                                     <div class="mt-2 small" id="pan-current-wrapper">
                                         @if($profile['pan_document_url'])
@@ -177,32 +335,56 @@
                                     <div class="invalid-feedback"></div>
                                 </div>
                             </div>
-                        </div>
+                                </div>
 
-                        <div class="border rounded-3 p-3 mt-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="mb-0">Digital Signature</h5>
+                                <div class="profile-section mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3 profile-section-head">
+                                <div>
+                                    <h4 class="profile-section-title mb-1">Digital Signature</h4>
+                                    <p class="profile-section-subtitle mb-0">Use a clean signature for agreements and verification workflows.</p>
+                                </div>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="clear-profile-signature">Clear Signature</button>
                             </div>
                             <canvas id="profile-signature-pad" class="profile-signature-pad" width="640" height="180"></canvas>
-                            <input type="hidden" name="astrologer_signature_image" value="{{ $profile['astrologer_signature_image'] }}">
+                            <input type="hidden" name="signature" value="{{ $profile['signature'] }}">
                             <div class="form-text">Use the pad to update your saved signature.</div>
                             <div class="invalid-feedback d-block"></div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="border rounded-3 p-3 mt-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="mb-0">Availability</h5>
+                        <div class="profile-section education-section mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3 profile-section-head">
+                                <div>
+                                    <div class="education-section-kicker">Credentials</div>
+                                    <h4 class="profile-section-title mb-1">Education</h4>
+                                    <p class="profile-section-subtitle mb-0">Add formal qualifications and supporting proof for profile verification.</p>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="add-education-row">Add Education</button>
+                            </div>
+                            <div id="education-rows" class="profile-stack-list education-stack-list"></div>
+                            <div class="invalid-feedback d-block" data-feedback="education"></div>
+                        </div>
+
+                        <div class="profile-section mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3 profile-section-head">
+                                <div>
+                                    <h4 class="profile-section-title mb-1">Availability</h4>
+                                    <p class="profile-section-subtitle mb-0">Set clear day and time slots so clients can book you with confidence.</p>
+                                </div>
                                 <button type="button" class="btn btn-outline-secondary btn-sm" id="add-availability-row">Add Availability</button>
                             </div>
-                            <div id="availability-rows"></div>
+                            <div id="availability-rows" class="profile-stack-list availability-stack-list"></div>
                             <div class="invalid-feedback d-block" data-feedback="availabilities"></div>
                         </div>
 
-                        <div id="astrologer-profile-message" class="mt-3"></div>
+                        <div class="profile-form-footer mt-4">
+                            <div id="astrologer-profile-message" class="profile-message"></div>
 
-                        <div class="mt-4 d-flex justify-content-end gap-2">
-                            <button type="submit" class="btn btn-primary" id="astrologer-profile-submit">Save Profile</button>
+                            <div class="profile-actions">
+                                <button type="button" class="btn btn-outline-primary" id="edit-profile-btn">Edit Profile</button>
+                                <button type="submit" class="btn btn-primary d-none" id="astrologer-profile-submit">Save Changes</button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -212,56 +394,788 @@
 </section>
 
 <style>
-    .profile-checkbox-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    .profile-shell {
+        border: 1px solid #d8dee8;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
+    }
+
+    .profile-page-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         gap: 0.75rem;
+        padding: 0.85rem 1.1rem;
+        border-bottom: 1px solid #e5eaf1;
+        background: #f8fafc;
+    }
+
+    .profile-page-head-content {
+        min-width: 0;
+    }
+
+    .profile-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0;
+        border-radius: 0;
+        background: transparent;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 0.2rem;
+    }
+
+    .profile-page-title {
+        margin: 0;
+        font-size: 1.12rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+
+    .profile-page-subtitle {
+        max-width: 760px;
+        margin-top: 0.2rem;
+        color: #475569;
+        font-size: 0.84rem;
+        line-height: 1.4;
+    }
+
+    .profile-page-meta {
+        display: flex;
+        align-items: center;
+    }
+
+    .profile-mode-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 104px;
+        padding: 0.45rem 0.75rem;
+        border-radius: 999px;
+        background: #eaf1f8;
+        color: #334155;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border: 1px solid #d6e1ee;
+    }
+
+    .profile-form {
+        padding: 1rem 1.25rem 1.25rem;
+        font-size: 0.94rem;
+    }
+
+    .profile-settings-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.9rem;
+        align-items: start;
+    }
+
+    .profile-settings-main,
+    .profile-settings-side {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .profile-section {
+        border: 1px solid #e5eaf1;
+        border-radius: 10px;
+        padding: 0.95rem;
+        background: #fff;
+        box-shadow: none;
+    }
+
+    .profile-section.mt-4 {
+        margin-top: 0.9rem !important;
+    }
+
+    .education-section {
+        border-color: #d8e5f1;
+        background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%);
+    }
+
+    .education-section .profile-section-head {
+        align-items: center;
+    }
+
+    .education-section-kicker {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.24rem 0.55rem;
+        border-radius: 999px;
+        background: #edf5fb;
+        color: #456c8f;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.45rem;
+    }
+
+    .profile-settings-main .profile-section.mt-4,
+    .profile-settings-side .profile-section.mt-4 {
+        margin-top: 0.9rem !important;
+    }
+
+    .profile-section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.7rem;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .profile-section-title {
+        margin: 0;
+        font-size: 0.98rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.3;
+    }
+
+    .profile-section-subtitle {
+        color: #64748b;
+        font-size: 0.84rem;
+        line-height: 1.45;
+    }
+
+    .profile-subcard {
+        height: 100%;
+        border: 1px solid #e5eaf1;
+        border-radius: 8px;
+        padding: 0.85rem;
+        background: #ffffff;
+    }
+
+    .profile-subcard-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .profile-mini-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.22rem 0.5rem;
+        border: 1px solid #d7e2ee;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .profile-subcard h5,
+    .profile-section h5 {
+        margin-bottom: 0.75rem !important;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .profile-file-dropzone {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 84px;
+        border: 1px dashed #bfd0e0;
+        border-radius: 8px;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+    }
+
+    .profile-file-dropzone:hover {
+        border-color: #8fb0cd;
+        background: #f4f8fc;
+    }
+
+    .profile-file-dropzone.is-dragover {
+        border-color: #f88500;
+        background: #edf5fb;
+        box-shadow: inset 0 0 0 1px #f88500;
+    }
+
+    .profile-file-dropzone.is-disabled {
+        cursor: default;
+        opacity: 0.75;
+    }
+
+    .profile-file-dropzone .profile-file-input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 2;
+    }
+
+    .profile-file-dropzone-copy {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.18rem;
+        padding: 0.75rem;
+        text-align: center;
+        pointer-events: none;
+    }
+
+    .profile-file-dropzone-title {
+        color: #334155;
+        font-size: 0.82rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .profile-file-dropzone-subtitle {
+        color: #64748b;
+        font-size: 0.75rem;
+        line-height: 1.2;
+    }
+
+    .profile-form .form-label {
+        margin-bottom: 0.35rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        text-transform: none;
+        color: #64748b;
+    }
+
+    .profile-form .form-control,
+    .profile-form .form-select {
+        min-height: 40px;
+        border: 1px solid #cfd8e3;
+        border-radius: 8px;
+        background: #fff;
+        color: #0f172a;
+        box-shadow: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        font-size: 0.92rem;
+        padding: 0.55rem 0.75rem;
+    }
+
+    .profile-form textarea.form-control {
+        min-height: 112px;
+        resize: vertical;
+    }
+
+    .profile-form .form-control:focus,
+    .profile-form .form-select:focus {
+        border-color: #7aa2c8;
+        box-shadow: 0 0 0 0.18rem rgba(122, 162, 200, 0.16);
+    }
+
+    .profile-form.profile-readonly .form-control,
+    .profile-form.profile-readonly .form-select {
+        background: #f8fafc;
+        border-color: #dbe3ec;
+        color: #475569;
+        cursor: default;
+    }
+
+    .profile-checkbox-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
     }
 
     .profile-choice {
-        display: flex;
+        position: relative;
+        display: inline-flex;
         align-items: center;
-        gap: 0.55rem;
-        border: 1px solid #ece7df;
-        border-radius: 10px;
-        padding: 0.7rem 0.85rem;
-        background: #fff9f1;
-    }
-
-    .profile-choice input {
         margin: 0;
     }
 
+    .profile-choice input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .profile-choice span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+        padding: 0.55rem 1rem;
+        border: 1px solid #f0d8b0;
+        border-radius: 6px;
+        background: #f9edd8;
+        color: #b77413;
+        font-size: 0.82rem;
+        line-height: 1;
+        font-weight: 700;
+        white-space: nowrap;
+        transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .profile-choice:hover span {
+        border-color: #e7bf7a;
+        background: #f6e1b9;
+        color: #a86409;
+    }
+
+    .profile-choice input:checked + span {
+        border-color: #f59e0b;
+        background: #f59e0b;
+        color: #ffffff;
+        box-shadow: inset 0 0 0 1px rgba(194, 120, 0, 0.18);
+    }
+
+    .profile-choice input:focus-visible + span {
+        outline: none;
+        box-shadow: 0 0 0 0.18rem rgba(245, 158, 11, 0.18);
+    }
+
+    .profile-form.profile-readonly .profile-choice span {
+        background: #fbf1df;
+        border-color: #ecd9b9;
+        color: #b47a2b;
+    }
+
+    .profile-form.profile-readonly .profile-choice input:checked + span {
+        background: #f3a11a;
+        border-color: #e09310;
+        color: #ffffff;
+    }
+
+    .profile-stack-list {
+        display: grid;
+        gap: 0.8rem;
+    }
+
     .profile-repeat-card {
-        border: 1px solid #ece7df;
-        border-radius: 12px;
-        padding: 1rem;
-        background: #fff;
-        margin-bottom: 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.75rem;
+        background: #ffffff;
+        margin-bottom: 0.75rem;
+        box-shadow: none;
+    }
+
+    .profile-repeat-card.education-row {
+        position: relative;
+        border-color: #d9e6f2;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        box-shadow: 0 8px 18px rgba(79, 125, 168, 0.06);
+        overflow: hidden;
+    }
+
+    .profile-repeat-card.availability-row {
+        border-color: #dbe4ec;
+        background: linear-gradient(180deg, #ffffff 0%, #f9fbfd 100%);
+        box-shadow: 0 6px 16px rgba(51, 65, 85, 0.05);
+    }
+
+    .profile-repeat-card.education-row::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: linear-gradient(180deg, #f78b41 0%, #f88500 100%);
+    }
+
+    .profile-repeat-card.availability-row::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: linear-gradient(180deg, #f78b41 0%, #f88500 100%);
+    }
+
+    .profile-card-topline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.65rem;
+        border-bottom: 1px solid #eaf0f6;
+    }
+
+    .profile-card-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.24rem 0.56rem;
+        border-radius: 999px;
+        background: #e5c38f;
+        color: #a77946;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .availability-row .profile-card-badge {
+        background: #eef2f6;
+        color: #f88500;
+    }
+
+    .profile-card-title {
+        margin: 0;
+        color: rgb(230, 111, 0);
+        font-size: 0.92rem;
+        font-weight: 700;
+    }
+
+    .profile-card-subtitle {
+        margin: 0.18rem 0 0;
+        color: #64748b;
+        font-size: 0.76rem;
+        line-height: 1.35;
+    }
+
+    .education-row-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+        align-items: end;
+    }
+
+    .education-row-grid > div:not(.profile-inline-actions) {
+        padding: 0.15rem 0;
+    }
+
+    .education-row-document {
+        grid-column: 1 / -1;
+        padding-top: 0.15rem;
+    }
+
+    .education-row .profile-card-topline {
+        align-items: flex-start;
+    }
+
+    .education-row .profile-card-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-shrink: 0;
+    }
+
+    .education-row .profile-file-dropzone {
+        min-height: 74px;
+        background: #f7fbff;
+        border-color: #c9dced;
+    }
+
+    .education-row .profile-file-dropzone:hover {
+        background: #eef6fd;
+    }
+
+    .education-row .profile-file-dropzone-title {
+        font-size: 0.78rem;
+    }
+
+    .education-row .profile-file-dropzone-subtitle {
+        font-size: 0.72rem;
+    }
+
+    .education-row .profile-inline-actions .btn-outline-danger {
+        min-width: 88px;
+    }
+
+    .availability-row-grid {
+        display: grid;
+        grid-template-columns: 180px minmax(0, 1fr) 120px;
+        gap: 0.75rem;
+        align-items: start;
+    }
+
+    .availability-row-meta,
+    .education-row-meta {
+        display: none;
+        margin-bottom: 0.4rem;
+    }
+
+    .table-cell-label {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .availability-slot-list {
+        display: grid;
+        gap: 0.45rem;
+        padding: 0.7rem;
+        border: 1px solid #e7eef5;
+        border-radius: 8px;
+        background: #fbfcfe;
+    }
+
+    .slot-row-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 88px;
+        gap: 0.55rem;
+        align-items: end;
+    }
+
+    .profile-inline-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.45rem;
+        height: 100%;
+    }
+
+    .availability-row .profile-inline-actions,
+    .education-row .profile-inline-actions {
+        align-items: flex-start;
+        padding-top: 1.65rem;
     }
 
     .profile-repeat-card .slot-row + .slot-row {
-        margin-top: 0.75rem;
+        margin-top: 0.55rem;
     }
 
     .profile-photo-preview {
-        width: 96px;
-        height: 96px;
+        width: 84px;
+        height: 84px;
         object-fit: cover;
+        border-radius: 8px;
     }
 
     .profile-signature-pad {
         width: 100%;
-        min-height: 180px;
-        border: 1px solid #d9d2c7;
-        border-radius: 12px;
-        background: linear-gradient(180deg, #fffdf8 0%, #fff7eb 100%);
+        min-height: 160px;
+        border: 1px solid #d6dee8;
+        border-radius: 8px;
+        background: #f8fafc;
         touch-action: none;
     }
+
+    .profile-signature-pad.disabled-canvas {
+        opacity: 0.65;
+    }
+
+    .profile-form .form-text,
+    .profile-form .small {
+        color: #64748b;
+        font-size: 0.78rem;
+    }
+
+    .profile-form .invalid-feedback,
+    .profile-form [data-feedback] {
+        color: #dc3545;
+    }
+
+    .profile-form-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        padding-top: 0.95rem;
+        border-top: 1px solid #e5eaf1;
+    }
+
+    .profile-message {
+        flex: 1 1 auto;
+    }
+
+    .profile-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-shrink: 0;
+    }
+
+    .profile-form .btn {
+        min-height: 38px;
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.88rem;
+    }
+
+    .profile-form .btn-primary {
+        border-color: #1d4f7a;
+        background: #1f5f95;
+    }
+
+    .profile-form .btn-outline-primary,
+    .profile-form .btn-outline-secondary,
+    .profile-form .btn-outline-danger {
+        background: #fff;
+    }
+
+    .profile-form .btn-outline-primary {
+        border-color: #b8c6d6;
+        color: #334155;
+    }
+
+    .profile-form .btn-outline-secondary {
+        border-color: #cbd5e1;
+        color: #475569;
+    }
+
+    .profile-form .btn-outline-danger {
+        border-color: #e5c7c7;
+        color: #b45353;
+    }
+
+    .profile-form .row {
+        --bs-gutter-x: 0.9rem;
+        --bs-gutter-y: 0.7rem;
+    }
+
+    .profile-message .alert {
+        margin-bottom: 0;
+        padding: 0.65rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.88rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .profile-page-head,
+        .profile-form-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .profile-page-meta,
+        .profile-actions {
+            justify-content: flex-start;
+        }
+
+        .profile-form {
+            padding: 0.9rem;
+        }
+
+        .profile-section {
+            padding: 0.85rem;
+        }
+
+        .profile-settings-main,
+        .profile-settings-side {
+            gap: 0.9rem;
+        }
+
+        .education-row-grid,
+        .availability-row-grid,
+        .slot-row-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .education-row-document {
+            grid-column: auto;
+        }
+
+        .profile-repeat-card.education-row::before {
+            width: 100%;
+            height: 3px;
+            inset: 0 0 auto 0;
+        }
+
+        .profile-repeat-card.availability-row::before {
+            width: 100%;
+            height: 3px;
+            inset: 0 0 auto 0;
+        }
+
+        .availability-row-meta,
+        .education-row-meta {
+            display: block;
+        }
+
+        .profile-inline-actions {
+            justify-content: flex-start;
+            padding-top: 0;
+        }
+
+        .profile-checkbox-grid {
+            gap: 0.45rem;
+        }
+
+        .profile-choice span {
+            min-height: 34px;
+            padding-inline: 0.85rem;
+        }
+    }
+
+    #astrologer-profile-form button#clear-profile-signature {
+    width: auto;
+}
+
+.profile-file-dropzone-copy{ color:#eb0a0a}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    let isEditMode = false;
+    const editBtn = document.getElementById('edit-profile-btn');
+    const modeBadge = document.getElementById('profile-mode-badge');
+    const locationStateUrl = '/api/v1/get-state-list';
+    const locationCityUrl = '/api/v1/get-city-list';
+
+    function setFormEditable(editable) {
+        const form = document.getElementById('astrologer-profile-form');
+        isEditMode = editable;
+        form.classList.toggle('profile-readonly', !editable);
+
+        form.querySelectorAll('input, textarea, select').forEach(function (el) {
+            if (el.type === 'hidden') return;
+            if (el.type === 'file') {
+                el.disabled = !editable;
+            } else if (el.type === 'checkbox' || el.type === 'radio') {
+                el.disabled = !editable;
+            } else {
+                el.readOnly = !editable;
+                el.disabled = !editable;
+            }
+        });
+        // Action buttons inside repeaters
+        form.querySelectorAll('.remove-education-row, .add-slot-row, .remove-slot-row, .remove-availability-row, #add-education-row, #add-availability-row, #clear-profile-signature').forEach(function (el) {
+            el.disabled = !editable;
+        });
+        form.querySelectorAll('[data-file-dropzone]').forEach(function (dropzone) {
+            updateDropzoneState(dropzone);
+        });
+        // Signature pad
+        const signatureCanvas = document.getElementById('profile-signature-pad');
+        if (signatureCanvas) {
+            signatureCanvas.style.pointerEvents = editable ? 'auto' : 'none';
+            signatureCanvas.classList.toggle('disabled-canvas', !editable);
+        }
+
+        const saveBtn = document.getElementById('astrologer-profile-submit');
+        if (saveBtn) {
+            saveBtn.classList.toggle('d-none', !editable);
+        }
+
+        if (editBtn) {
+            editBtn.classList.toggle('d-none', editable);
+        }
+
+        if (modeBadge) {
+            modeBadge.textContent = editable ? 'Edit Mode' : 'View Mode';
+        }
+    }
+
+    if (editBtn) {
+        editBtn.addEventListener('click', function () {
+            setFormEditable(true);
+        });
+    }
+
     const initialProfile = @json($profile);
     const updateUrl = @json(route('astrologer.profile.update'));
     const csrfToken = document.querySelector('#astrologer-profile-form input[name="_token"]').value;
@@ -270,13 +1184,107 @@ document.addEventListener('DOMContentLoaded', function () {
     const availabilityRows = document.getElementById('availability-rows');
     const submitButton = document.getElementById('astrologer-profile-submit');
     const form = document.getElementById('astrologer-profile-form');
+    const stateSelect = document.getElementById('profile-state-select');
+    const citySelect = document.getElementById('profile-city-select');
     const signatureCanvas = document.getElementById('profile-signature-pad');
-    const signatureInput = form.querySelector('[name="astrologer_signature_image"]');
+    const signatureInput = form.querySelector('[name="signature"]');
     const clearSignatureButton = document.getElementById('clear-profile-signature');
     const photoInput = form.querySelector('[name="photo"]');
     const aadharInput = form.querySelector('[name="aadhar_document"]');
     const panInput = form.querySelector('[name="pan_document"]');
     const maxUploadBytes = 1024 * 1024;
+
+    function populateSelect(select, items, placeholder, selectedValue) {
+        if (!select) {
+            return;
+        }
+
+        const normalizedSelectedValue = selectedValue === null || selectedValue === undefined ? '' : String(selectedValue);
+        let options = `<option value="">${placeholder}</option>`;
+
+        if (Array.isArray(items)) {
+            items.forEach(function (item) {
+                const value = item && item.id !== undefined && item.id !== null ? String(item.id) : '';
+                const label = item && item.name ? String(item.name) : value;
+                const selected = value !== '' && value === normalizedSelectedValue ? ' selected' : '';
+                options += `<option value="${value}"${selected}>${label}</option>`;
+            });
+        }
+
+        select.innerHTML = options;
+    }
+
+    function loadCities(stateId, selectedCityId) {
+        if (!citySelect) {
+            return Promise.resolve();
+        }
+
+        if (!stateId) {
+            populateSelect(citySelect, [], 'Select City', '');
+            return Promise.resolve();
+        }
+
+        citySelect.innerHTML = '<option value="">Loading cities...</option>';
+
+        return fetch(locationCityUrl, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ state_id: stateId }),
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Unable to load cities.');
+                }
+
+                return response.json();
+            })
+            .then(function (result) {
+                populateSelect(citySelect, result && Array.isArray(result.data) ? result.data : [], 'Select City', selectedCityId);
+            })
+            .catch(function () {
+                citySelect.innerHTML = '<option value="">Unable to load cities</option>';
+            });
+    }
+
+    function loadStates(selectedStateId, selectedCityId) {
+        if (!stateSelect) {
+            return Promise.resolve();
+        }
+
+        stateSelect.innerHTML = '<option value="">Loading states...</option>';
+
+        return fetch(locationStateUrl, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ country_id: 101 }),
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Unable to load states.');
+                }
+
+                return response.json();
+            })
+            .then(function (result) {
+                const selectedValue = selectedStateId || stateSelect.dataset.selected || '';
+                populateSelect(stateSelect, result && Array.isArray(result.data) ? result.data : [], 'Select State', selectedValue);
+                return loadCities(selectedValue, selectedCityId || citySelect.dataset.selected || '');
+            })
+            .catch(function () {
+                stateSelect.innerHTML = '<option value="">Unable to load states</option>';
+                if (citySelect) {
+                    citySelect.innerHTML = '<option value="">Select City</option>';
+                }
+            });
+    }
 
     function normalizeSelectionValues(values) {
         return new Set((Array.isArray(values) ? values : []).map(function (value) {
@@ -302,27 +1310,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return `
             <div class="profile-repeat-card education-row">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
+                <div class="profile-card-topline">
+                    <div>
+                        <div class="profile-card-badge">Education Record</div>
+                        <p class="profile-card-subtitle">Capture the qualification, institution, graduation year, and supporting document.</p>
+                    </div>
+                    <div class="profile-card-actions">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-education-row">Remove</button>
+                    </div>
+                </div>
+                <div class="education-row-meta d-md-none">
+                    <span class="table-cell-label">Education Entry</span>
+                </div>
+                <div class="education-row-grid">
+                    <div>
                         <label class="form-label">Degree</label>
                         <input type="text" class="form-control" data-field="degree" value="${data.degree || ''}">
                     </div>
-                    <div class="col-md-3">
+                    <div>
                         <label class="form-label">Institution</label>
                         <input type="text" class="form-control" data-field="institution" value="${data.institution || ''}">
                     </div>
-                    <div class="col-md-2">
+                    <div>
                         <label class="form-label">Year</label>
                         <input type="number" class="form-control" data-field="year" value="${data.year || ''}">
                     </div>
-                    <div class="col-md-3">
+                    <div class="education-row-document">
                         <label class="form-label">Education Document</label>
-                        <input type="file" class="form-control" data-field="document" accept=".pdf,image/jpeg,image/png,image/jpg">
+                        <div class="profile-file-dropzone" data-file-dropzone>
+                            <input type="file" class="form-control profile-file-input" data-field="document" accept=".pdf,image/jpeg,image/png,image/jpg">
+                            <div class="profile-file-dropzone-copy">
+                                <span class="profile-file-dropzone-title">Drop document here</span>
+                                <span class="profile-file-dropzone-subtitle">or click to browse</span>
+                            </div>
+                        </div>
                         <div class="form-text">Accepted: PDF, JPG, PNG. Max 1MB.</div>
                         <div class="small mt-1" data-role="education-document-link">${documentLink}</div>
-                    </div>
-                    <div class="col-md-1 text-end">
-                        <button type="button" class="btn btn-outline-danger btn-sm remove-education-row">Remove</button>
                     </div>
                 </div>
             </div>`;
@@ -332,16 +1355,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = slot || { from: '', to: '' };
 
         return `
-            <div class="row g-2 slot-row align-items-end">
-                <div class="col-md-5">
+            <div class="slot-row slot-row-grid">
+                <div>
                     <label class="form-label">From</label>
                     <input type="time" class="form-control" data-field="from" value="${data.from || ''}">
                 </div>
-                <div class="col-md-5">
+                <div>
                     <label class="form-label">To</label>
                     <input type="time" class="form-control" data-field="to" value="${data.to || ''}">
                 </div>
-                <div class="col-md-2 text-end">
+                <div class="profile-inline-actions">
                     <button type="button" class="btn btn-outline-danger btn-sm remove-slot-row">Remove</button>
                 </div>
             </div>`;
@@ -357,28 +1380,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return `
             <div class="profile-repeat-card availability-row">
-                <div class="row g-3 align-items-end mb-3">
-                    <div class="col-md-5">
+                <div class="profile-card-topline">
+                    <div>
+                        <div class="profile-card-badge">Availability Block</div>
+                        <p class="profile-card-subtitle">Set a day and define one or more consultation time slots.</p>
+                    </div>
+                </div>
+                <div class="availability-row-meta d-md-none">
+                    <span class="table-cell-label">Availability Entry</span>
+                </div>
+                <div class="availability-row-grid">
+                    <div>
                         <label class="form-label">Day</label>
                         <select class="form-select" data-field="day">${options}</select>
                     </div>
-                    <div class="col-md-7 text-end">
-                        <button type="button" class="btn btn-outline-secondary btn-sm add-slot-row">Add Slot</button>
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Time Slots</label>
+                            <button type="button" class="btn btn-outline-secondary btn-sm add-slot-row">Add Slot</button>
+                        </div>
+                        <div class="availability-slot-list availability-slots">${slots.map(slotTemplate).join('')}</div>
+                    </div>
+                    <div class="profile-inline-actions">
                         <button type="button" class="btn btn-outline-danger btn-sm remove-availability-row">Remove Day</button>
                     </div>
                 </div>
-                <div class="availability-slots">${slots.map(slotTemplate).join('')}</div>
             </div>`;
     }
 
     function renderEducation(items) {
         const rows = Array.isArray(items) && items.length ? items : [{ degree: '', institution: '', year: '' }];
         educationRows.innerHTML = rows.map(educationRowTemplate).join('');
+        bindAllDropzones(educationRows);
+        setFormEditable(isEditMode);
     }
 
     function renderAvailabilities(items) {
         const rows = Array.isArray(items) && items.length ? items : [{ day: 'Monday', slots: [{ from: '', to: '' }] }];
         availabilityRows.innerHTML = rows.map(availabilityRowTemplate).join('');
+        setFormEditable(isEditMode);
     }
 
     function clearErrors() {
@@ -529,6 +1569,113 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function updateDropzoneState(dropzone) {
+        const input = dropzone.querySelector('input[type="file"]');
+        if (!input) {
+            return;
+        }
+
+        const title = dropzone.querySelector('.profile-file-dropzone-title');
+        const subtitle = dropzone.querySelector('.profile-file-dropzone-subtitle');
+        const file = input.files && input.files[0] ? input.files[0] : null;
+
+        dropzone.classList.toggle('is-disabled', input.disabled);
+
+        if (file) {
+            if (title) {
+                title.textContent = file.name;
+            }
+            if (subtitle) {
+                subtitle.textContent = 'Click or drop another file to replace';
+            }
+            return;
+        }
+
+        if (title && title.dataset.defaultText) {
+            title.textContent = title.dataset.defaultText;
+        }
+
+        if (subtitle && subtitle.dataset.defaultText) {
+            subtitle.textContent = subtitle.dataset.defaultText;
+        }
+    }
+
+    function bindDropzone(dropzone) {
+        if (!dropzone || dropzone.dataset.boundDropzone === 'true') {
+            return;
+        }
+
+        const input = dropzone.querySelector('input[type="file"]');
+        const title = dropzone.querySelector('.profile-file-dropzone-title');
+        const subtitle = dropzone.querySelector('.profile-file-dropzone-subtitle');
+
+        if (!input) {
+            return;
+        }
+
+        dropzone.dataset.boundDropzone = 'true';
+
+        if (title && !title.dataset.defaultText) {
+            title.dataset.defaultText = title.textContent;
+        }
+
+        if (subtitle && !subtitle.dataset.defaultText) {
+            subtitle.dataset.defaultText = subtitle.textContent;
+        }
+
+        dropzone.addEventListener('click', function () {
+            if (!input.disabled) {
+                input.click();
+            }
+        });
+
+        ['dragenter', 'dragover'].forEach(function (eventName) {
+            dropzone.addEventListener(eventName, function (event) {
+                if (input.disabled) {
+                    return;
+                }
+
+                event.preventDefault();
+                dropzone.classList.add('is-dragover');
+            });
+        });
+
+        ['dragleave', 'dragend', 'drop'].forEach(function (eventName) {
+            dropzone.addEventListener(eventName, function (event) {
+                event.preventDefault();
+                dropzone.classList.remove('is-dragover');
+            });
+        });
+
+        dropzone.addEventListener('drop', function (event) {
+            if (input.disabled) {
+                return;
+            }
+
+            const files = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files : null;
+            if (!files || !files.length) {
+                return;
+            }
+
+            const transfer = new DataTransfer();
+            transfer.items.add(files[0]);
+            input.files = transfer.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
+        input.addEventListener('change', function () {
+            updateDropzoneState(dropzone);
+        });
+
+        updateDropzoneState(dropzone);
+    }
+
+    function bindAllDropzones(scope) {
+        (scope || document).querySelectorAll('[data-file-dropzone]').forEach(function (dropzone) {
+            bindDropzone(dropzone);
+        });
+    }
+
     function validateFileSize(input, label) {
         const file = input.files && input.files[0] ? input.files[0] : null;
         if (!file) {
@@ -576,8 +1723,92 @@ document.addEventListener('DOMContentLoaded', function () {
             context.fillStyle = '#fffdf8';
             context.fillRect(0, 0, width, 180);
             context.drawImage(image, 0, 0, width, 180);
+            signatureHasContent = true;
+
+            if (String(dataUrl).startsWith('data:')) {
+                signatureInput.value = dataUrl;
+            }
         };
         image.src = dataUrl;
+    }
+
+    function loadSignatureAsBase64(signatureValue) {
+        if (!signatureValue) {
+            return Promise.resolve('');
+        }
+
+        if (signatureValue.startsWith('data:')) {
+            signatureInput.value = signatureValue;
+            signatureHasContent = true;
+            return Promise.resolve(signatureValue);
+        }
+
+        return fetch(signatureValue, {
+            credentials: 'same-origin',
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Unable to load signature image.');
+                }
+
+                return response.blob();
+            })
+            .then(blobToDataUrl)
+            .then(function (dataUrl) {
+                signatureInput.value = dataUrl;
+                signatureHasContent = true;
+                renderSignature(dataUrl);
+                return dataUrl;
+            })
+            .catch(function () {
+                return '';
+            });
+    }
+
+    function blobToDataUrl(blob) {
+        return new Promise(function (resolve, reject) {
+            const reader = new FileReader();
+            reader.onloadend = function () {
+                if (typeof reader.result === 'string') {
+                    resolve(reader.result);
+                    return;
+                }
+
+                reject(new Error('Unable to convert signature to base64.'));
+            };
+            reader.onerror = function () {
+                reject(new Error('Unable to read signature file.'));
+            };
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    function ensureSignatureBase64() {
+        return signatureHydrationPromise.then(function () {
+            const signatureValue = signatureInput.value.trim();
+
+            if (!signatureHasContent && signatureValue === '') {
+                return '';
+            }
+
+            if (signatureValue.startsWith('data:')) {
+                return signatureValue;
+            }
+
+            if (signatureHasContent) {
+                const synced = syncSignatureInputFromCanvas() ? signatureInput.value.trim() : '';
+                if (synced.startsWith('data:')) {
+                    return synced;
+                }
+            }
+
+            if (signatureValue !== '') {
+                signatureHydrationPromise = loadSignatureAsBase64(signatureValue);
+                return signatureHydrationPromise;
+            }
+
+            return '';
+        });
     }
 
     function clearSignaturePad() {
@@ -585,7 +1816,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const width = signatureCanvas.getBoundingClientRect().width;
         context.fillStyle = '#fffdf8';
         context.fillRect(0, 0, width, 180);
+        signatureHasContent = false;
         signatureInput.value = '';
+        signatureHydrationPromise = Promise.resolve('');
     }
 
     function pointFromEvent(event) {
@@ -602,13 +1835,46 @@ document.addEventListener('DOMContentLoaded', function () {
     hydrateCheckboxes('input[name="skills[]"]', initialProfile.skills || []);
     renderEducation(initialProfile.education || []);
     renderAvailabilities(initialProfile.availabilities || []);
+    loadStates(initialProfile.state_id || '', initialProfile.city_id || '');
     bindFileLink(photoInput, 'photo-current-link', 'photo-current-link-text', 'No photo uploaded yet.', 'View selected photo');
     bindFileLink(aadharInput, 'aadhar-current-link', 'aadhar-current-link-text', 'No Aadhaar document uploaded yet.', 'View selected Aadhaar document');
     bindFileLink(panInput, 'pan-current-link', 'pan-current-link-text', 'No PAN document uploaded yet.', 'View selected PAN document');
-    resizeCanvas();
-
+    bindAllDropzones(form);
     let isDrawing = false;
     let lastPoint = null;
+    let signatureHasContent = Boolean(signatureInput.value && signatureInput.value.trim());
+    let signatureHydrationPromise = Promise.resolve(signatureInput.value.trim());
+
+    if (signatureHasContent) {
+        signatureHydrationPromise = loadSignatureAsBase64(signatureInput.value.trim());
+    }
+
+    resizeCanvas();
+    signatureHydrationPromise.then(function (signatureValue) {
+        if (signatureValue) {
+            renderSignature(signatureValue);
+            return;
+        }
+
+        if (signatureInput.value) {
+            renderSignature(signatureInput.value);
+        }
+    });
+    setFormEditable(false);
+
+    function syncSignatureInputFromCanvas() {
+        if (!signatureHasContent) {
+            signatureInput.value = '';
+            return false;
+        }
+
+        try {
+            signatureInput.value = signatureCanvas.toDataURL('image/png');
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
 
     signatureCanvas.addEventListener('mousedown', function (event) {
         isDrawing = true;
@@ -627,7 +1893,8 @@ document.addEventListener('DOMContentLoaded', function () {
         context.lineTo(nextPoint.x, nextPoint.y);
         context.stroke();
         lastPoint = nextPoint;
-        signatureInput.value = signatureCanvas.toDataURL('image/png');
+        signatureHasContent = true;
+        syncSignatureInputFromCanvas();
     });
 
     ['mouseup', 'mouseleave'].forEach(function (eventName) {
@@ -656,7 +1923,8 @@ document.addEventListener('DOMContentLoaded', function () {
         context.lineTo(nextPoint.x, nextPoint.y);
         context.stroke();
         lastPoint = nextPoint;
-        signatureInput.value = signatureCanvas.toDataURL('image/png');
+        signatureHasContent = true;
+        syncSignatureInputFromCanvas();
     }, { passive: false });
 
     ['touchend', 'touchcancel'].forEach(function (eventName) {
@@ -670,14 +1938,23 @@ document.addEventListener('DOMContentLoaded', function () {
         clearSignaturePad();
     });
 
+    if (stateSelect) {
+        stateSelect.addEventListener('change', function () {
+            loadCities(stateSelect.value, '');
+        });
+    }
+
     window.addEventListener('resize', resizeCanvas);
 
     document.getElementById('add-education-row').addEventListener('click', function () {
         educationRows.insertAdjacentHTML('beforeend', educationRowTemplate());
+        bindAllDropzones(educationRows);
+        setFormEditable(isEditMode);
     });
 
     document.getElementById('add-availability-row').addEventListener('click', function () {
         availabilityRows.insertAdjacentHTML('beforeend', availabilityRowTemplate());
+        setFormEditable(isEditMode);
     });
 
     educationRows.addEventListener('click', function (event) {
@@ -699,6 +1976,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (event.target.classList.contains('add-slot-row')) {
             event.target.closest('.availability-row').querySelector('.availability-slots').insertAdjacentHTML('beforeend', slotTemplate());
+            setFormEditable(isEditMode);
         }
 
         if (event.target.classList.contains('remove-slot-row')) {
@@ -712,6 +1990,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('astrologer-profile-form').addEventListener('submit', function (event) {
         event.preventDefault();
+
+        if (submitButton.classList.contains('d-none')) {
+            return false;
+        }
+
         clearErrors();
 
         const filesAreValid = [
@@ -732,16 +2015,35 @@ document.addEventListener('DOMContentLoaded', function () {
         const availabilities = collectAvailabilities();
         const formData = new FormData();
         formData.append('_method', 'PATCH');
-        formData.append('first_name', document.querySelector('[name="first_name"]').value.trim());
-        formData.append('last_name', document.querySelector('[name="last_name"]').value.trim());
-        formData.append('email', document.querySelector('[name="email"]').value.trim());
-        formData.append('mobile_no', document.querySelector('[name="mobile_no"]').value.trim());
-        formData.append('display_name', document.querySelector('[name="display_name"]').value.trim());
-        formData.append('short_intro', document.querySelector('[name="short_intro"]').value.trim());
-        formData.append('details_bio', document.querySelector('[name="details_bio"]').value.trim());
-        formData.append('experience', document.querySelector('[name="experience"]').value);
-        formData.append('rate', document.querySelector('[name="rate"]').value);
-        formData.append('duration', document.querySelector('[name="duration"]').value);
+        formData.append('first_name', form.querySelector('[name="first_name"]').value.trim());
+        formData.append('last_name', form.querySelector('[name="last_name"]').value.trim());
+        formData.append('email', form.querySelector('[name="email"]').value.trim());
+        formData.append('mobile_no', form.querySelector('[name="mobile_no"]').value.trim());
+        formData.append('display_name', form.querySelector('[name="display_name"]').value.trim());
+        formData.append('short_intro', form.querySelector('[name="short_intro"]').value.trim());
+        formData.append('details_bio', form.querySelector('[name="details_bio"]').value.trim());
+        formData.append('address', form.querySelector('[name="address"]').value.trim());
+        formData.append('state_id', form.querySelector('[name="state_id"]').value);
+        formData.append('city_id', form.querySelector('[name="city_id"]').value);
+        formData.append('pin_code', form.querySelector('[name="pin_code"]').value.trim());
+        formData.append('consultation_mode', form.querySelector('[name="consultation_mode"]').value);
+        formData.append('ac_holder_name', form.querySelector('[name="ac_holder_name"]').value.trim());
+        formData.append('bank_name', form.querySelector('[name="bank_name"]').value.trim());
+        formData.append('ac_number', form.querySelector('[name="ac_number"]').value.trim());
+        formData.append('ifsc_code', form.querySelector('[name="ifsc_code"]').value.trim());
+        formData.append('branch_name', form.querySelector('[name="branch_name"]').value.trim());
+        formData.append('upi_id', form.querySelector('[name="upi_id"]').value.trim());
+        formData.append('applicant_name', form.querySelector('[name="applicant_name"]').value.trim());
+        formData.append('experience', form.querySelector('[name="experience"]').value);
+        formData.append('rate', form.querySelector('[name="rate"]').value);
+        formData.append('duration', form.querySelector('[name="duration"]').value);
+        formData.append('aadhar_number', form.querySelector('[name="aadhar_number"]').value.trim());
+        formData.append('pan_number', form.querySelector('[name="pan_number"]').value.trim());
+
+        const passwordValue = form.querySelector('[name="password"]').value.trim();
+        if (passwordValue) {
+            formData.append('password', passwordValue);
+        }
 
         collectSelection('languages[]').forEach(function (value) {
             formData.append('languages[]', value);
@@ -781,11 +2083,12 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('pan_document', panInput.files[0]);
         }
 
-        if (signatureInput.value.trim()) {
-            formData.append('astrologer_signature_image', signatureInput.value.trim());
-        }
+        ensureSignatureBase64().then(function (signatureValue) {
+            if (signatureValue) {
+                formData.append('signature', signatureValue);
+            }
 
-        fetch(updateUrl, {
+            return fetch(updateUrl, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -793,6 +2096,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-Requested-With': 'XMLHttpRequest',
             },
             body: formData,
+            });
         })
             .then(function (response) {
                 return response.json().then(function (data) {
@@ -804,6 +2108,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (result.ok && result.data.success) {
                     showMessage('success', result.data.message || 'Profile updated successfully.');
+                    setFormEditable(false);
                     return;
                 }
 

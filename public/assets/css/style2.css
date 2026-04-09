@@ -592,7 +592,7 @@ button.btn.btn-outline-secondary.btn-sm {
     background: linear-gradient(135deg, #ff9800, #f57c00);
     border: navajowhite;
     color: #fff;
-    width: 70px;
+    /* width: 70px; */
 }
 
 button.btn.btn-primary.btn-sm {background: linear-gradient(135deg, #ff9800, #f57c00);border: none;width: 70px;float: right;}
