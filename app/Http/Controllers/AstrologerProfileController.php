@@ -377,7 +377,7 @@ class AstrologerProfileController extends Controller
             'photo_url' => $this->resolveAssetValue($profile, ['photo_url', 'photo', 'profile_photo', 'image', 'user.photo', 'astrologer.photo']),
             'aadhar_document_url' => $this->resolveAssetValue($profile, ['aadhar_document_url', 'aadhar_document', 'aadhaar_document', 'user.aadhar_document', 'astrologer.aadhar_document']),
             'pan_document_url' => $this->resolveAssetValue($profile, ['pan_document_url', 'pan_document', 'user.pan_document', 'astrologer.pan_document']),
-            'signature' => $this->resolveAssetValue($profile, ['signature_url', 'astrologer_signature_image', 'signature_image', 'signature', 'user.signature', 'astrologer.signature', 'astrologer.signature_url']),
+            'signature' => $this->resolveAssetValue($profile, ['astrologer_signature_image', 'signature_image', 'signature', 'user.signature', 'astrologer.signature', 'signature_url', 'astrologer.signature_url']),
             'languages' => $this->normalizeSelectionValues($profile['languages'] ?? data_get($profile, 'astrologer.languages') ?? []),
             'skills' => $this->normalizeSelectionValues($profile['skills'] ?? data_get($profile, 'astrologer.skills') ?? []),
             'education' => array_values(array_map(function ($item, $index) use ($educationDocuments) {

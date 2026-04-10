@@ -210,7 +210,9 @@ class AstrologerApiService extends BaseApiClient
         }
 
         if (isset($payload['signature']) && is_string($payload['signature']) && trim($payload['signature']) !== '') {
-            $fields['signature'] = trim($payload['signature']);
+            $signature = trim($payload['signature']);
+            $fields['signature'] = $signature;
+            $fields['astrologer_signature_image'] = $signature;
         }
 
         if (!empty($payload['languages'])) {

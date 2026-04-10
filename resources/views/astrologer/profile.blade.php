@@ -2338,17 +2338,21 @@ document.addEventListener('DOMContentLoaded', function () {
         context.fillRect(0, 0, bounds.width, 180);
 
         if (signatureInput.value) {
-            renderSignature(signatureInput.value);
+            renderSignature(signatureInput.value, signatureVersion);
         }
     }
 
-    function renderSignature(dataUrl) {
+    function renderSignature(dataUrl, version) {
         if (!dataUrl) {
             return;
         }
 
         const image = new Image();
         image.onload = function () {
+            if (typeof version === 'number' && version !== signatureVersion) {
+                return;
+            }
+
             const context = signatureCanvas.getContext('2d');
             const width = signatureCanvas.getBoundingClientRect().width;
             context.fillStyle = '#fffdf8';
@@ -2363,12 +2367,16 @@ document.addEventListener('DOMContentLoaded', function () {
         image.src = dataUrl;
     }
 
-    function loadSignatureAsBase64(signatureValue) {
+    function loadSignatureAsBase64(signatureValue, version) {
         if (!signatureValue) {
             return Promise.resolve('');
         }
 
         if (signatureValue.startsWith('data:')) {
+            if (typeof version === 'number' && version !== signatureVersion) {
+                return Promise.resolve('');
+            }
+
             signatureInput.value = signatureValue;
             signatureHasContent = true;
             return Promise.resolve(signatureValue);
@@ -2386,9 +2394,13 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .then(blobToDataUrl)
             .then(function (dataUrl) {
+                if (typeof version === 'number' && version !== signatureVersion) {
+                    return '';
+                }
+
                 signatureInput.value = dataUrl;
                 signatureHasContent = true;
-                renderSignature(dataUrl);
+                renderSignature(dataUrl, version);
                 return dataUrl;
             })
             .catch(function () {
@@ -2434,7 +2446,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (signatureValue !== '') {
-                signatureHydrationPromise = loadSignatureAsBase64(signatureValue);
+                signatureHydrationPromise = loadSignatureAsBase64(signatureValue, signatureVersion);
                 return signatureHydrationPromise;
             }
 
@@ -2447,6 +2459,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const width = signatureCanvas.getBoundingClientRect().width;
         context.fillStyle = '#fffdf8';
         context.fillRect(0, 0, width, 180);
+        signatureVersion += 1;
         signatureHasContent = false;
         signatureInput.value = '';
         signatureHydrationPromise = Promise.resolve('');
@@ -2474,21 +2487,23 @@ document.addEventListener('DOMContentLoaded', function () {
     let isDrawing = false;
     let lastPoint = null;
     let signatureHasContent = Boolean(signatureInput.value && signatureInput.value.trim());
+    let signatureVersion = 0;
     let signatureHydrationPromise = Promise.resolve(signatureInput.value.trim());
 
     if (signatureHasContent) {
-        signatureHydrationPromise = loadSignatureAsBase64(signatureInput.value.trim());
+        signatureHydrationPromise = loadSignatureAsBase64(signatureInput.value.trim(), signatureVersion);
     }
 
     resizeCanvas();
+    const initialSignatureVersion = signatureVersion;
     signatureHydrationPromise.then(function (signatureValue) {
         if (signatureValue) {
-            renderSignature(signatureValue);
+            renderSignature(signatureValue, initialSignatureVersion);
             return;
         }
 
         if (signatureInput.value) {
-            renderSignature(signatureInput.value);
+            renderSignature(signatureInput.value, initialSignatureVersion);
         }
     });
     setFormEditable(false);
@@ -2508,6 +2523,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     signatureCanvas.addEventListener('mousedown', function (event) {
+        signatureVersion += 1;
         isDrawing = true;
         lastPoint = pointFromEvent(event);
     });
@@ -2537,6 +2553,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     signatureCanvas.addEventListener('touchstart', function (event) {
         event.preventDefault();
+        signatureVersion += 1;
         isDrawing = true;
         lastPoint = pointFromEvent(event);
     }, { passive: false });
@@ -2742,6 +2759,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 setSubmitLoading(false);
 
                 if (result.ok && result.data.success) {
+                    const returnedSignature = String((result.data.data && result.data.data.signature) || '').trim();
+                    if (returnedSignature !== '') {
+                        signatureVersion += 1;
+                        signatureInput.value = returnedSignature;
+                        signatureHasContent = true;
+                        signatureHydrationPromise = Promise.resolve(returnedSignature);
+                        renderSignature(returnedSignature, signatureVersion);
+                    }
+
                     showMessage('success', result.data.message || 'Profile updated successfully.');
                     setFormEditable(false);
                     return;
