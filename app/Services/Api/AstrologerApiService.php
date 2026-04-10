@@ -177,6 +177,16 @@ class AstrologerApiService extends BaseApiClient
         ];
     }
 
+    public function getLanguages(): array
+    {
+        return $this->fetchSelectionOptions('languages', 'is_active');
+    }
+
+    public function getSkills(): array
+    {
+        return $this->fetchSelectionOptions('skills', 'status');
+    }
+
     public function updateAuthenticatedProfile(array $payload, ?string $token = null, string $method = 'PATCH'): array
     {
         $http = $this->buildApiRequest($token);
@@ -297,6 +307,85 @@ class AstrologerApiService extends BaseApiClient
         }
 
         return $request;
+    }
+
+    private function fetchSelectionOptions(string $endpoint, string $activeKey): array
+    {
+        $response = $this->buildApiRequest()->get($endpoint);
+
+        if (!$response->successful()) {
+            return [];
+        }
+
+        $result = $response->json();
+
+        if (!is_array($result)) {
+            return [];
+        }
+
+        $items = array_is_list($result)
+            ? $result
+            : ($result['data'] ?? $result[$endpoint] ?? []);
+
+        if (!is_array($items)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(function ($item) use ($activeKey) {
+            if (!is_array($item)) {
+                return null;
+            }
+
+            $name = trim((string) ($item['name'] ?? ''));
+            if ($name === '') {
+                return null;
+            }
+
+            if (array_key_exists($activeKey, $item) && !$this->isTruthyFlag($item[$activeKey])) {
+                return null;
+            }
+
+            if (isset($item['id']) && is_numeric($item['id'])) {
+                $item['id'] = (int) $item['id'];
+            }
+
+            if (isset($item['sort_order']) && is_numeric($item['sort_order'])) {
+                $item['sort_order'] = (int) $item['sort_order'];
+            }
+
+            if (array_key_exists($activeKey, $item)) {
+                $item[$activeKey] = $this->isTruthyFlag($item[$activeKey]);
+            }
+
+            $item['name'] = $name;
+
+            if (isset($item['code'])) {
+                $item['code'] = trim((string) $item['code']);
+            }
+
+            if (isset($item['slug'])) {
+                $item['slug'] = trim((string) $item['slug']);
+            }
+
+            return $item;
+        }, $items)));
+    }
+
+    private function isTruthyFlag(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (int) $value === 1;
+        }
+
+        if (is_string($value)) {
+            return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
+        }
+
+        return false;
     }
 
     private function stripUploadedFilesFromPayload(mixed $value): mixed

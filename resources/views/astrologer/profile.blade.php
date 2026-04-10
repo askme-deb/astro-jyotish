@@ -164,6 +164,7 @@
                                         <h5 class="mb-0">Languages</h5>
 
                                     </div>
+
                                     <div class="profile-checkbox-grid" id="language-options">
                                         @foreach($languageOptions as $option)
                                             <label class="profile-choice">
