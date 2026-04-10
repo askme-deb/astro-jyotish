@@ -592,7 +592,7 @@
             <div class="booking-details-row">
                 <div class="booking-details-col">
                     <div class="booking-details-label mb-2"><i class="fa-solid fa-user-astronaut me-1"></i> Astrologer Details</div>
-                    <div class="booking-details-value"><b>Name :</b> {{ $booking['astrologer']['name'] ?? '-' }}</div>
+                    <div class="booking-details-value"><b>Name :</b> {{ $booking['astrologer']['display_name'] ?? '-' }}</div>
                     <div class="booking-details-value"><b>Experience :</b> {{ $booking['astrologer']['experience'] ?? '-' }} Years</div>
                     <div class="booking-details-value"><b>Skills :</b> {{ collect($booking['astrologer']['skills'] ?? [])->pluck('name')->implode(', ') ?: '-' }}</div>
                     <div class="booking-details-value"><b>Languages :</b> {{ collect($booking['astrologer']['languages'] ?? [])->pluck('name')->implode(', ') ?: '-' }}</div>
@@ -619,7 +619,7 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>{{ $booking['astrologer']['name'] ?? '-' }}</td>
+                            <td>{{ $booking['astrologer']['display_name'] ?? '-' }}</td>
                             <td>{{ ucfirst($booking['consultation_type']) }}</td>
                             <td id="booking-scheduled-date-cell">{{ \Carbon\Carbon::parse($booking['scheduled_at'])->format('d F Y') }}</td>
                             <td id="booking-scheduled-slot-cell">{{ \Carbon\Carbon::parse($booking['scheduled_at'])->format('h:i A') }}@if(isset($booking['end_time'])) - {{ \Carbon\Carbon::parse($booking['end_time'])->format('h:i A') }}@endif</td>

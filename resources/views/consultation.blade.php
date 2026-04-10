@@ -151,10 +151,11 @@
                                         <select class="form-select" name="astrologer_id" id="astrologer_id">
                                             <option value="">-- Select Astrologer --</option>
                                             @if(isset($astrologers['data']) && is_array($astrologers['data']))
+                                          
                                                 @foreach($astrologers['data'] as $ast)
                                                     @if(is_array($ast) || is_object($ast))
                                                         <option value="{{ is_array($ast) ? ($ast['id'] ?? '') : ($ast->id ?? '') }}" data-duration="{{ is_array($ast) ? ($ast['duration'] ?? '') : ($ast->duration ?? '') }}" data-rate="{{ is_array($ast) ? ($ast['rate'] ?? '') : ($ast->rate ?? '') }}">
-                                                            {{ is_array($ast) ? ($ast['name'] ?? '') : ($ast->name ?? '') }}
+                                                            {{ is_array($ast) ? ($ast['display_name'] ?? $ast['name'] ?? '') : ($ast->display_name ?? $ast->name ?? '') }}
                                                         </option>
                                                     @endif
                                                 @endforeach

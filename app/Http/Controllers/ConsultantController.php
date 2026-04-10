@@ -57,7 +57,6 @@ class ConsultantController extends Controller
         }
 
         $filters = $this->astrologerApiService->getConsultantFilterSections($allAstrologers);
-
         return view('consultant', compact('astrologers', 'filters', 'pagination'));
     }
 

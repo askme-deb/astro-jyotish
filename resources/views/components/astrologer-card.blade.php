@@ -4,7 +4,7 @@
             <div class="d-flex gap-3">
                 <img src="{{ $astrologer['image'] ?? asset('assets/images/default-profile.png') }}" class="profile-img">
                 <div>
-                    <h6 class="mb-1"><a href="{{ url('consultant/' . $astrologer['id']) }}">{{ $astrologer['display_name'] ?? 'Unknown' }}</a></h6>
+                    <h6 class="mb-1"><a href="{{ url('consultant/' . $astrologer['id']) }}">{{ $astrologer['display_name'] ?? $astrologer['name'] ?? 'Unknown' }}</a></h6>
                     <small>{{ is_array($astrologer['languages']) ? implode(', ', $astrologer['languages']) : $astrologer['languages'] ?? '' }}</small><br>
                     <div class="nhgd">
                         @if(isset($astrologer['skills']) && is_array($astrologer['skills']))

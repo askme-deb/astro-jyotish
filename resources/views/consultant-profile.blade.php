@@ -49,7 +49,7 @@
                 <div class="d-flex align-items-center">
                     <img src="{{ $consultant['image'] ?? asset('assets/images/default-profile.png') }}" class="profile-img me-3">
                     <div>
-                        <h4 class="mb-1">{{ $consultant['name'] ?? '-' }}</h4>
+                        <h4 class="mb-1">{{ $consultant['display_name'] ?? $consultant['name'] ?? 'Unknown' }}</h4>
                         <p class="mb-1 text-muted">{{ $consultant['skills'] ? implode(', ', $consultant['skills']) : 'Astrology' }}</p>
                         <small class="text-muted">{{ $consultant['languages'] }} | {{ $consultant['experience'] }} | {{ $consultant['location'] ?? '' }}</small>
                         <div class="nhgd">

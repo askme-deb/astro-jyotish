@@ -796,6 +796,7 @@ class AstrologerApiService extends BaseApiClient
     private function normalizeAstrologer(array $item): array
     {
         $name = (string) ($item['name'] ?? 'Unknown');
+        $displayName = (string) ($item['display_name'] ?? $name);
         $skills = $this->sanitizeStringList($item['skills'] ?? $item['expertise'] ?? []);
         $languages = $this->sanitizeStringList($item['languages'] ?? []);
         $experience = $item['experience'] ?? null;
@@ -807,6 +808,7 @@ class AstrologerApiService extends BaseApiClient
         return [
             'id' => $item['id'] ?? null,
             'name' => $name,
+            'display_name' => $displayName,
             'price' => $item['rate'] ?? $item['price'] ?? null,
             'duration' => $item['duration'] ?? null,
             'image' => $item['image_url'] ?? $item['image'] ?? null,
