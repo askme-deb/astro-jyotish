@@ -377,7 +377,11 @@ class AstrologerProfileController extends Controller
             'photo_url' => $this->resolveAssetValue($profile, ['photo_url', 'photo', 'profile_photo', 'image', 'user.photo', 'astrologer.photo']),
             'aadhar_document_url' => $this->resolveAssetValue($profile, ['aadhar_document_url', 'aadhar_document', 'aadhaar_document', 'user.aadhar_document', 'astrologer.aadhar_document']),
             'pan_document_url' => $this->resolveAssetValue($profile, ['pan_document_url', 'pan_document', 'user.pan_document', 'astrologer.pan_document']),
-            'signature' => $this->resolveAssetValue($profile, ['astrologer_signature_image', 'signature_image', 'signature', 'user.signature', 'astrologer.signature', 'signature_url', 'astrologer.signature_url']),
+            'signature' => $this->resolveAssetValue(
+                $profile,
+                ['astrologer_signature_image', 'signature_image', 'signature', 'user.signature', 'astrologer.signature', 'signature_url', 'astrologer.signature_url'],
+                ['signature_updated_at', 'astrologer_signature_updated_at', 'updated_at', 'astrologer.updated_at', 'user.updated_at']
+            ),
             'languages' => $this->normalizeSelectionValues($profile['languages'] ?? data_get($profile, 'astrologer.languages') ?? []),
             'skills' => $this->normalizeSelectionValues($profile['skills'] ?? data_get($profile, 'astrologer.skills') ?? []),
             'education' => array_values(array_map(function ($item, $index) use ($educationDocuments) {
@@ -419,17 +423,89 @@ class AstrologerProfileController extends Controller
         }));
     }
 
-    private function resolveAssetValue(array $profile, array $paths): string
+    private function resolveAssetValue(array $profile, array $paths, array $versionPaths = []): string
     {
         foreach ($paths as $path) {
             $value = str_contains($path, '.') ? data_get($profile, $path) : ($profile[$path] ?? null);
 
             if (is_string($value) && trim($value) !== '') {
-                return trim($value);
+                return $this->appendAssetVersion(trim($value), $this->resolveAssetVersion($profile, $versionPaths));
             }
         }
 
         return '';
+    }
+
+    private function resolveAssetVersion(array $profile, array $paths): ?string
+    {
+        foreach ($paths as $path) {
+            $value = str_contains($path, '.') ? data_get($profile, $path) : ($profile[$path] ?? null);
+            $version = $this->normalizeAssetVersion($value);
+
+            if ($version !== null) {
+                return $version;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeAssetVersion(mixed $value): ?string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return (string) $value->getTimestamp();
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (string) (int) $value;
+        }
+
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            return (string) (int) $value;
+        }
+
+        $timestamp = strtotime($value);
+        if ($timestamp !== false) {
+            return (string) $timestamp;
+        }
+
+        $normalized = preg_replace('/[^A-Za-z0-9_-]+/', '', $value);
+
+        return is_string($normalized) && $normalized !== '' ? $normalized : null;
+    }
+
+    private function appendAssetVersion(string $value, ?string $version): string
+    {
+        if ($value === '' || $version === null || $version === '' || str_starts_with($value, 'data:')) {
+            return $value;
+        }
+
+        $fragment = '';
+        if (str_contains($value, '#')) {
+            [$value, $hash] = explode('#', $value, 2);
+            $fragment = '#' . $hash;
+        }
+
+        $versionParam = 'signature_v=' . rawurlencode($version);
+
+        if (preg_match('/([?&])signature_v=[^&#]*/', $value) === 1) {
+            $updated = preg_replace('/([?&])signature_v=[^&#]*/', '$1' . $versionParam, $value, 1);
+
+            return ($updated ?: $value) . $fragment;
+        }
+
+        $separator = str_contains($value, '?') ? '&' : '?';
+
+        return $value . $separator . $versionParam . $fragment;
     }
 
     private function resolveEducationDocumentValue(array $item): string

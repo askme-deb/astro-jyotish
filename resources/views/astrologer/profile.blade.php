@@ -1322,6 +1322,38 @@ document.addEventListener('DOMContentLoaded', function () {
     const maxUploadBytes = 1024 * 1024;
     let toastTimeoutId = null;
 
+    function stripSignatureCacheKey(signatureValue) {
+        if (!signatureValue || signatureValue.startsWith('data:')) {
+            return signatureValue;
+        }
+
+        try {
+            const url = new URL(signatureValue, window.location.origin);
+            url.searchParams.delete('signature_v');
+            return url.toString();
+        } catch (error) {
+            return signatureValue
+                .replace(/([?&])signature_v=[^&#]*/g, '$1')
+                .replace(/[?&]$/, '');
+        }
+    }
+
+    function withSignatureCacheKey(signatureValue, cacheKey) {
+        if (!signatureValue || signatureValue.startsWith('data:') || cacheKey === null || cacheKey === undefined || cacheKey === '') {
+            return signatureValue;
+        }
+
+        const normalizedValue = stripSignatureCacheKey(signatureValue);
+
+        try {
+            const url = new URL(normalizedValue, window.location.origin);
+            url.searchParams.set('signature_v', String(cacheKey));
+            return url.toString();
+        } catch (error) {
+            return `${normalizedValue}${normalizedValue.includes('?') ? '&' : '?'}signature_v=${encodeURIComponent(String(cacheKey))}`;
+        }
+    }
+
     function populateSelect(select, items, placeholder, selectedValue) {
         if (!select) {
             return;
@@ -2365,7 +2397,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 signatureInput.value = dataUrl;
             }
         };
-        image.src = dataUrl;
+        image.src = withSignatureCacheKey(dataUrl, signatureCacheKey);
     }
 
     function loadSignatureAsBase64(signatureValue, version) {
@@ -2383,8 +2415,13 @@ document.addEventListener('DOMContentLoaded', function () {
             return Promise.resolve(signatureValue);
         }
 
-        return fetch(signatureValue, {
+        return fetch(withSignatureCacheKey(signatureValue, signatureCacheKey), {
             credentials: 'same-origin',
+            cache: 'no-store',
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+            },
         })
             .then(function (response) {
                 if (!response.ok) {
@@ -2461,6 +2498,7 @@ document.addEventListener('DOMContentLoaded', function () {
         context.fillStyle = '#fffdf8';
         context.fillRect(0, 0, width, 180);
         signatureVersion += 1;
+        signatureCacheKey = null;
         signatureHasContent = false;
         signatureInput.value = '';
         signatureHydrationPromise = Promise.resolve('');
@@ -2489,6 +2527,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let lastPoint = null;
     let signatureHasContent = Boolean(signatureInput.value && signatureInput.value.trim());
     let signatureVersion = 0;
+    let signatureCacheKey = null;
     let signatureHydrationPromise = Promise.resolve(signatureInput.value.trim());
 
     if (signatureHasContent) {
@@ -2763,10 +2802,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     const returnedSignature = String((result.data.data && result.data.data.signature) || '').trim();
                     if (returnedSignature !== '') {
                         signatureVersion += 1;
-                        signatureInput.value = returnedSignature;
+                        signatureCacheKey = Date.now();
+                        signatureInput.value = withSignatureCacheKey(returnedSignature, signatureCacheKey);
                         signatureHasContent = true;
-                        signatureHydrationPromise = Promise.resolve(returnedSignature);
-                        renderSignature(returnedSignature, signatureVersion);
+                        signatureHydrationPromise = loadSignatureAsBase64(signatureInput.value, signatureVersion);
                     }
 
                     showMessage('success', result.data.message || 'Profile updated successfully.');
