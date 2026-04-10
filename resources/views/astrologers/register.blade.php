@@ -270,7 +270,7 @@
                                                 </div>
                                                 <input type="file" name="astrologer_aadhar_document" id="astrologer_aadhar_document" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0" accept=".pdf,image/*" required style="z-index:2;cursor:pointer;">
                                             </div>
-                                            <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 1MB.</div>
+                                            <div class="form-text text-muted small">Accepted: PDF, JPG, PNG. Max 2MB.</div>
                                             <div class="invalid-feedback"></div>
                                         </div>
                                         <div class="col-md-4">
@@ -726,8 +726,8 @@ $(document).ready(function () {
 function validateStep(step) {
     let valid = true;
 
-    const documentMaxSize = 1024 * 1024;
-    const documentMaxSizeMessage = 'File size must not be greater than 1MB.';
+    const documentMaxSize = 2 * 1024 * 1024;
+    const documentMaxSizeMessage = 'File size must not be greater than 2MB.';
 
     function setDocumentError(input, message) {
         const field = $(input);

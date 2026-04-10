@@ -100,7 +100,7 @@ class AstrologerProfileController extends Controller
             'availabilities.*.slots.*.from' => ['required_with:availabilities.*.slots', 'nullable', 'date_format:H:i'],
             'availabilities.*.slots.*.to' => ['required_with:availabilities.*.slots', 'nullable', 'date_format:H:i'],
             'photo' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:1024'],
-            'aadhar_document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:1024'],
+            'aadhar_document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'pan_document' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:1024'],
             'signature' => ['nullable', 'string'],
             'astrologer_signature_image' => ['nullable', 'string'],

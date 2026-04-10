@@ -305,7 +305,7 @@
                                             <span class="profile-file-dropzone-subtitle">or click to browse</span>
                                         </div>
                                     </div>
-                                    <div class="form-text">Accepted: PDF, JPG, PNG. Max 1MB.</div>
+                                    <div class="form-text">Accepted: PDF, JPG, PNG. Max 2MB.</div>
                                     <div class="mt-2 small" id="aadhar-current-wrapper">
                                         @if($profile['aadhar_document_url'])
                                             <a href="{{ $profile['aadhar_document_url'] }}" target="_blank" rel="noopener" id="aadhar-current-link">View current Aadhaar document</a>
@@ -1319,7 +1319,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const photoInput = form.querySelector('[name="photo"]');
     const aadharInput = form.querySelector('[name="aadhar_document"]');
     const panInput = form.querySelector('[name="pan_document"]');
-    const maxUploadBytes = 1024 * 1024;
+    const maxUploadBytes = 2 * 1024 * 1024;
     let toastTimeoutId = null;
 
     function stripSignatureCacheKey(signatureValue) {
@@ -2019,7 +2019,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return true;
         }
 
-        setInputError(input, `${label} must not be greater than 1MB.`);
+        setInputError(input, `${label} must not be greater than 2MB.`);
         return false;
     }
 
