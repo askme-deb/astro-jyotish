@@ -151,7 +151,7 @@
                                         <select class="form-select" name="astrologer_id" id="astrologer_id">
                                             <option value="">-- Select Astrologer --</option>
                                             @if(isset($astrologers['data']) && is_array($astrologers['data']))
-                                          
+
                                                 @foreach($astrologers['data'] as $ast)
                                                     @if(is_array($ast) || is_object($ast))
                                                         <option value="{{ is_array($ast) ? ($ast['id'] ?? '') : ($ast->id ?? '') }}" data-duration="{{ is_array($ast) ? ($ast['duration'] ?? '') : ($ast->duration ?? '') }}" data-rate="{{ is_array($ast) ? ($ast['rate'] ?? '') : ($ast->rate ?? '') }}">
@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         return;
                     }
                     const options = {
-                        key: orderResp.data.key || 'rzp_test_3WmknLIqcUo9er', // Replace with your Razorpay key
+                        key: orderResp.data.key || 'rzp_live_S8olB6adEFqIGG', // Replace with your Razorpay key
                         amount: orderResp.data.amount,
                         currency: orderResp.data.currency,
                         name: 'Astro Jyotish',
