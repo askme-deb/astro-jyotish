@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         key: orderResp.data.key || 'rzp_live_S8olB6adEFqIGG', // Replace with your Razorpay key
                         amount: orderResp.data.amount,
                         currency: orderResp.data.currency,
-                        name: 'Astro Jyotish',
+                        name: 'Astrologer Raju Maharaj',
                         description: 'Consultation Booking',
                         order_id: orderResp.data.razorpay_order_id,
                         handler: function (response) {
