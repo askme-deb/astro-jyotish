@@ -1670,7 +1670,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
 
                         const razorpay = new Razorpay({
-                            key: orderResponse.data.key || 'rzp_test_3WmknLIqcUo9er',
+                            key: orderResponse.data.key || 'rzp_live_S8olB6adEFqIGG',
                             amount: orderResponse.data.amount,
                             currency: orderResponse.data.currency,
                             name: 'Astro Jyotish',
