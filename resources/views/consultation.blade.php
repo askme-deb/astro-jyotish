@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         return;
                     }
                     const options = {
-                        key: orderResp.data.key || 'rzp_live_S8olB6adEFqIGG', // Replace with your Razorpay key
+                        key: orderResp.data.key || 'rzp_test_SiqSg6q5zDhTNk', // Replace with your Razorpay key
                         amount: orderResp.data.amount,
                         currency: orderResp.data.currency,
                         name: 'Astrologer Raju Maharaj',
