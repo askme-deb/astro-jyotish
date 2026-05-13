@@ -1347,7 +1347,7 @@ $meetingId = 'astro-' . $appointment['id'];
                 <div class="abuse-report-section">
                     <div class="booking-details-label mb-0"><i class="fa-solid fa-triangle-exclamation me-1"></i> Report Abuse</div>
 
-                    <div id="abuse-report-status" class="abuse-report-status-card @if(!$abuseReportExists) d-none @endif" aria-live="polite">
+                    {{-- <div id="abuse-report-status" class="abuse-report-status-card @if(!$abuseReportExists) d-none @endif" aria-live="polite">
                         <div class="abuse-report-status-head">
                             <div>
                                 <div class="abuse-report-status-title">
@@ -1375,7 +1375,7 @@ $meetingId = 'astro-' . $appointment['id'];
                         <div class="abuse-report-status-note">
                             Only one report is needed per consultation. If additional action is required, continue through the normal support or compliance process.
                         </div>
-                    </div>
+                    </div> --}}
 
                     <div id="abuse-report-form-wrapper" class="abuse-report-form-wrapper @if($abuseReportExists) d-none @endif">
                         <p class="text-muted small mb-0">Use this if the customer was abusive, threatening, or otherwise inappropriate during the consultation.</p>
